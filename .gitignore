@@ -1,0 +1,5 @@
+**/Intermediate/
+**/Local/
+**/Lib/
+*.sln
+*.xcodeproj
