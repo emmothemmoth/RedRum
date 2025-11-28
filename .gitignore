@@ -1,5 +1,11 @@
 **/Intermediate/
 **/Local/
 **/Lib/
+**/vs/
 *.sln
 *.xcodeproj
+*.vs
+*.inc
+*.obj
+*.tlog
+*.log
