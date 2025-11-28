@@ -1,0 +1,14 @@
+{
+  "AlbedoColorR": 1.0,
+  "AlbedoColorG": 1.0,
+  "AlbedoColorB": 1.0,
+  "AlbedoColorA": 0.3,
+  "UVTilingX": 1.0,
+  "UVTilingY": 1.0,
+  "NormalStrength": 10.0,
+  "Shininess": 1.0,
+  "EmissionStrength": 1.0,
+  "AlbedoTexture": "T_Wooden_Carving_C.dds",
+  "NormalTexture": "T_Wooden_Carving_N.dds",
+  "MaterialTexture": "T_Wooden_Carving_M.dds"
+}

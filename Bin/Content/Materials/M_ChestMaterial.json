@@ -1,0 +1,15 @@
+{
+  "AlbedoColorR": 1.0,
+  "AlbedoColorG": 1.0,
+  "AlbedoColorB": 1.0,
+  "AlbedoColorA": 1.0,
+  "UVTilingX": 1.0,
+  "UVTilingY": 1.0,
+  "NormalStrength": 0.9,
+  "Shininess": 1.0,
+  "EmissionStrength": 1.0,
+  "AlbedoTexture": "T_Chest_C.dds",
+  "NormalTexture": "T_Chest_N.dds",
+  "MaterialTexture": "T_Chest_M.dds",
+  "FXTexture": "T_Chest_FX.dds"
+}

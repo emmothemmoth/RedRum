@@ -1,0 +1,14 @@
+{
+  "AlbedoColorR": 1.0,
+  "AlbedoColorG": 1.0,
+  "AlbedoColorB": 1.0,
+  "AlbedoColorA": 1.0,
+  "UVTilingX": 1.0,
+  "UVTilingY": 1.0,
+  "NormalStrength": 1.0,
+  "Shininess": 0.0,
+  "EmissionStrength" :  1.0,
+  "AlbedoTexture": "T_TGA_Bro_C.dds",
+  "NormalTexture": "T_TGA_Bro_N.dds",
+  "MaterialTexture": "T_TGA_Bro_M.dds"
+}

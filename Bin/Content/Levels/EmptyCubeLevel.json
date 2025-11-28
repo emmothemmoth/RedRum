@@ -1,0 +1,57 @@
+{
+  "Entities": [
+    {
+      "Name": "Camera",
+      "ID": 0,
+      "ParentID": -1,
+      "RenderPass": "None",
+      "Transform": {
+        "Position": [ -40, 5825, -570 ],
+        "RotationDegrees": [-31.7, 0, 0 ],
+        "scale": [ 1, 1, 1 ]
+      },
+      "Components": [
+        {
+          "TypeName": "CameraComponent",
+          "ComponentID": 6
+        }
+      ]
+    },
+    {
+      "Name": "Ground",
+      "ID": 1,
+      "ParentID": -1,
+      "RenderPass": "Deferred",
+      "Transform": {
+        "Position": [ 0, 0, 0 ],
+        "RotationDegrees": [ 0, 0, 0 ],
+        "scale": [ 1, 1, 1 ]
+      },
+      "Components": [
+        {
+          "TypeName": "MeshComponent",
+          "ComponentID": 0,
+          "Mesh": "GroundMesh"
+        },
+        {
+          "TypeName": "MaterialComponent",
+          "ComponentID": 2,
+          "Material": "M_GroundMaterial"
+        }
+      ]
+    },
+    {
+      "Name": "WorldBounds",
+      "ID": 2,
+      "Transform": {
+        "Position": [ 0, 0, 0 ],
+        "RotationDegrees": [ 0, 0, 0 ],
+        "scale": [ 1, 1, 1 ]
+      },
+      "HalfSize": 2000,
+      "Components": [
+      ]
+    }
+
+  ]
+}

@@ -1,0 +1,64 @@
+{
+  "Type": "Other",
+  "Shape": "Box",
+  "ShapeRadius": 100,
+  "AngleKeys": [
+    {
+      "Position": 0,
+      "Value": 0
+    },
+    {
+      "Position": 0.5,
+      "Value": 90
+    },
+    {
+      "Position": 1,
+      "Value": 180
+    }
+  ],
+  "ChannelMask": {
+    "R": 1,
+    "G": 1,
+    "B": 1,
+    "A": 1
+  },
+  "Color": [
+    {
+      "Position": 0,
+      "R": 0.5,
+      "G": 0.5,
+      "B": 0.7,
+      "A": 1
+    },
+    {
+      "Position": 1,
+      "R": 0.5,
+      "G": 0.5,
+      "B": 0.7,
+      "A": 0.1
+    }
+  ],
+  "EmitterSizeKeys": {
+    "Position": 0,
+    "SizeX": 50,
+    "SizeY": 50
+  },
+  {
+    "Position": 1,
+    "SizeX": 10,
+    "SizeY": 10
+  },
+  "LifeTime": 5,
+  "Textures": [
+    {
+      "Slot": 5,
+      "Texture": "T_BlueNoise"
+    }
+  ],
+  "GravityScale": 2,
+  "Velocity": {
+    "X": 20,
+    "Y": 20,
+    "Z": 20
+  }
+}

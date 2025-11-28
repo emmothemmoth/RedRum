@@ -1,0 +1,250 @@
+{
+  "Entities": [
+    {
+      "Name": "Camera",
+      "ID": 0,
+      "ParentID": -1,
+      "RenderPass": "None",
+      "Transform": {
+        "Position": [ 0, 100, -1000 ],
+        "RotationDegrees": [ 0, 0, 0 ],
+        "scale": [ 1, 1, 1 ]
+      },
+      "Components": [
+        {
+          "TypeName": "CameraComponent",
+          "ComponentID": 6
+        }
+      ]
+    },
+    {
+      "Name": "Ground",
+      "ID": 1,
+      "ParentID": -1,
+      "RenderPass": "Deferred",
+      "Transform": {
+        "Position": [ 0, 0, 0 ],
+        "RotationDegrees": [ 0, 0, 0 ],
+        "scale": [ 1, 1, 1 ]
+      },
+      "Components": [
+        {
+          "TypeName": "MeshComponent",
+          "ComponentID": 0,
+          "Mesh": "GroundMesh"
+        }
+      ]
+    },
+    {
+      "Name": "Sphere",
+      "ID": 2,
+      "ParentID": -1,
+      "RenderPass": "Deferred",
+      "Transform": {
+        "Position": [ -500, 50.0, 300.0 ],
+        "RotationDegrees": [ 0, 0, 0 ],
+        "scale": [ 1, 1, 1 ]
+      },
+      "Components": [
+        {
+          "TypeName": "MeshComponent",
+          "ComponentID": 0,
+          "Mesh": "SphereMesh"
+        },
+        {
+          "TypeName": "ControllerComponent",
+          "ComponentID": 4,
+          "ControllerType": "USER"
+        }
+      ]
+    },
+    {
+      "Name": "PlaneH",
+      "ID": 3,
+      "ParentID": -1,
+      "RenderPass": "Deferred",
+      "Transform": {
+        "Position": [ 0, 500.0, 50.0 ],
+        "RotationDegrees": [ 0, 180.0, 0 ],
+        "scale": [ 1, 1, 1 ]
+      },
+      "Components": [
+        {
+          "TypeName": "MeshComponent",
+          "ComponentID": 0,
+          "Mesh": "HorizontalPlaneMesh"
+        }
+      ]
+    },
+    {
+      "Name": "Cube",
+      "ID": 4,
+      "ParentID": -1,
+      "RenderPass": "Deferred",
+      "Transform": {
+        "Position": [ 0, 500.0, 50.0 ],
+        "RotationDegrees": [ 0, 0, 0 ],
+        "scale": [ 1, 1, 1 ]
+      },
+      "Components": [
+        {
+          "TypeName": "MeshInstanceComponent",
+          "ComponentID": 1,
+          "Mesh": "CubeMesh",
+          "Instances": [
+            {
+              "InstanceID": 0,
+              "Position": [ -250, 50, 50 ],
+              "RotationDegrees": [ 0, 0, 0 ],
+              "Scale": [ 1, 1, 1 ]
+            },
+            {
+              "InstanceID": 1,
+              "Position": [ 0, 50, 50 ],
+              "RotationDegrees": [ 0, 0, 0 ],
+              "Scale": [ 1, 1, 1 ]
+            },
+            {
+              "InstanceID": 2,
+              "Position": [ 250, 50, 50 ],
+              "RotationDegrees": [ 0, 0, 0 ],
+              "Scale": [ 1, 1, 1 ]
+            }
+          ]
+        }
+
+      ]
+    },
+    {
+      "Name": "Chest",
+      "ID": 5,
+      "ParentID": -1,
+      "RenderPass": "Deferred",
+      "Transform": {
+        "Position": [ 0, 0, -300 ],
+        "RotationDegrees": [ 0, 180.0, 0 ],
+        "scale": [ 1, 1, 1 ]
+      },
+      "Components": [
+        {
+          "TypeName": "MeshComponent",
+          "ComponentID": 0,
+          "Mesh": "SM_Chest"
+        },
+        {
+          "TypeName": "MaterialComponent",
+          "ComponentID": 2,
+          "Material": "M_ChestMaterial"
+        },
+        {
+          "TypeName": "ParticleSystemComponent",
+          "ComponentID": 5,
+          "EmitterTypeName": "Other",
+          "EmitterID": 2
+        }
+      ]
+    },
+    {
+      "Name": "Bro",
+      "ID": 6,
+      "ParentID": -1,
+      "RenderPass": "Deferred",
+      "Transform": {
+        "Position": [ 600, 0, 0 ],
+        "RotationDegrees": [ 0, 180.0, 0 ],
+        "scale": [ 1, 1, 1 ]
+      },
+      "Components": [
+        {
+          "TypeName": "MeshComponent",
+          "ComponentID": 0,
+          "Mesh": "SK_C_TGA_Bro"
+        },
+        {
+          "TypeName": "MaterialComponent",
+          "ComponentID": 2,
+          "Material": "M_BroMaterial"
+        },
+        {
+          "TypeName": "AnimationComponent",
+          "ComponentID": 3,
+          "Animations": [
+            {
+              "StateName": "Idle",
+              "StateID": 0,
+              "Animation": "A_C_TGA_Bro_Idle_Brething"
+            },
+            {
+              "StateName": "Waving",
+              "StateID": 1,
+              "Animation": "A_C_TGA_Bro_Idle_Wave"
+            },
+            {
+              "StateName": "Running",
+              "StateID": 2,
+              "Animation": "A_C_TGA_Bro_Run"
+            },
+            {
+              "StateName": "Walking",
+              "StateID": 3,
+              "Animation": "A_C_TGA_Bro_Walk"
+            }
+
+          ]
+        },
+        {
+          "TypeName": "ParticleSystemComponent",
+          "ComponentID": 5,
+          "EmitterTypeName": "StarParticle",
+          "EmitterID": 1
+        }
+      ]
+    },
+    {
+      "Name": "Buddha",
+      "ID": 7,
+      "ParentID": -1,
+      "RenderPass": "Deferred",
+      "Transform": {
+        "Position": [ 0, 0, 600.0 ],
+        "RotationDegrees": [ 0, 180.0, 0 ],
+        "scale": [ 1, 1, 1 ]
+      },
+      "Components": [
+        {
+          "TypeName": "MeshComponent",
+          "ComponentID": 0,
+          "Mesh": "SM_Buddha"
+        },
+        {
+          "TypeName": "MaterialComponent",
+          "ComponentID": 2,
+          "Material": "M_BuddhaMaterial"
+        }
+      ]
+    },
+    {
+      "Name": "PlaneV",
+      "ID": 8,
+      "ParentID": -1,
+      "RenderPass": "Forward",
+      "Transform": {
+        "Position": [ 0, 100, -800.0 ],
+        "RotationDegrees": [ 0, 180.0, 0 ],
+        "scale": [ 1, 1, 1 ]
+      },
+      "Components": [
+        {
+          "TypeName": "MeshComponent",
+          "ComponentID": 0,
+          "Mesh": "VerticalPlaneMesh"
+        },
+        {
+          "TypeName": "MaterialComponent",
+          "ComponentID": 2,
+          "Material": "M_WoodMaterial"
+        }
+      ]
+    }
+  ]
+}

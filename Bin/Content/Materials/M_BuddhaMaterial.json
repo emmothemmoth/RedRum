@@ -1,0 +1,14 @@
+{
+  "AlbedoColorR": 0.7,
+  "AlbedoColorG": 0.7,
+  "AlbedoColorB": 1.0,
+  "AlbedoColorA": 1.0,
+  "UVTilingX": 1.0,
+  "UVTilingY": 1.0,
+  "NormalStrength": 1.0,
+  "Shininess": 900.0,
+  "EmissionStrength": 1.0,
+  "AlbedoTexture": "T_Buddha_C.DDS",
+  "NormalTexture": "T_Buddha_N.DDS",
+  "MaterialTexture": "T_Buddha_M.DDS"
+}
