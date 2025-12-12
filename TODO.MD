@@ -1,5 +1,4 @@
-* Project setup -> Double check build system
-* Logging System -> Cherno
+* Logging System
 * Juce integration
 * Editor, screen picking
 * Serialization
