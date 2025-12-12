@@ -21,7 +21,7 @@ cppdialect "C++20"
 debugdir ("%{dirs.intermidiate}/%{prj.name}/")
 targetdir (dirs.lib.."/%{cfg.buildcfg}")
 targetname("%{prj.name}")
-objdir (dirs.graphicsengine)
+objdir (dirs.intermidiate .. "%{prj.name}/%{cfg.buildcfg}")
 
 
 pchheader ("%{prj.name}.pch.h")
