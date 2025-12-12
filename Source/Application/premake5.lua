@@ -10,10 +10,12 @@ kind "WindowedApp"
 language "C++"
 cppdialect "C++20"
 
-targetdir (dirs.bin)
 targetname("%{prj.name}_%{cfg.buildcfg}")
 objdir (dirs.intermidiate .. "%{prj.name}/%{cfg.buildcfg}")
+targetdir (dirs.bin)
+debugdir (dirs.bin)
 
+dependson({"Editor"})
 links ({"Editor"})
 print(dirs.game)
 includedirs {dirs.application, dirs.utilities}

@@ -10,8 +10,9 @@ cppdialect "C++20"
 debugdir ("%{dirs.intermidiate}/%{prj.name}/")
 targetdir (dirs.lib.."/%{cfg.buildcfg}")
 targetname("%{prj.name}")
-dependson({"AssetManager", "CommonUtilities", "DearImGui", "GameEngine"});
-links({"AssetManager", "CommonUtilities", "GameEngine", "DearImGui"});
+dependson({"Shaders", "AssetManager", "DearImGui", "GraphicsEngine", "GameEngine", "CommonUtilities"});
+links({"Shaders", "AssetManager", "DearImGui", "GraphicsEngine", "GameEngine", "CommonUtilities"});
+includedirs {dirs.utilities, dirs.gameEngine}
 	files {
 		"**.h",
 		"**.hpp",
