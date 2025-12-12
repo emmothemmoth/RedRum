@@ -126,12 +126,26 @@ bool AssetManager::RegisterAssetFromRelative(const std::filesystem::path& aPath)
 		RegisterTextureAsset(aPath);
 		return true;
 	}
+	else if (fileName.string().starts_with("sprite") && extension.ends_with("DDS") || extension.ends_with("dds"))
+	{
+		//SPRITES
+		return true;
+	}
 	else if (fileName.string().starts_with("M") && extension.ends_with("json"))
 	{
 		RegisterMaterialAsset(aPath);
 		return true;
 	}
 	else if (fileName.string().starts_with("P") && extension.ends_with("json"))
+	{
+		return true;
+	}
+
+	else if (extension.ends_with("json"))
+	{
+		return true;
+	}
+	else if (extension.ends_with("mp3") || extension.ends_with("wav") || extension.ends_with("aiff"))
 	{
 		return true;
 	}
