@@ -1155,7 +1155,7 @@ bool RHI::CreateTexture(std::string aName, unsigned aWidth, unsigned aHeight, RH
 	D3D11_TEXTURE2D_DESC desc;
 	desc.Width = aWidth;
 	desc.Height = aHeight;
-	desc.MipLevels = 0;
+	desc.MipLevels = 1;
 	desc.ArraySize = 1;
 	desc.Format = static_cast<DXGI_FORMAT>(aFormat);
 	desc.SampleDesc.Count = 1;
@@ -1198,7 +1198,6 @@ bool RHI::CreateTexture(std::string aName, unsigned aWidth, unsigned aHeight, RH
 
 		SetObjectName(outTexture->myRTV, aName + "_RTV");
 	}
-	outTexture->myName = aName;
 
 	return true;
 }

@@ -14,7 +14,7 @@ public:
 	CameraComponent(GameObject& aParent);
 	~CameraComponent();
 
-	void Init(CU::Vector3<float> aPoint);
+	void Init(CU::Vector3<float> aPoint, const CU::Vector3f& someRotations = CU::Vector3f());
 	void Update(float aDeltaTime) override;
 	void Render() override;
 	void UpdateRotation();

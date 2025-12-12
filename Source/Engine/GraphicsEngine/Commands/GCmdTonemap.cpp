@@ -24,3 +24,4 @@ void GCmdTonemap::Execute()
 void GCmdTonemap::Destroy()
 {
 }
+

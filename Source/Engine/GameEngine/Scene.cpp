@@ -13,6 +13,7 @@
 #include "..\GraphicsEngine\GraphicsCommands.h"
 #include "..\GraphicsEngine\PipelineStates.h"
 #include "../GraphicsEngine/Buffers/DebugBuffer.h"
+#include "../GraphicsEngine/Objects/MaterialAsset.h"
 
 #include "Logger/Logger.h"
 
@@ -270,7 +271,7 @@ void Scene::InitSortingLists()
 bool Scene::AddPlayer(const CU::Vector3f& aSpawnPosition, unsigned char anID, bool aIsUser)
 {
 	myIDtoIndex.insert({ anID, static_cast<unsigned>(myCurrentLevel.DeferredObjects.size()) });
-	myCurrentLevel.DeferredObjects.emplace_back(std::make_shared<GameObject>("Unnamed", anID));
+	myCurrentLevel.DeferredObjects.emplace_back(std::make_shared<GameObject>(anID));
 	std::shared_ptr<GameObject> newObject = myCurrentLevel.DeferredObjects.back();
 	newObject->SetPosition(aSpawnPosition);
 	newObject->AddComponent(std::make_shared<MeshComponent>(*newObject, AssetManager::Get().GetAsset<MeshAsset>("SphereMesh")));
@@ -285,7 +286,7 @@ bool Scene::AddPlayer(const CU::Vector3f& aSpawnPosition, unsigned char anID, bo
 bool Scene::AddObject(const CU::Vector3f& aPosition, const char* aMesh, unsigned char anID, bool aIsActive, bool aIsUser)
 {
 	myIDtoIndex.insert({ anID, static_cast<unsigned>(myCurrentLevel.DeferredObjects.size()) });
-	myCurrentLevel.DeferredObjects.emplace_back(std::make_shared<GameObject>("Unnamed", anID));
+	myCurrentLevel.DeferredObjects.emplace_back(std::make_shared<GameObject>(anID));
 	std::shared_ptr<GameObject> newObject = myCurrentLevel.DeferredObjects.back();
 	newObject->SetPosition(aPosition);
 	newObject->SetIsActive(aIsActive);

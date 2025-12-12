@@ -1,8 +1,6 @@
 #include "Editor.pch.h"
 #include "Editor.h"
 
-#include "Scene.h"
-#include "MainSingleton.h"
 #include "../Engine/GraphicsEngine/GraphicsEngine.h"
 #include "../Engine/GraphicsEngine/GraphicsCommands.h"
 #include "../Engine/GraphicsEngine/PipelineStates.h"
@@ -11,8 +9,12 @@
 #include "../Engine/AssetManager/AssetManager.h"
 #include "CommonUtilities/UtilityFunctions.hpp"
 
+#include "Scene.h"
+#include "MainSingleton.h"
+
 #include "Windows.h"
 #include "shellapi.h"
+#include <iostream>
 
 Editor::~Editor()
 {
@@ -22,32 +24,20 @@ void Editor::Init()
 {
 	const std::filesystem::path startDir = std::filesystem::current_path().parent_path();
 	const std::filesystem::path contentDir = startDir / "Bin" / "Content";
-	AssetManager::Get().Init(contentDir);
-	AssetManager::Get().LoadAllAssets();
 	myScene = std::make_shared<Scene>();
 	myScene->Init();
-	for (const auto& file : std::filesystem::recursive_directory_iterator(AssetManager::Get().GetContentRootDirectory()))
-	{
-		if (file.path().has_filename() && file.path().has_extension())
-		{
-			if (AssetManager::Get().RegisterAsset(file.path()))
-			{
-
-			}
-		}
-	}
 	SIZE windowSize = GraphicsEngine::Get().GetWindowSize();
 	DragAcceptFiles(GraphicsEngine::Get().GetWindowHandle(), true); //Accept drag&drop to window
 
-	myGUI.Init(GraphicsEngine::Get().GetWindowHandle(), GraphicsEngine::Get().GetRHI()->GetDevice().Get(), GraphicsEngine::Get().GetRHI()->GetContext().Get(), GraphicsEngine::Get().GetWindowSizeAsVector());
+	myGUI.Init(GraphicsEngine::Get().GetWindowHandle(), GraphicsEngine::Get().GetRHI()->GetDevice().Get(), GraphicsEngine::Get().GetRHI()->GetContext().Get(), GraphicsEngine::Get().GetRenderSize());
 
-	for (const auto& audioFile : std::filesystem::recursive_directory_iterator(contentDir / "AudioFiles"))
+	for (const auto& audioFile : std::filesystem::recursive_directory_iterator(contentDir / "Audio"))
 	{
 		if (audioFile.path().has_filename() && audioFile.path().has_extension())
 		{
 		}
 	}
-	
+	MapInputs();
 	myLoadingDone = true;
 }
 
@@ -82,6 +72,7 @@ void Editor::Run()
 			}
 		}
 		MainSingleton::Get().GetRenderer().RenderFrame();
+		GraphicsEngine::Get().ChangeRenderTarget(GraphicsEngine::Get().GetRHI()->GetBackBuffer());
 		myGUI.Update();
 		myGUI.Render();
 		myScene->PresentScene();
@@ -95,27 +86,28 @@ void Editor::ShutDown()
 
 bool Editor::LoadScene(const std::filesystem::path& aLevel)
 {
-	myLoadingDone = false;
+	myLoadingDone.store(false, std::memory_order::release);
 	myScene->LoadScene(aLevel.empty() ? "Content\\Levels\\AssetGym.json" : aLevel.string());
-	myLoadingDone = true;
+	myLoadingDone.store(true, std::memory_order_release);
 	return true;
 }
 
-void GUI::UnloadScene()
+void Editor::UnloadScene()
 {
 }
 
-bool GUI::CreateNewScene(const std::filesystem::path& aSceneName)
+bool Editor::CreateNewScene(const std::filesystem::path& aSceneName)
 {
+	aSceneName;
 	return false;
 }
 
 void Editor::UpdateLoop()
 {
-	do
+	while (myLoadingDone.load(std::memory_order_acquire) == false)
 	{
-		std::this_thread::yield();
-	} while (!myLoadingDone);
+		std::this_thread::sleep_for(std::chrono::milliseconds(10));
+	}
 
 	//For fixed update timing
 	constexpr float fps = 120.f;
@@ -147,9 +139,28 @@ void Editor::UpdateLoop()
 		}
 		MainSingleton::Get().GetInputMapper().Refresh();
 
-		myScene->UpdateScene(myTimer.GetDeltaTime());
+		myScene->UpdateScene(CU::Timer::Get().GetDeltaTime());
 		myScene->RenderScene();
 	}
+}
+
+void Editor::MapInputs()
+{
+	MainSingleton::Get().GetInputMapper().BindEvent(GameInput::Move_Left, ActionEventID::CameraMove_Left);
+	MainSingleton::Get().GetInputMapper().BindEvent(GameInput::Move_Forward, ActionEventID::CameraMove_Forward);
+	MainSingleton::Get().GetInputMapper().BindEvent(GameInput::Move_Backwards, ActionEventID::CameraMove_Backwards);
+	MainSingleton::Get().GetInputMapper().BindEvent(GameInput::Move_Right, ActionEventID::CameraMove_Right);
+	MainSingleton::Get().GetInputMapper().BindEvent(GameInput::Fly_Up, ActionEventID::CameraMove_Up);
+	MainSingleton::Get().GetInputMapper().BindEvent(GameInput::Fly_Down, ActionEventID::CameraMove_Down);
+	MainSingleton::Get().GetInputMapper().BindEvent(GameInput::Rotation, ActionEventID::CameraRotation);
+	MainSingleton::Get().GetInputMapper().BindEvent(GameInput::ToggleDirectionalLight, ActionEventID::Toggle_DirectionalLight);
+	MainSingleton::Get().GetInputMapper().BindEvent(GameInput::TogglePointLight, ActionEventID::Toggle_PointLights);
+	MainSingleton::Get().GetInputMapper().BindEvent(GameInput::ToggleSpotLight, ActionEventID::Toggle_SpotLights);
+	MainSingleton::Get().GetInputMapper().BindEvent(GameInput::ChangeTonemap, ActionEventID::ChangeTonemap);
+	MainSingleton::Get().GetInputMapper().BindEvent(GameInput::ExposureUp, ActionEventID::ExposureUp);
+	MainSingleton::Get().GetInputMapper().BindEvent(GameInput::ExposureDown, ActionEventID::ExposureDown);
+	MainSingleton::Get().GetInputMapper().BindEvent(GameInput::ChangeLuminanceMode, ActionEventID::ChangeLuminanceMode);
+	MainSingleton::Get().GetInputMapper().BindEvent(GameInput::Toggle_SSAO, ActionEventID::Toggle_SSAO);
 }
 
 

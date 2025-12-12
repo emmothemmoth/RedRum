@@ -36,6 +36,7 @@ void GUI::Init(HWND aWindowHandle, ID3D11Device* aDX11Device, ID3D11DeviceContex
 	ImGui_ImplDX11_Init(aDX11Device, aDX11Context);
 }
 
+
 void GUI::Update()
 {
 	ImGui_ImplDX11_NewFrame();

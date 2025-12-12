@@ -10,6 +10,17 @@ GameObject::GameObject(std::string_view aName, unsigned anID)
 	myName = aName;
 }
 
+GameObject::GameObject(unsigned anID)
+{
+	myID = anID;
+	myName = "Unnamed";
+}
+
+GameObject::GameObject(std::string_view aName)
+{
+	myName = aName;
+}
+
 GameObject::GameObject() = default;
 
 GameObject::~GameObject()
@@ -36,6 +47,13 @@ void GameObject::SetPosition(float anX, float aY, float aZ)
 	myTransform(4, 1) = anX;
 	myTransform(4, 2) = aY;
 	myTransform(4, 3) = aZ;
+}
+
+void GameObject::SetPosition(const CU::Vector3f& aPosition)
+{
+	myTransform(4, 1) = aPosition.x;
+	myTransform(4, 2) = aPosition.y;
+	myTransform(4, 3) = aPosition.z;
 }
 
 void GameObject::RotateAroundY(float anAngle)

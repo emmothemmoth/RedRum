@@ -1,6 +1,6 @@
 #pragma once
 #include "ComponentID.h"
-#include "CommonUtilities\Matrix4x4.hpp"
+#include "../Utilities/CommonUtilities/Matrix4x4.hpp"
 
 #include <vector>
 #include <memory>
@@ -30,12 +30,26 @@ public:
 
 	CommonUtilities::Vector3<float> GetPosition();
 
-	void SetTransform(CommonUtilities::Matrix4x4<float>& aTransform);
-				 
+	void SetIsActive(const bool aIsActive) { myIsActive = aIsActive; }
+	bool GetIsActive() const { return myIsActive; }
+
+	void SetVisible(const bool aIsVisible) { myIsVisible = aIsVisible; }
+	bool GetIsVisible() const { return myIsVisible; }
+
+	void SetTransform(CU::Matrix4x4<float>& aTransform);
+
+	void SetDeltaPosition(const CU::Vector3f& aPosition);
+	void AddDeltaPosition(const CU::Vector3f& aPosition);
+	CU::Vector3f GetDeltaPosition() const;
+	CU::Vector3f GetRequestedPosition();
 
 protected:
 	CommonUtilities::Matrix4x4<float> myTransform;
+	CU::Vector3f myDeltaPosition = { 0,0,0 };
+	CU::Vector3f myRequestedPosition = { 0,0,0 };
 	std::vector<std::shared_ptr<Component>>	myComponents;
+	bool myIsActive = true;
+	bool myIsVisible = true;
 
 private:
 	//std::vector<std::shared_ptr<Component>>	myComponents;

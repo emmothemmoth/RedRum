@@ -21,5 +21,4 @@
 #include "Commands\GCmdSetDebugBuffer.h"
 #include "Commands\GCmdSSAO.h"
 #include "Commands\GCmdRenderSprite.h"
-#include "Commands\GCmdRenderAudioWave.h"
 #include "Commands/GCmdChangeRenderTarget.h"

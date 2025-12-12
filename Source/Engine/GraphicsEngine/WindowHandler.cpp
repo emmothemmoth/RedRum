@@ -50,7 +50,7 @@ bool WindowHandler::Init(SIZE aWindowSize, WNDPROC aWindowProcess, LPCWSTR aWind
     const HWND consoleWindow = GetConsoleWindow();
     RECT consoleSize;
     GetWindowRect(consoleWindow, &consoleSize);
-    MoveWindow(consoleWindow, consoleSize.left, consoleSize.top, 1280, 720, true);
+    //MoveWindow(consoleWindow, consoleSize.left, consoleSize.top, 1280, 720, true);
 
     myModuleHandle = GetModuleHandleW(NULL);
     constexpr LPCWSTR windowClassName = L"MainWindow";
@@ -63,13 +63,26 @@ bool WindowHandler::Init(SIZE aWindowSize, WNDPROC aWindowProcess, LPCWSTR aWind
     windowClass.lpszClassName = windowClassName;
     RegisterClass(&windowClass);
 
+    //// Then we use the class to create our window
+    //myWindowHandle = CreateWindow(
+    //    windowClassName,                                // Classname
+    //    aWindowTitle,                                    // Window Title
+    //    WS_OVERLAPPEDWINDOW | WS_POPUP,    // Flags
+    //    (GetSystemMetrics(SM_CXSCREEN) - aWindowSize.cx) / 2,
+    //    (GetSystemMetrics(SM_CYSCREEN) - aWindowSize.cy) / 2,
+    //    aWindowSize.cx,
+    //    aWindowSize.cy,
+    //    nullptr, nullptr, nullptr,
+    //    nullptr
+    //);
+
     // Then we use the class to create our window
     myWindowHandle = CreateWindow(
         windowClassName,                                // Classname
         aWindowTitle,                                    // Window Title
         WS_OVERLAPPEDWINDOW | WS_POPUP,    // Flags
-        (GetSystemMetrics(SM_CXSCREEN) - aWindowSize.cx) / 2,
-        (GetSystemMetrics(SM_CYSCREEN) - aWindowSize.cy) / 2,
+        0,
+        0,
         aWindowSize.cx,
         aWindowSize.cy,
         nullptr, nullptr, nullptr,
@@ -79,6 +92,11 @@ bool WindowHandler::Init(SIZE aWindowSize, WNDPROC aWindowProcess, LPCWSTR aWind
     myWindowSize = aWindowSize;
 
     return true;
+}
+
+void WindowHandler::MoveRenderWindow(int anX, int aY)
+{
+    MoveWindow(myWindowHandle, anX, aY, myWindowSize.cx, myWindowSize.cy, FALSE);
 }
 
 HWND WindowHandler::GetWindowHandle() const
@@ -104,6 +122,12 @@ void WindowHandler::HideSplashWindow()
 {
     mySplashWindow->Close();
     delete mySplashWindow;
+    ShowWindow(myWindowHandle, SW_SHOW);
+    SetForegroundWindow(myWindowHandle);
+}
+
+void WindowHandler::ShowMainWindow()
+{
     ShowWindow(myWindowHandle, SW_SHOW);
     SetForegroundWindow(myWindowHandle);
 }

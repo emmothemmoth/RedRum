@@ -45,7 +45,7 @@ void GCmdSSAO::Execute()
 	ge.ClearRenderTarget();
 
 	//ge.ClearRenderTarget();
-	ge.SetTextureResource(PIPELINE_STAGE_PIXEL_SHADER,119, *GraphicsEngine::Get().GetSSAOBuffer());
+	ge.SetTextureResource(PIPELINE_STAGE_PIXEL_SHADER, 119, *GraphicsEngine::Get().GetSSAOBuffer());
 
 
 	//Downsample to halfsize
@@ -56,6 +56,7 @@ void GCmdSSAO::Execute()
 
 	//TODO: need to set the SSAO buffer before light gets rendered to slot 119
 }
+
 
 void GCmdSSAO::Destroy()
 {

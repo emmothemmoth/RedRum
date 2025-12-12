@@ -1,6 +1,5 @@
 #pragma once
 #include "..\GraphicsEngine\Objects\IAsset.h"
-#include "../GraphicsEngine/Objects/SpriteAsset.h"
 
 #include <filesystem>
 #include <memory>
@@ -9,13 +8,13 @@
 
 #define WIN32_LEAN_AND_MEAN   
 
+
 enum class AssetType
 {
 	Mesh,
 	Texture,
 	Animation,
-	Material,
-	Sprite
+	Material
 };
 
 struct RegistryID
@@ -66,8 +65,6 @@ private:
 	bool RegisterPrimitiveAssets();
 
 	bool RegisterMeshAsset(const std::filesystem::path aFilePath);
-	bool RegisterSpriteAsset(const std::filesystem::path aFilePath);
-	bool LoadSprite(const std::wstring& aKey);
 	bool RegisterAnimationAsset(const std::filesystem::path aFilePath);
 	bool RegisterTextureAsset(const std::filesystem::path aFilePath);
 	bool RegisterMaterialAsset(const std::filesystem::path aFilePath);
@@ -80,15 +77,16 @@ private:
 
 
 template<class T>
-std::shared_ptr<T> AssetManager::GetAsset(const std::filesystem::path aFileName)
+inline std::shared_ptr<T> AssetManager::GetAsset(const std::filesystem::path aFileName)
 {
 	std::string name = aFileName.string();
 	if (!myAssetMap.contains(aFileName.wstring()))
 	{
-		throw std::invalid_argument("Could not find asset with the name: " + name);
+		AssetInfo info = myAssetMap.at(L"SphereMesh");
+		return std::dynamic_pointer_cast<T>(info.Asset);
 	}
 
-	AssetInfo& info = myAssetMap.at(aFileName.wstring());
+	AssetInfo info = myAssetMap.at(aFileName.wstring());
 	return std::dynamic_pointer_cast<T>(info.Asset);
 }
 

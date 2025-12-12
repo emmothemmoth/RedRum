@@ -85,6 +85,13 @@ bool GraphicsEngine::InitWindow(SIZE aWindowSize, WNDPROC aWindowProcess, LPCWST
 	return false;
 }
 
+void GraphicsEngine::MoveRenderWindow(int anX, int aY)
+{
+	assert(myWindowHandler != nullptr && "Can't move window before initializing it!");
+	myWindowHandler->MoveRenderWindow(anX, aY);
+}
+
+
 void GraphicsEngine::ShowSplashScreen()
 {
 	myWindowHandler->ShowSplashWindow();
@@ -118,7 +125,6 @@ bool GraphicsEngine::Initialize(bool enableDeviceDebug)
 
 		CreateShaders();
 		CreateUIShaders();
-		CreateAudioShaders();
 		CreateParticleShaders();
 		CreatePostProcessShaders();
 		myShaderMap;
@@ -482,9 +488,9 @@ void GraphicsEngine::RenderMesh(const MeshAsset& aMesh, const std::vector<std::s
 			}
 		}
 		myRHI->DrawIndexed(aMesh.GetElements()[index].IndexOffset, aMesh.GetElements()[index].NumIndices);
-		
+
 	}
-	
+
 
 	if (!myRHI->ClearTextureResourceSlot(PIPELINE_STAGE_PIXEL_SHADER, 0))
 	{
@@ -520,12 +526,6 @@ void GraphicsEngine::RenderSprite2D(const SpriteAsset& anElement) const
 	SetTextureResource(PIPELINE_STAGE_PIXEL_SHADER, 0, *anElement.GetTexture());
 	myRHI->SetVertexBuffer(anElement.GetVertexBuffer(), myCurrentVertexShader->VertexStride, 0);
 	myRHI->Draw(4);
-}
-
-void GraphicsEngine::RenderAudioUI(unsigned aStartIndex, unsigned anIndexCount)
-{
-	myRHI->SetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP);
-	myRHI->DrawIndexed(aStartIndex, anIndexCount);
 }
 
 
@@ -876,7 +876,7 @@ SIZE GraphicsEngine::GetWindowSize() const
 	return myWindowHandler->GetWindowSize();
 }
 
-CU::Vector2f GraphicsEngine::GetWindowSizeAsVector() const
+CU::Vector2f GraphicsEngine::GetRenderSize() const
 {
 	return myRHI->GetBackBuffer()->GetSize();
 }
@@ -1063,27 +1063,9 @@ bool GraphicsEngine::CreateSpotLightPSO()
 bool GraphicsEngine::CreateSpritePSO()
 {
 	mySpritePSO = std::make_shared<PipelineStateObject>();
-	mySpritePSO->Type = PSOType::Sprite;
 	mySpritePSO->RenderTargetCount = 1;
-
-	D3D11_SAMPLER_DESC spriteSamplerDesc = {};
-	spriteSamplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-	spriteSamplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
-	spriteSamplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
-	spriteSamplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
-	spriteSamplerDesc.MipLODBias = 0.0f;
-	spriteSamplerDesc.MaxAnisotropy = 1;
-	spriteSamplerDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
-	spriteSamplerDesc.BorderColor[0] = 1.0f;
-	spriteSamplerDesc.BorderColor[1] = 1.0f;
-	spriteSamplerDesc.BorderColor[2] = 1.0f;
-	spriteSamplerDesc.BorderColor[3] = 1.0f;
-	spriteSamplerDesc.MinLOD = -D3D11_FLOAT32_MAX;
-	spriteSamplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
-
-	myRHI->CreateSamplerState("SpriteSamplerState", spriteSamplerDesc);
-
-	mySpritePSO->SamplerStates[0] = myRHI->GetSamplerState("SpriteSamplerState");
+	mySpritePSO->Type = PSOType::Sprite;
+	mySpritePSO->SamplerStates[0] = myRHI->GetSamplerState("DefaultSamplerState");
 
 	D3D11_BLEND_DESC blendStateDescription = {};
 	blendStateDescription = {};
@@ -1102,7 +1084,7 @@ bool GraphicsEngine::CreateSpritePSO()
 	mySpritePSO->BlendState = myRHI->GetBlendState("SpriteBlendState");
 
 	mySpritePSO->RenderTarget[0] = myRHI->GetBackBuffer();
-	mySpritePSO->ClearRenderTarget[0] = true;
+	mySpritePSO->ClearRenderTarget[0] = false;
 
 	mySpritePSO->DepthStencil = nullptr;
 	mySpritePSO->ClearDepthStencil = false;
@@ -1391,27 +1373,27 @@ bool GraphicsEngine::CreateGBuffer()
 	myGBuffer.WorldPosition = std::make_shared<TextureAsset>();
 	myGBuffer.FXTexture = std::make_shared<TextureAsset>();
 
-	if (!myRHI->CreateTexture("AlbedoTexture", 1904, 1041, RHITextureFormat::R8G8B8A8_UNORM, myGBuffer.Albedo.get(), false, true, true, false, false))
+	if (!myRHI->CreateTexture("AlbedoTexture", myRHI->GetDeviceSize().Width, myRHI->GetDeviceSize().Height, RHITextureFormat::R8G8B8A8_UNORM, myGBuffer.Albedo.get(), false, true, true, false, false))
 	{
-		LOG(GELog,Error, "Couldn't create albedo texture for GBuffer");
+		LOG(GELog, Error, "Couldn't create albedo texture for GBuffer");
 		return false;
 	}
-	if (!myRHI->CreateTexture("WorldNormalTexture", 1904, 1041, RHITextureFormat::R16G16B16A16_SNORM, myGBuffer.WorldNormal.get(), false, true, true, false, false))
+	if (!myRHI->CreateTexture("WorldNormalTexture", myRHI->GetDeviceSize().Width, myRHI->GetDeviceSize().Height, RHITextureFormat::R16G16B16A16_SNORM, myGBuffer.WorldNormal.get(), false, true, true, false, false))
 	{
 		LOG(GELog, Error, "Couldn't create material texture for GBuffer");
 		return false;
 	}
-	if (!myRHI->CreateTexture("MaterialTexture", 1904, 1041, RHITextureFormat::R8G8B8A8_UNORM, myGBuffer.Material.get(), false, true, true, false, false))
+	if (!myRHI->CreateTexture("MaterialTexture", myRHI->GetDeviceSize().Width, myRHI->GetDeviceSize().Height, RHITextureFormat::R8G8B8A8_UNORM, myGBuffer.Material.get(), false, true, true, false, false))
 	{
 		LOG(GELog, Error, "Couldn't create pixel normal texture for GBuffer");
 		return false;
 	}
-	if (!myRHI->CreateTexture("WorldPositionTexture", 1904, 1041, RHITextureFormat::R32G32B32A32_Float, myGBuffer.WorldPosition.get(), false, true, true, false, false))
+	if (!myRHI->CreateTexture("WorldPositionTexture", myRHI->GetDeviceSize().Width, myRHI->GetDeviceSize().Height, RHITextureFormat::R32G32B32A32_Float, myGBuffer.WorldPosition.get(), false, true, true, false, false))
 	{
 		LOG(GELog, Error, "Couldn't create world position texture for GBuffer");
 		return false;
 	}
-	if (!myRHI->CreateTexture("FXTexture", 1904, 1041, RHITextureFormat::R8G8B8A8_UNORM, myGBuffer.FXTexture.get(), false, true, true, false, false))
+	if (!myRHI->CreateTexture("FXTexture", myRHI->GetDeviceSize().Width, myRHI->GetDeviceSize().Height, RHITextureFormat::R8G8B8A8_UNORM, myGBuffer.FXTexture.get(), false, true, true, false, false))
 	{
 		LOG(GELog, Error, "Couldn't create fx texture for GBuffer");
 		return false;
@@ -1559,7 +1541,7 @@ void GraphicsEngine::CreateIntermediateBuffers()
 	}
 
 	size.x = size.x / 2;
-	size.y = size.y / 2;	
+	size.y = size.y / 2;
 	myEighthScreenBufferA = std::make_shared<TextureAsset>();
 	myEighthScreenBufferA->SetSize(CU::Vector2f{ static_cast<float>(size.x), static_cast<float>(size.y) });
 	if (!myRHI->CreateTexture("Eight Size Buffer A", size.x, size.y, RHITextureFormat::R8G8B8A8_UNORM, myEighthScreenBufferA.get(), false, true, true, false, false))
@@ -1632,7 +1614,7 @@ void GraphicsEngine::ChangePipelineState(const std::shared_ptr<PipelineStateObje
 
 void GraphicsEngine::CreateShaders()
 {
-	myShaderNames.reserve(30);
+	myShaderNames.reserve(100);
 
 #include "CompiledHeaders\DefaultMaterial_VS.h"
 #include "CompiledHeaders\DefaultMaterial_PS.h"
@@ -1783,33 +1765,6 @@ void GraphicsEngine::CreateUIShaders()
 	if (!myRHI->LoadShaderFromMemory(debugLinePS, *debugLinePixelShader, BuiltIn_DebugLine_PS_ByteCode, sizeof(BuiltIn_DebugLine_PS_ByteCode)))
 	{
 		LOG(GELog, Error, "Failed to load pixel shader from memory, {}", debugLinePS);
-	}
-}
-
-void GraphicsEngine::CreateAudioShaders()
-{
-#include "CompiledHeaders/AudioWave_PS.h"
-	std::string_view audioWavePS = "AudioWave_PS";
-	myShaderMap.emplace(audioWavePS, static_cast<unsigned>(myShaders.size()));
-	myShaders.push_back(std::make_shared<Shader>());
-	myShaders.back()->type = ShaderType::PixelShader;
-	std::shared_ptr<Shader> audioWavePixelShader = std::dynamic_pointer_cast<Shader>(myShaders.back());
-	if (!myRHI->LoadShaderFromMemory(audioWavePS, *audioWavePixelShader, BuiltIn_AudioWave_PS_ByteCode, sizeof(BuiltIn_AudioWave_PS_ByteCode)))
-	{
-		LOG(GELog, Error, "Failed to load pixel shader from memory, {}", audioWavePS);
-	}
-
-	{
-#include "CompiledHeaders/AudioFade_PS.h"
-		std::string_view audioFadePS = "AudioFade_PS";
-		myShaderMap.emplace(audioFadePS, static_cast<unsigned>(myShaders.size()));
-		myShaders.push_back(std::make_shared<Shader>());
-		myShaders.back()->type = ShaderType::PixelShader;
-		std::shared_ptr<Shader> audiofadePixelShader = std::dynamic_pointer_cast<Shader>(myShaders.back());
-		if (!myRHI->LoadShaderFromMemory(audioFadePS, *audiofadePixelShader, BuiltIn_AudioFade_PS_ByteCode, sizeof(BuiltIn_AudioFade_PS_ByteCode)))
-		{
-			LOG(GELog, Error, "Failed to load AudioFade pixel shader from memory, {}", audioFadePS);
-		}
 	}
 }
 

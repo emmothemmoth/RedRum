@@ -72,6 +72,8 @@ public:
 
 	bool InitWindow(SIZE aWindowSize, WNDPROC aWindowProcess, LPCWSTR aWindowTitle);
 
+	void MoveRenderWindow(int anX, int aY);
+
 	void ShowSplashScreen();
 	void HideSplashScreen();
 
@@ -116,7 +118,6 @@ public:
 
 	void RenderSprite2D(const SpriteAsset& anElement) const;
 
-	void RenderAudioUI(unsigned aStartIndex, unsigned anIndexCount);
 
 	void RenderInstancedMesh(const MeshAsset& aMesh, const std::vector<std::shared_ptr<MaterialAsset>>& someMaterials, const InstanceData& anInstanceData) const;
 
@@ -183,7 +184,7 @@ public:
 
 	HWND GetWindowHandle() const;
 	SIZE GetWindowSize() const;
-	CU::Vector2f GetWindowSizeAsVector() const;
+	CU::Vector2f GetRenderSize() const;
 
 
 private:
@@ -222,8 +223,6 @@ private:
 	void CreateShaders();
 
 	void CreateUIShaders();
-
-	void CreateAudioShaders();
 
 	void CreateParticleShaders();
 

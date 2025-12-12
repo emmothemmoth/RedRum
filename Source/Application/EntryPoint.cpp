@@ -105,7 +105,7 @@ int GuardedMain()
     LONG width, heigth;
     GetScreenResolution(width, heigth);
     SIZE windowSize = { width, heigth };
-    constexpr LPCWSTR windowTitle = L"Audio Editor";
+    constexpr LPCWSTR windowTitle = L"Red Rum";
     GraphicsEngine::Get().InitWindow(windowSize, WinProc, windowTitle);
     GraphicsEngine::Get().ShowSplashScreen();
     GraphicsEngine::Get().Initialize(true);
@@ -115,10 +115,12 @@ int GuardedMain()
     const std::filesystem::path startDir = std::filesystem::current_path();
     const std::filesystem::path contentDir = startDir / "Content";
     AssetManager::Get().Init(contentDir);
+    AssetManager::Get().LoadAllAssets();
 
 
     Editor editor;
     editor.Init();
+    editor.LoadScene("Content\\Levels\\AssetGym.json");
 
     GraphicsEngine::Get().HideSplashScreen();
 

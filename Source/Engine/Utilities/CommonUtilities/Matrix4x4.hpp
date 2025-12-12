@@ -17,17 +17,17 @@ namespace CommonUtilities
 			myMatrix[0][1] = static_cast<T>(0);
 			myMatrix[0][2] = static_cast<T>(0);
 			myMatrix[0][3] = static_cast<T>(0);
-					  
+
 			myMatrix[1][0] = static_cast<T>(0);
 			myMatrix[1][1] = static_cast<T>(1);
 			myMatrix[1][2] = static_cast<T>(0);
 			myMatrix[1][3] = static_cast<T>(0);
-					  
+
 			myMatrix[2][0] = static_cast<T>(0);
 			myMatrix[2][1] = static_cast<T>(0);
 			myMatrix[2][2] = static_cast<T>(1);
 			myMatrix[2][3] = static_cast<T>(0);
-					  
+
 			myMatrix[3][0] = static_cast<T>(0);
 			myMatrix[3][1] = static_cast<T>(0);
 			myMatrix[3][2] = static_cast<T>(0);
@@ -63,11 +63,20 @@ namespace CommonUtilities
 		{
 			assert(aRowIndex > 0 && aRowIndex < 5);
 			Vector4<T> row;
-			row.x = this->myMatrix[aRowIndex-1][0];
-			row.y = this->myMatrix[aRowIndex-1][1];
-			row.z = this->myMatrix[aRowIndex-1][2];
-			row.w = this->myMatrix[aRowIndex-1][3];
+			row.x = this->myMatrix[aRowIndex - 1][0];
+			row.y = this->myMatrix[aRowIndex - 1][1];
+			row.z = this->myMatrix[aRowIndex - 1][2];
+			row.w = this->myMatrix[aRowIndex - 1][3];
 			return row;
+		}
+
+		Vector3<T> GetTranslation()
+		{
+			Vector3<T> translation;
+			translation.x = myMatrix[3][0];
+			translation.y = myMatrix[3][1];
+			translation.z = myMatrix[3][2];
+			return translation;
 		}
 
 		void SetRow(const Vector4<T>& aRowVector, const unsigned& aRowIndex)
@@ -97,7 +106,7 @@ namespace CommonUtilities
 			rotationMatrix(3, 2) = static_cast<T>(-1 * sin(aAngleInRadians));
 			rotationMatrix(3, 3) = static_cast<T>(cos(aAngleInRadians));
 			rotationMatrix(3, 4) = static_cast<T>(0);
-			
+
 			rotationMatrix(4, 1) = static_cast<T>(0);
 			rotationMatrix(4, 2) = static_cast<T>(0);
 			rotationMatrix(4, 3) = static_cast<T>(0);
@@ -150,7 +159,7 @@ namespace CommonUtilities
 			rotationMatrix(3, 2) = static_cast<T>(0);
 			rotationMatrix(3, 3) = static_cast<T>(1);
 			rotationMatrix(3, 4) = static_cast<T>(0);
-			
+
 			rotationMatrix(4, 1) = static_cast<T>(0);
 			rotationMatrix(4, 2) = static_cast<T>(0);
 			rotationMatrix(4, 3) = static_cast<T>(0);
@@ -169,8 +178,8 @@ namespace CommonUtilities
 			matrix(1, 1) = reciprocalWidth + reciprocalWidth;
 			matrix(2, 2) = reciprocalHeight + reciprocalHeight;
 			matrix(3, 3) = fRange;
-			matrix(4,1) = - 1 *(aLeftPlane + aRightPlane) * reciprocalWidth;
-			matrix(4,2) = -1 * (aTopPlane + aBottomPlane) * reciprocalHeight;
+			matrix(4, 1) = -1 * (aLeftPlane + aRightPlane) * reciprocalWidth;
+			matrix(4, 2) = -1 * (aTopPlane + aBottomPlane) * reciprocalHeight;
 			matrix(4, 3) = -1 * fRange * aNearPlane;
 			matrix(4, 4) = 1;
 			return matrix;
@@ -415,7 +424,7 @@ namespace CommonUtilities
 			translationVector.x = aTransform(4, 1) * -1;
 			translationVector.y = aTransform(4, 2) * -1;
 			translationVector.z = aTransform(4, 3) * -1;
-		
+
 			//Copy 3x3 part of rotationsinverse and multiply with negated translationVector
 			Matrix3x3<T> rotationInverse(transposedRotation);
 			Vector3<T> inversedVector = translationVector * rotationInverse;
@@ -431,7 +440,7 @@ namespace CommonUtilities
 			fastInverse(4, 1) = inversedVector.x;
 			fastInverse(4, 2) = inversedVector.y;
 			fastInverse(4, 3) = inversedVector.z;
-			fastInverse(4, 4) = static_cast<T> (1);
+			fastInverse(4, 4) = static_cast<T>(1);
 
 			//Create fastInverse by multiplying inverses of translation * rotation. OBS! Order matters!
 
@@ -517,11 +526,11 @@ namespace CommonUtilities
 		matrixProduct.myMatrix[1][0] = aMatrix.myMatrix[1][0] * anotherMatrix.myMatrix[0][0] + aMatrix.myMatrix[1][1] * anotherMatrix.myMatrix[1][0] + aMatrix.myMatrix[1][2] * anotherMatrix.myMatrix[2][0] + aMatrix.myMatrix[1][3] * anotherMatrix.myMatrix[3][0];
 		matrixProduct.myMatrix[1][1] = aMatrix.myMatrix[1][0] * anotherMatrix.myMatrix[0][1] + aMatrix.myMatrix[1][1] * anotherMatrix.myMatrix[1][1] + aMatrix.myMatrix[1][2] * anotherMatrix.myMatrix[2][1] + aMatrix.myMatrix[1][3] * anotherMatrix.myMatrix[3][1];
 		matrixProduct.myMatrix[1][2] = aMatrix.myMatrix[1][0] * anotherMatrix.myMatrix[0][2] + aMatrix.myMatrix[1][1] * anotherMatrix.myMatrix[1][2] + aMatrix.myMatrix[1][2] * anotherMatrix.myMatrix[2][2] + aMatrix.myMatrix[1][3] * anotherMatrix.myMatrix[3][2];
-		matrixProduct.myMatrix[1][3] = aMatrix.myMatrix[1][0] * anotherMatrix.myMatrix[0][3] + aMatrix.myMatrix[1][1] * anotherMatrix.myMatrix[1][3] + aMatrix.myMatrix[1][2] * anotherMatrix.myMatrix[2][3] + aMatrix.myMatrix[1][3] * anotherMatrix.myMatrix[3][3];					 
+		matrixProduct.myMatrix[1][3] = aMatrix.myMatrix[1][0] * anotherMatrix.myMatrix[0][3] + aMatrix.myMatrix[1][1] * anotherMatrix.myMatrix[1][3] + aMatrix.myMatrix[1][2] * anotherMatrix.myMatrix[2][3] + aMatrix.myMatrix[1][3] * anotherMatrix.myMatrix[3][3];
 		matrixProduct.myMatrix[2][0] = aMatrix.myMatrix[2][0] * anotherMatrix.myMatrix[0][0] + aMatrix.myMatrix[2][1] * anotherMatrix.myMatrix[1][0] + aMatrix.myMatrix[2][2] * anotherMatrix.myMatrix[2][0] + aMatrix.myMatrix[2][3] * anotherMatrix.myMatrix[3][0];
 		matrixProduct.myMatrix[2][1] = aMatrix.myMatrix[2][0] * anotherMatrix.myMatrix[0][1] + aMatrix.myMatrix[2][1] * anotherMatrix.myMatrix[1][1] + aMatrix.myMatrix[2][2] * anotherMatrix.myMatrix[2][1] + aMatrix.myMatrix[2][3] * anotherMatrix.myMatrix[3][1];
 		matrixProduct.myMatrix[2][2] = aMatrix.myMatrix[2][0] * anotherMatrix.myMatrix[0][2] + aMatrix.myMatrix[2][1] * anotherMatrix.myMatrix[1][2] + aMatrix.myMatrix[2][2] * anotherMatrix.myMatrix[2][2] + aMatrix.myMatrix[2][3] * anotherMatrix.myMatrix[3][2];
-		matrixProduct.myMatrix[2][3] = aMatrix.myMatrix[2][0] * anotherMatrix.myMatrix[0][3] + aMatrix.myMatrix[2][1] * anotherMatrix.myMatrix[1][3] + aMatrix.myMatrix[2][2] * anotherMatrix.myMatrix[2][3] + aMatrix.myMatrix[2][3] * anotherMatrix.myMatrix[3][3];					 
+		matrixProduct.myMatrix[2][3] = aMatrix.myMatrix[2][0] * anotherMatrix.myMatrix[0][3] + aMatrix.myMatrix[2][1] * anotherMatrix.myMatrix[1][3] + aMatrix.myMatrix[2][2] * anotherMatrix.myMatrix[2][3] + aMatrix.myMatrix[2][3] * anotherMatrix.myMatrix[3][3];
 		matrixProduct.myMatrix[3][0] = aMatrix.myMatrix[3][0] * anotherMatrix.myMatrix[0][0] + aMatrix.myMatrix[3][1] * anotherMatrix.myMatrix[1][0] + aMatrix.myMatrix[3][2] * anotherMatrix.myMatrix[2][0] + aMatrix.myMatrix[3][3] * anotherMatrix.myMatrix[3][0];
 		matrixProduct.myMatrix[3][1] = aMatrix.myMatrix[3][0] * anotherMatrix.myMatrix[0][1] + aMatrix.myMatrix[3][1] * anotherMatrix.myMatrix[1][1] + aMatrix.myMatrix[3][2] * anotherMatrix.myMatrix[2][1] + aMatrix.myMatrix[3][3] * anotherMatrix.myMatrix[3][1];
 		matrixProduct.myMatrix[3][2] = aMatrix.myMatrix[3][0] * anotherMatrix.myMatrix[0][2] + aMatrix.myMatrix[3][1] * anotherMatrix.myMatrix[1][2] + aMatrix.myMatrix[3][2] * anotherMatrix.myMatrix[2][2] + aMatrix.myMatrix[3][3] * anotherMatrix.myMatrix[3][2];

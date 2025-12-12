@@ -10,12 +10,14 @@ public:
 	~WindowHandler();
 
 	bool Init(SIZE aWindowSize, WNDPROC aWindowProcess, LPCWSTR aWindowTitle);
+	void MoveRenderWindow(int anX, int aY);
 
 	HWND GetWindowHandle() const;
 	SIZE GetWindowSize() const;
 
 	void ShowSplashWindow();
 	void HideSplashWindow();
+	void ShowMainWindow();
 
 private:
 	SIZE myWindowSize{ 0,0 };

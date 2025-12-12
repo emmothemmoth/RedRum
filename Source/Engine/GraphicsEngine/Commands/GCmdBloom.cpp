@@ -12,7 +12,7 @@ void GCmdBloom::Execute()
 {
 	GraphicsEngine& ge = GraphicsEngine::Get();
 	ge.BeginEvent("Bloom");
-	
+
 	ge.ChangePipelineState(static_cast<int>(PipelineStates::Luminance));
 	ge.SetVertexShader("Quad_VS");
 	ge.SetPixelShader("Luminance_PS");
@@ -23,17 +23,17 @@ void GCmdBloom::Execute()
 
 	ge.SetMarker("Downsampling");
 	ge.SetPixelShader("Resample_PS");
-	ge.ChangePipelineState(static_cast<int>(PipelineStates::Resampling)); 
+	ge.ChangePipelineState(static_cast<int>(PipelineStates::Resampling));
 	ge.SetTextureResource(PIPELINE_STAGE_PIXEL_SHADER, 20, *GraphicsEngine::Get().GetLuminanceBuffer());
 	ge.ChangeRenderTarget(GraphicsEngine::Get().GetHalfSizeBuffer());
 	ge.DrawQuad(GraphicsEngine::Get().GetHalfSizeBuffer()->GetSize());
 	ge.ClearTextureResourceSlot(PIPELINE_STAGE_PIXEL_SHADER, 20);
-	
+
 	ge.ChangeRenderTarget(GraphicsEngine::Get().GetQuarterSizeBuffer());
 	ge.SetTextureResource(PIPELINE_STAGE_PIXEL_SHADER, 20, *GraphicsEngine::Get().GetHalfSizeBuffer());
 	ge.DrawQuad(GraphicsEngine::Get().GetQuarterSizeBuffer()->GetSize());
 	ge.ClearTextureResourceSlot(PIPELINE_STAGE_PIXEL_SHADER, 20);
-	
+
 	ge.ChangeRenderTarget(GraphicsEngine::Get().GetEightSizeBufferA());
 	ge.SetTextureResource((PIPELINE_STAGE_PIXEL_SHADER), 20, *GraphicsEngine::Get().GetQuarterSizeBuffer());
 	ge.DrawQuad(GraphicsEngine::Get().GetEightSizeBufferA()->GetSize());
@@ -59,21 +59,21 @@ void GCmdBloom::Execute()
 	ge.SetMarker("Upsampling");
 	ge.SetPixelShader("Resample_PS");
 	ge.ChangePipelineState(static_cast<int>(PipelineStates::Resampling));
-	ge.ChangeRenderTarget(GraphicsEngine::Get().GetQuarterSizeBuffer()); 
+	ge.ChangeRenderTarget(GraphicsEngine::Get().GetQuarterSizeBuffer());
 	ge.SetTextureResource(PIPELINE_STAGE_PIXEL_SHADER, 20, *GraphicsEngine::Get().GetEightSizeBufferA());
 	ge.DrawQuad(GraphicsEngine::Get().GetQuarterSizeBuffer()->GetSize());
 	ge.ClearTextureResourceSlot(PIPELINE_STAGE_PIXEL_SHADER, 20);
-	
-	ge.ChangeRenderTarget(GraphicsEngine::Get().GetHalfSizeBuffer()); 
+
+	ge.ChangeRenderTarget(GraphicsEngine::Get().GetHalfSizeBuffer());
 	ge.SetTextureResource(PIPELINE_STAGE_PIXEL_SHADER, 20, *GraphicsEngine::Get().GetQuarterSizeBuffer());
 	ge.DrawQuad(GraphicsEngine::Get().GetHalfSizeBuffer()->GetSize());
 	ge.ClearTextureResourceSlot((PIPELINE_STAGE_PIXEL_SHADER), 20);
-	
+
 	ge.ChangeRenderTarget(GraphicsEngine::Get().GetLuminanceBuffer());
 	ge.SetTextureResource((PIPELINE_STAGE_PIXEL_SHADER), 20, *GraphicsEngine::Get().GetHalfSizeBuffer());
 	ge.DrawQuad();
 	ge.ClearTextureResourceSlot((PIPELINE_STAGE_PIXEL_SHADER), 20);
-	
+
 	ge.SetMarker("Blending");
 	ge.SetPixelShader("Bloom_PS");
 	ge.ChangePipelineState(static_cast<int>(PipelineStates::Bloom));

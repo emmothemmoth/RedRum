@@ -20,14 +20,15 @@ public:
 	void ShutDown();
 
 	bool LoadScene(const std::filesystem::path& aLevel = "");
+	void UnloadScene();
+	bool CreateNewScene(const std::filesystem::path& aSceneName);
 
 	void UpdateLoop();
 
 private:
-
+	void MapInputs();
 private:
 	GUI myGUI;
-	CU::Timer myTimer;
 	std::shared_ptr<Scene> myScene;
 	std::atomic<bool> myLoadingDone = false;
 	std::atomic<bool> myIsRunning = false;

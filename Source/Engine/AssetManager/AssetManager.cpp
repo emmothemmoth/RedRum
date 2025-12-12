@@ -9,13 +9,10 @@
 
 #include "AnimationAsset.h"
 #include "MeshAsset.h"
-#include "SpriteAsset.h"
 #include "SkeletonAsset.h"
 #include "TextureAsset.h"
 #include "MaterialAsset.h"
 #include "Logger/Logger.h"
-
-#include <fstream>
 
 #ifdef _DEBUG
 DECLARE_LOG_CATEGORY_WITH_NAME(AMLog, "AM", Verbose);
@@ -41,6 +38,17 @@ bool AssetManager::Init(const std::filesystem::path& aContentRootPath)
 		LOG(AMLog, Error, "Unable to load primitive forms!");
 		return false;
 	}
+	for (const auto& file : std::filesystem::recursive_directory_iterator(myContentRoot))
+	{
+		if (file.path().has_filename() && file.path().has_extension())
+		{
+			if (AssetManager::Get().RegisterAsset(file.path()))
+			{
+
+			}
+		}
+	}
+
 	return true;
 }
 
@@ -51,8 +59,10 @@ bool AssetManager::RegisterAsset(const std::filesystem::path& aPath)
 		LOG(AMLog, Error, "The asset doesn't exist!");
 		return false;
 	}
-	if (aPath.filename().extension() == ".wav") return true;
-	if (aPath.extension() == ".ini") return true;
+	if (aPath.filename().extension() == ".wav")
+	{
+		return true;
+	}
 	if (aPath.filename().stem().string().ends_with("cubemap") || aPath.filename().stem().string().ends_with("Cubemap"))
 	{
 		return true;
@@ -123,13 +133,6 @@ bool AssetManager::RegisterAssetFromRelative(const std::filesystem::path& aPath)
 	}
 	else if (fileName.string().starts_with("P") && extension.ends_with("json"))
 	{
-		return true;
-	}
-	else if (fileName.string().starts_with("sprite") && extension.ends_with("dds"))
-	{
-		RegisterSpriteAsset(aPath);
-		LoadSprite(fileName.stem().wstring());
-		myAssetMap.at(fileName.stem().wstring()).isLoaded = true;
 		return true;
 	}
 	else
@@ -306,48 +309,6 @@ bool AssetManager::RegisterMeshAsset(const std::filesystem::path aFilePath)
 	LOG(AMLog, Log, "Mesh registered: {}", aFilePath.stem().string());
 	return false;
 }
-
-bool AssetManager::RegisterSpriteAsset(const std::filesystem::path aFilePath)
-{
-	std::wstring fileName = aFilePath.stem();
-	if (myAssetMap.contains(fileName))
-	{
-		myLastRegisteredKey.Name = fileName;
-		myLastRegisteredKey.Type = AssetType::Mesh;
-		return true;
-	}
-	std::shared_ptr<SpriteAsset> sprite = std::make_shared<SpriteAsset>(aFilePath);
-
-	AssetInfo spriteInfo;
-	spriteInfo.Path = aFilePath;
-	spriteInfo.Asset = sprite;
-	myAssetMap.insert({ fileName, spriteInfo });
-	myLastRegisteredKey.Name = fileName;
-	myLastRegisteredKey.Type = AssetType::Sprite;
-	LOG(AMLog, Log, "Sprite registered: {}", aFilePath.stem().string());
-	return false;
-}
-
-bool AssetManager::LoadSprite(const std::wstring& aKey)
-{
-	if (!myAssetMap.contains(aKey))
-	{
-		return false;
-	}
-	AssetInfo& asset = myAssetMap.at(aKey);
-	std::shared_ptr<SpriteAsset> sprite = std::dynamic_pointer_cast<SpriteAsset>(asset.Asset);
-	sprite->SetTexture(std::make_shared<TextureAsset>());
-	if (!GraphicsEngine::Get().LoadTexture(myContentRoot / asset.Path, *sprite->GetTexture()))
-	{
-		return false;
-	}
-	asset.isLoaded = true;
-	CU::Vector2f pos = { 500.5f, 500.5f };
-	CU::Vector2f size = { 100.5f, 100.5f };
-	sprite->InitAbsolute(pos, size, sprite->GetTexture());
-	return true;
-}
-
 
 
 bool AssetManager::RegisterAnimationAsset(const std::filesystem::path aFilePath)

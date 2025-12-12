@@ -3,6 +3,8 @@
 #include "Level.h"
 #include "Components/ComponentsInclude.h"
 #include "../GraphicsEngine/Objects/MeshAsset.h"
+#include "../GraphicsEngine/Objects/AnimationAsset.h"
+#include "../GraphicsEngine/Objects/MaterialAsset.h"
 
 #include "..\AssetManager\AssetManager.h"
 
@@ -88,6 +90,7 @@ bool LevelLoader::LoadLevelFromJSON(const std::filesystem::path& aLevelPath, Lev
                         matrix.SetRow(translation, 4);
                         gameObject->GetComponent<MeshInstancedComponent>()->AddInstance(matrix);
                     }
+                    gameObject->GetComponent<MeshInstancedComponent>()->Init();
                     break;
                 case 2:
                     gameObject->AddComponent(std::make_shared<MaterialComponent>(*gameObject, AssetManager::Get().GetAsset<MaterialAsset>(component.at("Material"))));

@@ -25,10 +25,6 @@ public:
 
 	void Init(HWND aWindowHandle, ID3D11Device* aDX11Device, ID3D11DeviceContext* aDX11Context, const CU::Vector2f& aResolution);
 
-	bool LoadScene(const std::filesystem::path& aSceneName);
-	void UnloadScene();
-	bool CreateNewScene(const std::filesystem::path& aSceneName);
-
 	void Update();
 			
 	void Render();

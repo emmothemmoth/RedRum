@@ -41,7 +41,7 @@ CameraComponent::~CameraComponent()
 }
 
 
-void CameraComponent::Init(CU::Vector3<float> aPoint)
+void CameraComponent::Init(CU::Vector3<float> aPoint, const CU::Vector3f& someRotations)
 {
 	myFrameBuffer = std::make_shared<FrameBufferData>();
 	myPosition.x = aPoint.x;
@@ -49,10 +49,14 @@ void CameraComponent::Init(CU::Vector3<float> aPoint)
 	myPosition.z = aPoint.z;
 	myPosition.w = 1;
 
+	myRotationX = someRotations.x;
+	myRotationY = someRotations.y;
+
 	float scaleX = 1 / static_cast<float>(tan(myHorizontalFov * 0.5f));
 	float scaleY = (myResolution.x / myResolution.y) * scaleX;
 	float planesDiv = myFarPlaneZ / (myFarPlaneZ - myNearPlaneZ);
 	myRotationMatrix = Matrix4x4<float>::CreateRotationAroundY(myRotationY * static_cast<float>((M_PI) / 180.0f));
+	myRotationMatrix = myRotationMatrix * Matrix4x4<float>::CreateRotationAroundX(myRotationX * static_cast<float>((M_PI) / 180.0f));
 	myViewTransform = {};
 	myViewTransform = myRotationMatrix;
 	myViewTransform(4, 1) = myPosition.x;

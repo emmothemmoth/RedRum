@@ -1,100 +1,90 @@
 #include "GameEngine.pch.h"
 #include "Renderer.h"
+#include <iostream>
 
 Renderer::Renderer()
 {
-	//myUpdatePtr = &myFirstCmdList;
-	//myIntermediatePtr = &mySecondCmdList;
-	//myRenderPtr = &myThirdCmdList;
+    myUpdatePtr = &myFirstCmdList;
+    myIntermediatePtr = &mySecondCmdList;
+    myRenderPtr = &myThirdCmdList;
 
-	myHasUpdated.store(false, std::memory_order_seq_cst);
-
-	myUpdatePtr = &myFirstQueue;
-	myUpdatePtr->Reset();
-	myIntermediatePtr = &mySecondQueue;
-	myIntermediatePtr->Reset();
-	myRenderPtr = &myThirdQueue;
-	myRenderPtr->Reset();
+    // ensure deterministic initial state
+    myHasUpdated.store(false, std::memory_order_release);
 }
 
 Renderer::~Renderer()
 {
-	myUpdatePtr = nullptr;
-	myIntermediatePtr = nullptr;
-	myRenderPtr = nullptr;
+    myUpdatePtr = nullptr;
+    myIntermediatePtr = nullptr;
+    myRenderPtr = nullptr;
 }
 
 
 void Renderer::SwitchRenderIntermediate()
 {
-	//myBufferLock.lock();
-	//GraphicsCommandList* tempIntermediate = myRenderPtr;
-	//myRenderPtr = myIntermediatePtr;
-	//myIntermediatePtr = tempIntermediate;
-	//myHasUpdated = false;
-	//myBufferLock.unlock();
+    // Called by render thread to consume the latest intermediate buffer.
+    std::unique_lock<std::mutex> lock(myBufferLock);
 
-	do
-	{
-		std::this_thread::yield();
-	} while (myHasUpdated.load(std::memory_order_acquire) == false);
+    // Wait until update publishes a new frame (myHasUpdated == true).
+    myBufferCV.wait(lock, [this]()
+        {
+            return myHasUpdated.load(std::memory_order_acquire);
+        });
 
-	RenderQueue* tempIntermediate = myRenderPtr;
-	myRenderPtr = myIntermediatePtr;
-	//myBufferLock.lock();
-	myIntermediatePtr = tempIntermediate;
-	//myBufferLock.unlock();
-	tempIntermediate = nullptr;
-	myHasUpdated.store(false, std::memory_order_release);
-}
+    // Swap render <-> intermediate while holding lock to make it atomic.
+    std::swap(myRenderPtr, myIntermediatePtr);
 
+    // mark consumed
+    myHasUpdated.store(false, std::memory_order_release);
 
-
-void Renderer::ChangeRenderPass(RenderQueueStage aStage)
-{
-	myCurrentStage = aStage;
+    // Notify update thread that intermediate is free (if it was waiting)
+    lock.unlock();
+    myBufferCV.notify_one();
 }
 
 void Renderer::SwitchUpdateIntermediate()
 {
-	//myBufferLock.lock();
-	//GraphicsCommandList* tempIntermediate = myUpdatePtr;
-	//myUpdatePtr = myIntermediatePtr;
-	//myIntermediatePtr = tempIntermediate;
-	//myUpdatePtr->Reset();
-	//myHasUpdated = true;
-	//myBufferLock.unlock();
+    // Called by update thread after it finished populating myUpdatePtr.
+    std::unique_lock<std::mutex> lock(myBufferLock);
 
-	//do
-	//{
-	//	std::this_thread::yield();
-	//} while (myHasUpdated);
-	if (myHasUpdated.load(std::memory_order_acquire))
-	{
-		myUpdatePtr->Reset(true);
-		return;
-	}
+    // Optional policy:
+    // If you want to BLOCK the update thread until render has consumed previous frame,
+    // use wait like this:
+    // myBufferCV.wait(lock, [this]() { return !myHasUpdated.load(); });
+    //
+    // If you prefer to OVERWRITE intermediate (drop frames), skip waiting and publish immediately.
+    //
+    // Here we will *block* update if previous frame hasn't been consumed (safer/deterministic).
+    myBufferCV.wait(lock, [this]()
+        {
+            return !myHasUpdated.load(std::memory_order_acquire);
+        });
 
-	RenderQueue* tempIntermediate = myUpdatePtr;
-	myUpdatePtr = myIntermediatePtr;
-	//myBufferLock.lock();
-	myIntermediatePtr = tempIntermediate;
-	//myBufferLock.unlock();
-	tempIntermediate = nullptr;
-	myHasUpdated.store(true, std::memory_order_release);
+    // Swap update <-> intermediate (publish new frame)
+    std::swap(myUpdatePtr, myIntermediatePtr);
+
+    // Reset the new update buffer so update thread can append more commands next frame.
+    myUpdatePtr->Reset();
+
+    // Publish and notify render thread
+    myHasUpdated.store(true, std::memory_order_release);
+
+    // unlock before notify
+    lock.unlock();
+    myBufferCV.notify_one();
 }
 
 void Renderer::RenderFrame()
 {
-	SwitchRenderIntermediate();
+    // Wait for and swap in the next frame
+    SwitchRenderIntermediate();
 
-	myRenderPtr->RenderFrame();
-	myRenderPtr->Reset();
+    // Now render what's in myRenderPtr
+    if (myRenderPtr->HasCommands())
+    {
+        myRenderPtr->Execute();
+    }
 
-
-	//if (myRenderPtr->HasCommands())
-	//{
-	//	myRenderPtr->Execute();
-	//}
-	//myRenderPtr->Reset();
+    // Reset the render buffer after executing it
+    myRenderPtr->Reset();
 }
