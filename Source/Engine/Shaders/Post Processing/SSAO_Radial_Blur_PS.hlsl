@@ -1,5 +1,5 @@
-#include "Include/QuadInclude.hlsli"
-#include "Include/SamplerInclude.hlsli"
+#include "../Include/QuadInclude.hlsli"
+#include "../Include/SamplerInclude.hlsli"
 
 Texture2D SSAOTexture : register(t119);
 

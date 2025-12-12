@@ -1,7 +1,7 @@
-#include "Include/SamplerInclude.hlsli"
-#include "Include/QuadInclude.hlsli"
-#include "ConstantBuffers/FrameBuffer.hlsli"
-#include "ConstantBuffers/DebugBuffer.hlsli"
+#include "../Include/SamplerInclude.hlsli"
+#include "../Include/QuadInclude.hlsli"
+#include "../ConstantBuffers/FrameBuffer.hlsli"
+#include "../ConstantBuffers/DebugBuffer.hlsli"
 
 Texture2D intermediateLDR : register(t126);
 

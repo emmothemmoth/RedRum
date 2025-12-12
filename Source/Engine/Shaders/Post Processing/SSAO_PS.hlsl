@@ -1,10 +1,10 @@
-#include "Include/QuadInclude.hlsli"
-#include "Include/TextureInclude.hlsli"
-#include "Include/SamplerInclude.hlsli"
-#include "ConstantBuffers/GBuffer.hlsli"
-#include "ConstantBuffers/FrameBuffer.hlsli"
-#include "ConstantBuffers/PostProcessBuffer.hlsli"
-#include "ConstantBuffers/DebugBuffer.hlsli"
+#include "../Include/QuadInclude.hlsli"
+#include "../Include/TextureInclude.hlsli"
+#include "../Include/SamplerInclude.hlsli"
+#include "../ConstantBuffers/GBuffer.hlsli"
+#include "../ConstantBuffers/FrameBuffer.hlsli"
+#include "../ConstantBuffers/PostProcessBuffer.hlsli"
+#include "../ConstantBuffers/DebugBuffer.hlsli"
 
 
 float4 GetViewSpacePosition(float2 aUV)

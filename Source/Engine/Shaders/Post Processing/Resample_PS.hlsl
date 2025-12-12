@@ -1,4 +1,4 @@
-#include "Include/QuadInclude.hlsli"
+#include "../Include/QuadInclude.hlsli"
 
 Texture2D inputTexture : register(t20);
 SamplerState defaultClampSampler : register(s1);

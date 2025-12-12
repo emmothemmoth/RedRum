@@ -1,6 +1,6 @@
-#include "Include/SamplerInclude.hlsli"
-#include "Include/QuadInclude.hlsli"
-#include "ConstantBuffers/DebugBuffer.hlsli"
+#include "../Include/SamplerInclude.hlsli"
+#include "../Include/QuadInclude.hlsli"
+#include "../ConstantBuffers/DebugBuffer.hlsli"
 
 Texture2D intermediateBuffer : register(t126);
 // Pick one of these at a time. Keep in mind that ACES and Lottes need to be
