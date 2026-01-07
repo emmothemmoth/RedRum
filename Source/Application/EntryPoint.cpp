@@ -18,7 +18,6 @@
 
 #include <shellapi.h>
 #include <thread>
-
 int GuardedMain();
 
 int main()

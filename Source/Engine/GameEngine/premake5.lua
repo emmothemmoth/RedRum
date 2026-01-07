@@ -24,8 +24,8 @@ forceincludes ("%{prj.name}.pch.h")
 -- pchheader ("%{prj.name}.pch.h")
 -- pchsource ("%{prj.name}.pch.cpp")
 -- forceincludes ("%{prj.name}.pch.h")
-links ({"GraphicsEngine","CommonUtilities", "Logger"})
-includedirs {dirs.gameEngine, dirs.utilities}
+links ({"GraphicsEngine","CommonUtilities", "Logger", "AudioEngine"})
+includedirs {dirs.gameEngine, dirs.utilities, dirs.audioEngine}
 
 	files {
 		"**.h",

@@ -13,6 +13,7 @@ public:
 	//Updates the settings for listener
 	void ManualUpdate();
 
+
 	bool IsPlayable() const { return myIsPlayable; }
 
 private:

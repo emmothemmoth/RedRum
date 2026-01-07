@@ -1,6 +1,7 @@
 #pragma once
 #include "ComponentID.h"
-#include "../Utilities/CommonUtilities/Matrix4x4.hpp"
+#include "CommonUtilities/Matrix4x4.hpp"
+#include "CommonUtilities/Vector3.hpp"
 
 #include <vector>
 #include <memory>

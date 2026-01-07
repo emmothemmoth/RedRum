@@ -25,8 +25,13 @@ forceincludes ("%{prj.name}.pch.h")
 -- pchheader ("%{prj.name}.pch.h")
 -- pchsource ("%{prj.name}.pch.cpp")
 -- forceincludes ("%{prj.name}.pch.h")
+defines {
+	"JUCE_APP_CONFIG_HEADER=\"AppConfig.h\"",
+        "JUCE_DONT_DECLARE_PROJECTINFO=1",
+        "DONT_SET_USING_JUCE_NAMESPACE=1"
+}
 links ({"CommonUtilities", "Logger"})
-includedirs {dirs.utilities, dirs.juceModules}
+includedirs {dirs.utilities, dirs.juceModules, dirs.juceConfig}
 
 	files {
 		"**.h",

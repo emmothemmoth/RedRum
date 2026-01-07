@@ -10,10 +10,15 @@ public:
 
 	void Init(const std::filesystem::path& aSourceFile);
 
+	void ManualUpdate();
+
 	void Play();
 	void Stop();
 
+
+	bool IsPlayable() const { return myIsPlayable; }
 private:
 	uint32_t myAudioHandle = UINT32_MAX;
 	std::filesystem::path myFilePath;
+	bool myIsPlayable = false;
 };
