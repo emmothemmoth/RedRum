@@ -1,12 +1,13 @@
+print("AudioEngine")
 include "../../../Premake/extensions.lua"
 -- include for common stuff 
 include "../../../Premake/common.lua"
 
  group "Engine"
 -------------------------------------------------------------
-project "GameEngine"
+project "AudioEngine"
 location (dirs.projectfiles)
-dependson { "GraphicsEngine, CommonUtilities, Logger"}
+dependson { "CommonUtilities, Logger"}
 
 kind "StaticLib"
 language "C++"
@@ -24,8 +25,8 @@ forceincludes ("%{prj.name}.pch.h")
 -- pchheader ("%{prj.name}.pch.h")
 -- pchsource ("%{prj.name}.pch.cpp")
 -- forceincludes ("%{prj.name}.pch.h")
-links ({"GraphicsEngine","CommonUtilities", "Logger"})
-includedirs {dirs.gameEngine, dirs.utilities}
+links ({"CommonUtilities", "Logger"})
+includedirs {dirs.utilities, dirs.juceModules}
 
 	files {
 		"**.h",
@@ -64,7 +65,7 @@ includedirs {dirs.gameEngine, dirs.utilities}
 		warnings "Extra"
 		--links{"d3d11","dxguid", "dxgi", "d3dcompiler" }
 		--conformanceMode "On"
-		--buildoptions { "/permissive" }
+		buildoptions { "/bigobj" }
 		flags { 
 		--	"FatalWarnings", -- would be both compile and lib, the original didn't set lib
 			-- "FatalCompileWarnings",

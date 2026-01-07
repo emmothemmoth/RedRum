@@ -18,10 +18,10 @@ configurations {
 print("Engine")
 group "Engine"
 include(dirs.assetmanager)
+include(dirs.audioEngine)
 include(dirs.gameEngine)
 include(dirs.graphicsengine)
 include(dirs.shaders)
 
-print("Editor")
 include(dirs.editor)
 
