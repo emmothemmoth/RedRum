@@ -35,7 +35,7 @@ void AudioSourceComponent::ManualUpdate()
 
 void AudioSourceComponent::Play()
 {
-	//Play the original file
+	if (!myIsPlayable) return;
 }
 
 void AudioSourceComponent::Stop()

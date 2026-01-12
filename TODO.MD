@@ -12,8 +12,9 @@
 
 **Notes**
 
+* AudioEngine should run on its own thread
 * An AudioListenerComponent will handle the preview of the room
-* AudioSourceComponent is just the audio source. It can be played and placed within the room. 
+* AudioSourceComponent is just the audio source. It can be played and placed within the room.
   Settings available should be:
   \* Position
   \* Rotation

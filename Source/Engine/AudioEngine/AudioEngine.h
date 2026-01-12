@@ -18,10 +18,13 @@ public:
 	void Initialize();
 
 	void InitListener(const CommonUtilities::Matrix4x4f& aMatrix);
+	//Reads provided file and returns an audio handle for control
 	std::optional<AudioHandle> RegisterSoundSource(const std::filesystem::path& aFilePath);
 	void UnregisterSoundSource();
 
-	void UpdateSoundSource(const AudioHandle, const CU::Matrix4x4f& aMatrix);
+	void UpdateSoundSource(const AudioHandle aHandle, const CU::Matrix4x4f& aMatrix);
+
+	void Play2DSource(const AudioHandle aHandle);
 
 	bool IsInitialized() const { return myIsInitialized; }
 
