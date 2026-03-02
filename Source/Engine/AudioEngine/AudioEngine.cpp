@@ -11,6 +11,8 @@
 #include <unordered_map>
 #include <optional>
 
+#include <iostream>
+
 struct AudioFile
 {
     juce::AudioSampleBuffer Buffer;
@@ -30,40 +32,72 @@ struct AudioSource
     AudioSource& operator=(const AudioSource&) = delete;
     void Process(juce::AudioBuffer<float>& outputBuffer)
     {
-        if (!IsPlaying || CurrentSound == nullptr) return;
+        if (!IsPlaying || CurrentSound == nullptr)
+            return;
 
         auto& soundBuffer = CurrentSound->Buffer;
+
         const int numChannels = outputBuffer.getNumChannels();
         const int numSamples = outputBuffer.getNumSamples();
         const int soundLength = soundBuffer.getNumSamples();
 
-        // Check if we have enough samples left to even try
+        if (soundLength == 0)
+            return;
+
         if (ReadIndex >= soundLength)
         {
             if (Loop) ReadIndex = 0;
             else { IsPlaying = false; return; }
         }
 
+        // how many input samples interpolation may consume
+        const int interpolationSafety = 4;
+        int inputNeeded = static_cast<int>(numSamples * Ratio) + interpolationSafety;
+
+        int samplesAvailable = soundLength - ReadIndex;
+
+        int samplesToProcess = numSamples;
+
+        if (!Loop && inputNeeded > samplesAvailable)
+        {
+            // clamp output so interpolator never reads past the buffer
+            samplesToProcess = static_cast<int>((samplesAvailable - interpolationSafety) / Ratio);
+
+            if (samplesToProcess <= 0)
+            {
+                IsPlaying = false;
+                ReadIndex = 0;
+                return;
+            }
+        }
+
         for (int chan = 0; chan < numChannels; ++chan)
         {
             int sourceChan = chan % soundBuffer.getNumChannels();
-
-            // Get pointers for this specific channel
             const float* sourcePtr = soundBuffer.getReadPointer(sourceChan, ReadIndex);
             float* destPtr = outputBuffer.getWritePointer(chan);
 
-            // JUCE LagrangeInterpolator::process
-            Interpolator->process(Ratio, sourcePtr, destPtr, numSamples);
+            Interpolator->process(Ratio, sourcePtr, destPtr, samplesToProcess);
+
+            // clear remaining buffer if clamped
+            if (samplesToProcess < numSamples)
+            {
+                juce::FloatVectorOperations::clear(destPtr + samplesToProcess,
+                    numSamples - samplesToProcess);
+            }
         }
 
-        // Advance the read index based on how many input samples were consumed
-        // numSamples (output) * Ratio (in/out) = input samples consumed
-        ReadIndex += static_cast<int>(numSamples * Ratio);
+        ReadIndex += static_cast<int>(samplesToProcess * Ratio);
 
         if (ReadIndex >= soundLength)
         {
-            if (Loop) ReadIndex %= soundLength;
-            else { IsPlaying = false; ReadIndex = 0; }
+            if (Loop)
+                ReadIndex %= soundLength;
+            else
+            {
+                IsPlaying = false;
+                ReadIndex = 0;
+            }
         }
     }
     CommonUtilities::Matrix4x4f Transform;
@@ -81,7 +115,7 @@ struct AudioCommand
     AudioCommand(AudioCommand&&) noexcept = default;
     AudioCommand& operator=(AudioCommand&&) noexcept = default;
 
-    enum { Play, Stop, UpdateTransform, AddSource } Type;
+    enum { Play, Stop, Pause, StopAll, UpdateTransform, AddSource } Type;
     AudioHandle Handle;
     std::unique_ptr<AudioSource> SourceData;
     // You can add Matrix4x4 here for 3D updates later
@@ -122,9 +156,12 @@ struct AudioEngine::Impl : public juce::AudioIODeviceCallback
     juce::AudioFormatManager FormatManager;
     std::unordered_map<std::string, std::shared_ptr<AudioFile>> LoadedFiles;
 
+    juce::ScopedJuceInitialiser_GUI juceInit;
 	juce::AudioDeviceManager DeviceManager;
 	std::unordered_map<AudioHandle, std::unique_ptr<AudioSource>> AudioSources;
 	AudioHandle HandleCounter = 0;
+
+    std::filesystem::path ContentPath;
 };
 
 AudioEngine::AudioEngine()
@@ -155,7 +192,7 @@ void AudioEngine::InitListener(const CommonUtilities::Matrix4x4f& aMatrix)
 std::optional<AudioHandle> AudioEngine::RegisterSoundSource(const std::filesystem::path& aFilePath)
 {
     // 1. Load the file (Heavy Work - Main Thread)
-    juce::File file(aFilePath.string());
+    juce::File file(myImpl->ContentPath.string() + aFilePath.string());
     std::unique_ptr<juce::AudioFormatReader> reader(myImpl->FormatManager.createReaderFor(file));
 
     if (reader == nullptr) return std::nullopt;
@@ -204,12 +241,36 @@ void AudioEngine::Impl::PushCommand(AudioCommand aCommand)
     CommandFifo.finishedWrite(size1);
 }
 
-void AudioEngine::Play2DSource(const AudioHandle aHandle)
+void AudioEngine::Control2DSource(const AudioHandle aHandle, const AudiosourceControl aControltype)
 {
     if (!myIsInitialized) return;
 
     AudioCommand cmd;
-    cmd.Type = AudioCommand::Play;
+    switch (aControltype)
+    {
+    case AudiosourceControl::Play:
+    {
+        {
+            AudioCommand stopAll;
+            stopAll.Type = AudioCommand::StopAll;
+            myImpl->PushCommand(std::move(stopAll));
+        }
+        cmd.Type = AudioCommand::Play;
+        break;
+    }
+    case AudiosourceControl::Pause:
+    {
+        cmd.Type = AudioCommand::Pause;
+        break;
+    }
+    case AudiosourceControl::Stop:
+    {
+        cmd.Type = AudioCommand::Stop;
+        break;
+    }
+    default:
+        return;
+    }
     cmd.Handle = aHandle;
 
     myImpl->PushCommand(std::move(cmd));
@@ -218,6 +279,12 @@ void AudioEngine::Play2DSource(const AudioHandle aHandle)
 AudioEngine::Impl::Impl()
 {
     FormatManager.registerBasicFormats();
+    AudioSources.reserve(64);
+    juce::File exeFile = juce::File::getSpecialLocation(juce::File::currentExecutableFile);
+    juce::File contentDir = exeFile.getParentDirectory().getChildFile("Content");
+
+    juce::String absolutePath = contentDir.getFullPathName();
+    ContentPath = absolutePath.toStdString();
 }
 
 void AudioEngine::Impl::audioDeviceIOCallbackWithContext(const float* const* inputChannelData, int numInputChannels, float* const* outputChannelData, int numOutputChannels, int numSamples, const juce::AudioIODeviceCallbackContext& context)
@@ -233,27 +300,54 @@ void AudioEngine::Impl::audioDeviceIOCallbackWithContext(const float* const* inp
 
     for (int i = 0; i < size1; ++i)
     {
-        const auto& cmd = CommandBuffer[start1 + i];
+        auto& cmd = CommandBuffer[start1 + i];
 
         switch (cmd.Type)
         {
         case AudioCommand::AddSource:
-            // Direct access to the map member of 'this'
-            AudioSources[cmd.Handle] = std::move(const_cast<AudioCommand&>(cmd).SourceData);
+            AudioSources.emplace(cmd.Handle, std::move(cmd.SourceData));
             break;
 
         case AudioCommand::Play:
-            if (AudioSources.contains(cmd.Handle))
+        {
+            auto it = AudioSources.find(cmd.Handle);
+            if (it != AudioSources.end())
             {
-                AudioSources[cmd.Handle]->ReadIndex = 0;
-                AudioSources[cmd.Handle]->IsPlaying = true;
+                auto& src = it->second;
+                src->ReadIndex = 0;
+                src->IsPlaying = true;
             }
             break;
-
-        case AudioCommand::Stop:
-            if (AudioSources.contains(cmd.Handle))
-                AudioSources[cmd.Handle]->IsPlaying = false;
+        }
+        case AudioCommand::Pause:
+        {
+            auto it = AudioSources.find(cmd.Handle);
+            if (it != AudioSources.end())
+            {
+                it->second->IsPlaying = false;
+            }
             break;
+        }
+        case AudioCommand::Stop:
+        {
+            auto it = AudioSources.find(cmd.Handle);
+            if (it != AudioSources.end())
+            {
+                auto& src = it->second;
+                src->ReadIndex = 0;
+                src->IsPlaying = false;
+            }
+            break;
+        }
+        case AudioCommand::StopAll:
+        {
+            for (auto& [handle, source] : AudioSources)
+            {
+                source->IsPlaying = false;
+                source->ReadIndex = 0;
+            }
+            break;
+        }
         }
     }
     CommandFifo.finishedRead(size1);

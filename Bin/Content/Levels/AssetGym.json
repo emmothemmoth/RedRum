@@ -55,6 +55,11 @@
           "TypeName": "ControllerComponent",
           "ComponentID": 4,
           "ControllerType": "USER"
+        },
+        {
+          "TypeName": "AudioSourceComponent",
+          "ComponentID": 7,
+          "File":  "\\Audio\\example_music.wav"
         }
       ]
     },

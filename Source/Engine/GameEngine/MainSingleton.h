@@ -7,7 +7,7 @@
 class MainSingleton
 {
 public:
-	MainSingleton() = default;
+	MainSingleton();
 	~MainSingleton() = default;
 
 	static MainSingleton& Get();

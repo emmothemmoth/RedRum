@@ -14,3 +14,4 @@
 #include "ShadowCameraComponent.h"
 #include "AnimationComponent.h"
 #include "ParticleSystemComponent.h"
+#include "AudioSourceComponent.h"

@@ -1,6 +1,10 @@
 #include "GameEngine.pch.h"
 #include "MainSingleton.h"
 
+MainSingleton::MainSingleton()
+{
+}
+
 MainSingleton& MainSingleton::Get()
 {
 	static MainSingleton myInstance;

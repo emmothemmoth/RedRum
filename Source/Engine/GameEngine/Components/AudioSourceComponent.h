@@ -2,6 +2,8 @@
 #include "Component.h"
 #include <filesystem>
 
+class AudioEngine;
+
 class AudioSourceComponent : public Component
 {
 public:
@@ -9,12 +11,14 @@ public:
 	~AudioSourceComponent();
 
 	void Init(const std::filesystem::path& aSourceFile);
+	void Update(const float aDeltaTime) override;
+	void Render() override;
 
-	void ManualUpdate();
-
-	void Play();
+	void Play(); //TEMP
+	void Pause();
 	void Stop();
 
+	void OnEditorChange();
 
 	bool IsPlayable() const { return myIsPlayable; }
 private:

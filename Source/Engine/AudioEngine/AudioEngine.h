@@ -9,6 +9,13 @@
 namespace juce { class AudioDeviceManager; }
 typedef uint32_t AudioHandle;
 
+enum class AudiosourceControl
+{
+	Play,
+	Pause,
+	Stop
+};
+
 class AudioEngine
 {
 public:
@@ -24,7 +31,7 @@ public:
 
 	void UpdateSoundSource(const AudioHandle aHandle, const CU::Matrix4x4f& aMatrix);
 
-	void Play2DSource(const AudioHandle aHandle);
+	void Control2DSource(const AudioHandle aHandle, const AudiosourceControl aControltype);
 
 	bool IsInitialized() const { return myIsInitialized; }
 

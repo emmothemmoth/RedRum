@@ -3,6 +3,7 @@
 
 #include "GameObject.h"
 #include "MainSingleton.h"
+#include "CommonUtilities/Input.h"
 
 AudioSourceComponent::AudioSourceComponent(GameObject& aParent)
 	: Component(aParent)
@@ -24,21 +25,48 @@ void AudioSourceComponent::Init(const std::filesystem::path& aSourceFile)
 		myAudioHandle = handle.value();
 		myIsPlayable = true;
 	}
-
 }
 
-void AudioSourceComponent::ManualUpdate()
+//TEMP
+void AudioSourceComponent::Update(const float aDeltaTime)
 {
-	AudioEngine& engine = MainSingleton::Get().GetAudioEngine();
-	engine.UpdateSoundSource(myAudioHandle, myParent.GetTransform());
+	aDeltaTime;
+	if (CU::Input::GetKeyUp(CU::Keys::SPACE))
+	{
+		Play();
+	}
+	if (CU::Input::GetKeyUp(CU::Keys::RETURN))
+	{
+		Stop();
+	}
+}
+
+void AudioSourceComponent::Render()
+{
+	//Draw icon
 }
 
 void AudioSourceComponent::Play()
 {
 	if (!myIsPlayable) return;
+	AudioEngine& engine = MainSingleton::Get().GetAudioEngine();
+	engine.Control2DSource(myAudioHandle, AudiosourceControl::Play);
+}
+
+void AudioSourceComponent::Pause()
+{
+	AudioEngine& engine = MainSingleton::Get().GetAudioEngine();
+	engine.Control2DSource(myAudioHandle, AudiosourceControl::Pause);
 }
 
 void AudioSourceComponent::Stop()
 {
-	//Stop the original file
+	AudioEngine& engine = MainSingleton::Get().GetAudioEngine();
+	engine.Control2DSource(myAudioHandle, AudiosourceControl::Stop);
+}
+
+void AudioSourceComponent::OnEditorChange()
+{
+	AudioEngine& engine = MainSingleton::Get().GetAudioEngine();
+	engine.UpdateSoundSource(myAudioHandle, myParent.GetTransform());
 }
