@@ -1,8 +1,12 @@
-* Logging System -> use the current one?
-* Juce integration
-* Editor, screen picking ->
+* Room component with Icon, transformation arrows
+* Listener Component, Audio Source Component
+* Screen picking
+* Editor commands, moving stuff in scene
+* Drag \& Drop audio files and meshes into scene
 * Serialization
-* Compute shaders
+* Ray casted audio with compute shaders + line trace debug drawing
+* Global Play, pause, stop buttons
+* Export section
 
 
 
@@ -13,11 +17,24 @@
 **Notes**
 
 * AudioEngine should run on its own thread
-* An AudioListenerComponent will handle the preview of the room
-* AudioSourceComponent is just the audio source. It can be played and placed within the room.
+* AudioEngine handles all logic and notifies back to Listener once preview is done
+* AudioListenerComponent is a transformation and Icons
+* Room component is just a boundary with settings
+  Settings should be:
+  \* Material absorption (a number between 0-1. Rest is reflection)
+  \* Material coloration (filtering)
+  \* Material "roughness" (random reflection directions)
+* AudioSourceComponent is the audio source. It can be played and placed within the room.
   Settings available should be:
   \* Position
   \* Rotation
   \* Volume
-* As soon as the audio source is changed, the engine will start computing the preview file (and gray out the big play button).
-  This won't happen every frame but rather when the user stops editing.
+
+
+
+* All stuff in the scene can be one of three states: Ready(edited) or Pending(being edited).
+  Once the state changes, the AudioEngine will update the preview. 
+
+
+
+* As soon as anything changes in the editor, the engine will start computing the preview file (and gray out the big play button). 

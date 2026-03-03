@@ -23,9 +23,18 @@ struct AudioFile
 struct AudioSource
 {
     // We need a move constructor because unique_ptr can't be copied
-    AudioSource() : Interpolator(std::make_unique<juce::LagrangeInterpolator>()) {}
+    AudioSource(){}
     AudioSource(AudioSource&& other) noexcept = default;
     AudioSource& operator=(AudioSource&& other) noexcept = default;
+    void Prepare(int numOutputChannels)
+    {
+        Interpolators.clear();
+        Interpolators.resize(numOutputChannels);
+        for (auto& interpolator : Interpolators)
+        {
+            interpolator = std::make_unique<juce::LagrangeInterpolator>();
+        }
+    }
 
     // Delete the copy constructor and assignment to satisfy the compiler
     AudioSource(const AudioSource&) = delete;
@@ -70,14 +79,14 @@ struct AudioSource
                 return;
             }
         }
-
+        int usedCount = 0;
         for (int chan = 0; chan < numChannels; ++chan)
         {
             int sourceChan = chan % soundBuffer.getNumChannels();
             const float* sourcePtr = soundBuffer.getReadPointer(sourceChan, ReadIndex);
             float* destPtr = outputBuffer.getWritePointer(chan);
 
-            Interpolator->process(Ratio, sourcePtr, destPtr, samplesToProcess);
+            usedCount = Interpolators[chan]->process(Ratio, sourcePtr, destPtr, samplesToProcess);
 
             // clear remaining buffer if clamped
             if (samplesToProcess < numSamples)
@@ -87,7 +96,7 @@ struct AudioSource
             }
         }
 
-        ReadIndex += static_cast<int>(samplesToProcess * Ratio);
+        ReadIndex += usedCount;
 
         if (ReadIndex >= soundLength)
         {
@@ -102,7 +111,7 @@ struct AudioSource
     }
     CommonUtilities::Matrix4x4f Transform;
     AudioFile* CurrentSound = nullptr;
-    std::unique_ptr<juce::LagrangeInterpolator> Interpolator;
+    std::vector<std::unique_ptr<juce::LagrangeInterpolator>> Interpolators;
     double Ratio = 1.0;
     int ReadIndex = 0;
     bool IsPlaying = false;
@@ -207,6 +216,7 @@ std::optional<AudioHandle> AudioEngine::RegisterSoundSource(const std::filesyste
     auto newSource = std::make_unique<AudioSource>();
     auto* device = myImpl->DeviceManager.getCurrentAudioDevice();
     double hardwareSampleRate = device ? device->getCurrentSampleRate() : 44100.0;
+    newSource->Prepare(reader->numChannels);
     newSource->Ratio = newFile->SampleRate / hardwareSampleRate;
     newSource->CurrentSound = newFile.get();
     newSource->IsPlaying = false;
@@ -316,6 +326,10 @@ void AudioEngine::Impl::audioDeviceIOCallbackWithContext(const float* const* inp
                 auto& src = it->second;
                 src->ReadIndex = 0;
                 src->IsPlaying = true;
+                for (auto& interpolator : src->Interpolators)
+                {
+                    interpolator->reset();
+                }
             }
             break;
         }
