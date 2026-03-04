@@ -13,6 +13,7 @@ public:
 	void InitSphere(MeshAsset& inOutAsset);
 	void InitHorizontalPlane(MeshAsset& inOutAsset);
 	void InitVerticalPlane(MeshAsset& inOutAsset);
+	void InitTransformGizmo(MeshAsset& inOutAsset);
 
 	bool LoadMeshFromFBX(const std::filesystem::path& aPath, MeshAsset& inOutAsset);
 	bool LoadSkeletonFromFBX(const std::filesystem::path& aPath, SkeletonAsset& inOutAsset);

@@ -8,6 +8,7 @@
 AudioSourceComponent::AudioSourceComponent(GameObject& aParent)
 	: Component(aParent)
 {
+	myComponentType = ComponentType::AudioSource;
 	//Register audio source
 }
 

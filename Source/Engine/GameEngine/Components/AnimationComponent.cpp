@@ -9,7 +9,7 @@ AnimationComponent::AnimationComponent(GameObject& aParent, const SkeletonAsset&
 	: Component(aParent),
 	mySkeleton(aSkeletonAsset)
 {
-	myID = ComponentID::Animation;
+	myComponentType = ComponentType::Animation;
 	myState = AnimationState::Walking;
 	myCurrentBoneTransforms.resize(mySkeleton.bones.size());
 }

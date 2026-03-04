@@ -2,10 +2,8 @@
 
 #include "CameraComponent.h"
 #include "ControllerComponent.h"
-#include "MaterialComponent.h"
 #include "MeshComponent.h"
 #include "MeshInstancedComponent.h"
-#include "TextureComponent.h"
 #include "LightComponent.h"
 #include "DirLightComponent.h"
 #include "PointLightComponent.h"

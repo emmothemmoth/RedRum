@@ -8,6 +8,7 @@
 SpotLightComponent::SpotLightComponent(GameObject& aParent)
 	: Component(aParent)
 {
+	myComponentType = ComponentType::SpotLight;
 	myLightData = std::make_shared<LightBuffer::SpotLightData>();
 	MainSingleton::Get().GetInputMapper().Register(ActionEventID::Toggle_SpotLights, this);
 }

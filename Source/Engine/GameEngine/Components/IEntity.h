@@ -1,5 +1,4 @@
 #pragma once
-#include "ComponentID.h"
 #include "CommonUtilities/Matrix4x4.hpp"
 #include "CommonUtilities/Vector3.hpp"
 
@@ -20,6 +19,9 @@ public:
 
 	template <class T>
 	std::shared_ptr<T> GetComponent();
+
+	template<class T>
+	std::shared_ptr<T> GetLastAddedComponent();
 
 	template <class T>
 	std::vector<std::shared_ptr<T>> GetComponents();
@@ -51,9 +53,8 @@ protected:
 	std::vector<std::shared_ptr<Component>>	myComponents;
 	bool myIsActive = true;
 	bool myIsVisible = true;
-
+	unsigned myComponentIDCounter = 0;
 private:
-	//std::vector<std::shared_ptr<Component>>	myComponents;
 };
 
 
@@ -69,6 +70,18 @@ inline std::shared_ptr<T> IEntity::GetComponent()
 			return ptr;
 		}
 
+	}
+	return std::shared_ptr<T>();
+}
+
+template<class T>
+inline std::shared_ptr<T> IEntity::GetLastAddedComponent()
+{
+	assert(myComponents.size() > 0);
+	std::shared_ptr<T> ptr = std::dynamic_pointer_cast<T>(myComponents.back());
+	if (ptr.get() != nullptr)
+	{
+		return ptr;
 	}
 	return std::shared_ptr<T>();
 }

@@ -1,5 +1,5 @@
 #pragma once
-#include "ComponentID.h"
+#include "ComponentType.h"
 
 class GameObject;
 
@@ -10,10 +10,15 @@ public:
 	virtual				~Component();
 	virtual void		Update(const float aDeltaTime);
 	virtual void Render();
-	GameObject& GetParent();
-	ComponentID GetID();
+
+	void SetID(const unsigned anID) { myID = anID; }
+
+	GameObject& GetParent() { return myParent; }
+	ComponentType GetComponentType() { return myComponentType; }
+	unsigned GetID() { return myID; }
 
 protected:
 	GameObject& myParent;
-	ComponentID myID;
+	ComponentType myComponentType;
+	unsigned myID;
 };

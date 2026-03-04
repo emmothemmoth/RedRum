@@ -8,6 +8,7 @@
 DirLightComponent::DirLightComponent(GameObject& aParent)
 	: Component(aParent)
 {
+	myComponentType = ComponentType::DirectionalLight;
 	myLightData = std::make_shared<LightBuffer::DirLightData>();
 	MainSingleton::Get().GetInputMapper().Register(ActionEventID::Toggle_DirectionalLight, this);
 }

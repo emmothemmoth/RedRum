@@ -11,6 +11,7 @@
 ShadowCameraComponent::ShadowCameraComponent(GameObject& aParent)
 	: Component(aParent)
 {
+	myComponentType = ComponentType::ShadowCamera;
 }
 
 void ShadowCameraComponent::Init(const CU::Matrix4x4<float>& aView, const CU::Matrix4x4<float>& aProjection, const CU::Vector3<float>& aPosition)

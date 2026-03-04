@@ -2,6 +2,7 @@
 #include "LevelLoader.h"
 #include "Level.h"
 #include "Components/ComponentsInclude.h"
+#include "Components/ComponentType.h"
 #include "../GraphicsEngine/Objects/MeshAsset.h"
 #include "../GraphicsEngine/Objects/AnimationAsset.h"
 #include "../GraphicsEngine/Objects/MaterialAsset.h"
@@ -23,6 +24,7 @@ bool LevelLoader::LoadLevelFromJSON(const std::filesystem::path& aLevelPath, Lev
     file >> jsonReader;
     assert(jsonReader.contains("Entities") && "Level without entities detected!");
 
+    unsigned gameObjectIDCounter = 0;
     for (auto& entity : jsonReader["Entities"])
     {
         std::shared_ptr<GameObject> gameObject;
@@ -33,22 +35,21 @@ bool LevelLoader::LoadLevelFromJSON(const std::filesystem::path& aLevelPath, Lev
         {
             renderPass = entity.at("RenderPass");
         }
-        unsigned char ID = entity.at("ID");
-        if (ID == 0)
+        if (name.starts_with("Camera"))
         {
-            inOutLevel.Camera = std::make_shared<GameObject>(name, ID);
+            inOutLevel.Camera = std::make_shared<GameObject>(name, gameObjectIDCounter++);
             gameObject = inOutLevel.Camera;
         }
         else
         {
             if (renderPass == "Forward")
             {
-                inOutLevel.ForwardObjects.emplace_back(std::make_shared<GameObject>(name, ID));
+                inOutLevel.ForwardObjects.emplace_back(std::make_shared<GameObject>(name, gameObjectIDCounter++));
                 gameObject = inOutLevel.ForwardObjects.back();
             }
             else
             {
-                inOutLevel.DeferredObjects.emplace_back(std::make_shared<GameObject>(name, ID));
+                inOutLevel.DeferredObjects.emplace_back(std::make_shared<GameObject>(name, gameObjectIDCounter++));
                 gameObject = inOutLevel.DeferredObjects.back();
             }
         }
@@ -66,15 +67,34 @@ bool LevelLoader::LoadLevelFromJSON(const std::filesystem::path& aLevelPath, Lev
         {
             for (auto& component : entity.at("Components"))
             {
-                unsigned componentID = component.at("ComponentID");
+                unsigned componentType = component.at("ComponentTypeID");
                 unsigned emitterID;
-                switch (componentID)
+                switch (static_cast<ComponentType>(componentType))
                 {
-                case 0:
+                case ComponentType::Mesh:
+                {
                     gameObject->AddComponent(std::make_shared<MeshComponent>(*gameObject, AssetManager::Get().GetAsset<MeshAsset>(component.at("Mesh"))));
+                    if (component.contains("Material"))
+                    {
+                        std::string material = component.at("Material");
+                        if (!material.empty())
+                        {
+                            gameObject->GetLastAddedComponent<MeshComponent>()->AddMaterial(AssetManager::Get().GetAsset<MaterialAsset>(material));
+                        }
+                    }
                     break;
-                case 1:
+                }
+                case ComponentType::MeshInstance:
+                {
                     gameObject->AddComponent(std::make_shared<MeshInstancedComponent>(*gameObject, AssetManager::Get().GetAsset<MeshAsset>(component.at("Mesh"))));
+                    if (component.contains("Material"))
+                    {
+                        std::string material = component.at("Material");
+                        if (!material.empty())
+                        {
+                            gameObject->GetLastAddedComponent<MeshInstancedComponent>()->AddMaterial(AssetManager::Get().GetAsset<MaterialAsset>(material));
+                        }
+                    }
                     for (auto& instance : component.at("Instances"))
                     {
                         CU::Matrix4x4f instanceTransform;
@@ -92,11 +112,9 @@ bool LevelLoader::LoadLevelFromJSON(const std::filesystem::path& aLevelPath, Lev
                     }
                     gameObject->GetComponent<MeshInstancedComponent>()->Init();
                     break;
-                case 2:
-                    gameObject->AddComponent(std::make_shared<MaterialComponent>(*gameObject, AssetManager::Get().GetAsset<MaterialAsset>(component.at("Material"))));
-                    break;
-                case 3:
-                    gameObject->AddComponent(std::make_shared<AnimationComponent>(*gameObject, gameObject->GetComponent<MeshComponent>()->GetMesh()->GetSkeleton()));
+                }
+                case ComponentType::Animation:
+                    gameObject->AddComponent(std::make_shared<AnimationComponent>(*gameObject, gameObject->GetLastAddedComponent<MeshComponent>()->GetMesh()->GetSkeleton()));
                     for (auto& animation : component.at("Animations"))
                     {
                         unsigned stateID = animation.at("StateID");
@@ -104,19 +122,19 @@ bool LevelLoader::LoadLevelFromJSON(const std::filesystem::path& aLevelPath, Lev
                     }
                     gameObject->GetComponent<AnimationComponent>()->SetAnimationState(AnimationState::Idle);
                     break;
-                case 4:
+                case ComponentType::Controller:
                     gameObject->AddComponent(std::make_shared<ControllerComponent>(*gameObject));
                     break;
-                case 5:
+                case ComponentType::ParticleSystem:
                     emitterID = component.at("EmitterID");
                     gameObject->AddComponent(std::make_shared<ParticleSystemComponent>(*gameObject));
                     gameObject->GetComponent<ParticleSystemComponent>()->Init(static_cast<ParticleEmitterType>(emitterID));
                     break;
-                case 6:
+                case ComponentType::Camera:
                     gameObject->AddComponent(std::make_shared<CameraComponent>(*gameObject));
                     gameObject->GetComponent<CameraComponent>()->Init(gameObject->GetPosition(), {rotationX, rotationY, rotationZ});
                     break;
-                case 7:
+                case ComponentType::AudioSource:
                     gameObject->AddComponent(std::make_shared<AudioSourceComponent>(*gameObject));
                     gameObject->GetComponent<AudioSourceComponent>()->Init(component.at("File"));
                     break;

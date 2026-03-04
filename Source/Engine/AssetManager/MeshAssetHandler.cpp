@@ -138,6 +138,12 @@ void MeshAssetHandler::InitVerticalPlane(MeshAsset& inOutAsset)
 	inOutAsset.AddElement(plane.mdlVertices, plane.mdlIndices, 0);
 }
 
+void MeshAssetHandler::InitTransformGizmo(MeshAsset& inOutAsset)
+{
+	TransformGizmoData transform;
+	inOutAsset.AddElement(transform.mdlVertices, transform.mdlIndices, 0);
+}
+
 bool MeshAssetHandler::LoadMeshFromFBX(const std::filesystem::path& aPath, MeshAsset& inOutAsset)
 {
 	TGA::FBX::Importer::InitImporter();
@@ -164,6 +170,11 @@ bool MeshAssetHandler::LoadMeshFromFBX(const std::filesystem::path& aPath, MeshA
 	else if (aPath == L"VerticalPlaneMesh")
 	{
 		InitVerticalPlane(inOutAsset);
+		return true;
+	}
+	else if (aPath == L"TransformGizmo")
+	{
+		InitTransformGizmo(inOutAsset);
 		return true;
 	}
 	std::wstring contentPath = L"Content\\" + aPath.wstring();

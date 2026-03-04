@@ -15,6 +15,7 @@
 ParticleSystemComponent::ParticleSystemComponent(GameObject& aParent)
 	:Component(aParent)
 {
+	myComponentType = ComponentType::ParticleSystem;
 	myParticleSystem = std::make_shared<ParticleSystem>();
 }
 

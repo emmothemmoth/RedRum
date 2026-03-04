@@ -483,3 +483,144 @@ struct VerticalPlaneData
 		2,1,0
 	};
 };
+
+struct TransformGizmoData
+{
+	std::vector<Vertex> mdlVertices;
+	std::vector<UINT> mdlIndices;
+
+	TransformGizmoData()
+	{
+		const float axisLength = 100.f;
+		const float shaftSize = 2.5f;
+		const float headSize = 10.f;
+
+		auto AddBox = [&](Vector3f center, Vector3f size)
+			{
+				int startIndex = (int)mdlVertices.size();
+
+				float hx = size.x * 0.5f;
+				float hy = size.y * 0.5f;
+				float hz = size.z * 0.5f;
+
+				Vector3f v[8] =
+				{
+					center + Vector3f(-hx,-hy,-hz),
+					center + Vector3f(hx,-hy,-hz),
+					center + Vector3f(hx, hy,-hz),
+					center + Vector3f(-hx, hy,-hz),
+
+					center + Vector3f(-hx,-hy, hz),
+					center + Vector3f(hx,-hy, hz),
+					center + Vector3f(hx, hy, hz),
+					center + Vector3f(-hx, hy, hz),
+				};
+
+				for (int i = 0; i < 8; i++)
+				{
+					mdlVertices.push_back(
+						{
+							v[i],
+							Vector2f(0,0),
+							Vector3f(0,1,0),
+							Vector3f(1,0,0)
+						});
+				}
+
+				UINT inds[] =
+				{
+					0,1,2, 0,2,3,
+					4,6,5, 4,7,6,
+					0,4,5, 0,5,1,
+					1,5,6, 1,6,2,
+					2,6,7, 2,7,3,
+					3,7,4, 3,4,0
+				};
+
+				for (UINT i : inds)
+					mdlIndices.push_back(startIndex + i);
+			};
+
+		auto AddPyramid = [&](Vector3f baseCenter, Vector3f dir)
+			{
+				int startIndex = (int)mdlVertices.size();
+
+				Vector3f up = dir * headSize;
+				Vector3f right;
+
+				if (fabs(dir.y) > 0.5f)
+					right = Vector3f(1, 0, 0);
+				else
+					right = Vector3f(0, 1, 0);
+
+				Vector3f forward = dir.Cross(right);
+				right = forward.Cross(dir);
+
+				right.Normalize();
+				forward.Normalize();
+
+				right *= headSize * 0.5f;
+				forward *= headSize * 0.5f;
+
+				Vector3f tip = baseCenter + up;
+
+				Vector3f base[4] =
+				{
+					baseCenter + right + forward,
+					baseCenter - right + forward,
+					baseCenter - right - forward,
+					baseCenter + right - forward
+				};
+
+				mdlVertices.push_back({ tip, {}, dir, right });
+				for (int i = 0; i < 4; i++)
+					mdlVertices.push_back({ base[i], {}, dir, right });
+
+				UINT inds[] =
+				{
+					0,1,2,
+					0,2,3,
+					0,3,4,
+					0,4,1,
+					1,4,3,
+					1,3,2
+				};
+
+				for (UINT i : inds)
+					mdlIndices.push_back(startIndex + i);
+			};
+
+		// X axis
+		AddBox(
+			Vector3f(axisLength * 0.5f, 0, 0),
+			Vector3f(axisLength, shaftSize, shaftSize)
+		);
+
+		AddPyramid(
+			Vector3f(axisLength, 0, 0),
+			Vector3f(1, 0, 0)
+		);
+
+		// Y axis
+		AddBox(
+			Vector3f(0, axisLength * 0.5f, 0),
+			Vector3f(shaftSize, axisLength, shaftSize)
+		);
+
+		AddPyramid(
+			Vector3f(0, axisLength, 0),
+			Vector3f(0, 1, 0)
+		);
+
+		// Z axis
+		AddBox(
+			Vector3f(0, 0, axisLength * 0.5f),
+			Vector3f(shaftSize, shaftSize, axisLength)
+		);
+
+		AddPyramid(
+			Vector3f(0, 0, axisLength),
+			Vector3f(0, 0, 1)
+		);
+	}
+};

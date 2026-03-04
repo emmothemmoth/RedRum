@@ -1,13 +1,15 @@
 #pragma once
 
-enum class ComponentID
+enum class ComponentType
 {
 	Mesh,
-	Skeleton,
+	MeshInstance,
 	Animation,
-	Material,
 	Controller,
-	Light,
+	ParticleSystem,
+	Camera,
+	ShadowCamera,
+	AudioSource,
 	DirectionalLight,
 	PointLight,
 	SpotLight,

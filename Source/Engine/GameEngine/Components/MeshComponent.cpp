@@ -1,12 +1,12 @@
 #include "GameEngine.pch.h"
 #include "MeshComponent.h"
-#include "MaterialComponent.h"
 #include "AnimationComponent.h"
 #include "MainSingleton.h"
 
 #include "../../AssetManager/AssetManager.h"
 #include "GameObject.h"
 #include "../../GraphicsEngine/Objects/MeshAsset.h"
+#include "../../GraphicsEngine/Objects/MaterialAsset.h"
 
 #include "..\GraphicsEngine\Commands\GCmdRenderMesh.h"
 #include "..\GraphicsEngine\Commands\GCmdRenderSkeletalMesh.h"
@@ -17,7 +17,7 @@ MeshComponent::MeshComponent(GameObject& aParent, std::shared_ptr<MeshAsset> aMe
 	: Component(aParent)
 {
 	myMesh = aMesh;
-	myID = ComponentID::Mesh;
+	myComponentType = ComponentType::Mesh;
 }
 
 MeshComponent::~MeshComponent()
@@ -31,27 +31,27 @@ void MeshComponent::Update(const float aDeltaTime)
 
 void MeshComponent::Render()
 {
-	std::vector<std::shared_ptr<MaterialAsset>> materialList;
-	if (this->GetParent().GetComponent<MaterialComponent>())
+	if (myMaterials.empty())
 	{
-		materialList = this->GetParent().GetComponent<MaterialComponent>()->GetMaterials();
-	}
-	else
-	{
-		materialList = GraphicsEngine::Get().GetDefaultMaterials();
+		myMaterials = GraphicsEngine::Get().GetDefaultMaterials();
 	}
 	if (this->GetParent().GetComponent<AnimationComponent>().get() != nullptr)
 	{
 		MainSingleton::Get().GetRenderer().Enqueue<GCmdRenderSkeletalMesh>(myMesh, myParent.GetTransform(),
-			this->GetParent().GetComponent<AnimationComponent>()->GetBoneTransforms(),  materialList);
+			this->GetParent().GetComponent<AnimationComponent>()->GetBoneTransforms(),  myMaterials);
 	}
 	else
 	{
-		MainSingleton::Get().GetRenderer().Enqueue<GCmdRenderMesh>(myMesh, myParent.GetTransform(), materialList);
+		MainSingleton::Get().GetRenderer().Enqueue<GCmdRenderMesh>(myMesh, myParent.GetTransform(), myMaterials);
 	}
 }
 
 std::shared_ptr<MeshAsset> MeshComponent::GetMesh()
 {
 	return myMesh;
+}
+
+void MeshComponent::AddMaterial(std::shared_ptr<MaterialAsset> aMaterial)
+{
+	myMaterials.push_back(aMaterial);
 }

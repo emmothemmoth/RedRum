@@ -300,6 +300,14 @@ bool AssetManager::RegisterPrimitiveAssets()
 	myAssetMap.insert({ L"HorizontalPlaneMesh", horizontalPlaneInfo });
 	myLastRegisteredKey.Name = horizontalPlaneInfo.Path;
 	myLastRegisteredKey.Type = AssetType::Mesh;
+
+	std::shared_ptr<MeshAsset> transformGizmo = std::make_shared<MeshAsset>(L"TransformGizmo");
+	AssetInfo transformGizmoInfo;
+	transformGizmoInfo.Path = "TransformGizmo";
+	transformGizmoInfo.Asset = transformGizmo;
+	myAssetMap.insert({ L"TransformGizmo", transformGizmoInfo });
+	myLastRegisteredKey.Name = transformGizmoInfo.Path;
+	myLastRegisteredKey.Type = AssetType::Mesh;
 	return true;
 }
 

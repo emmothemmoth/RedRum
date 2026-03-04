@@ -9,6 +9,7 @@
 PointLightComponent::PointLightComponent(GameObject& aParent)
 	: Component(aParent)
 {
+	myComponentType = ComponentType::PointLight;
 	myLightData = std::make_shared<LightBuffer::PointLightData>();
 	MainSingleton::Get().GetInputMapper().Register(ActionEventID::Toggle_PointLights, this);
 }

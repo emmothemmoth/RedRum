@@ -2,8 +2,6 @@
   "Entities": [
     {
       "Name": "Camera",
-      "ID": 0,
-      "ParentID": -1,
       "RenderPass": "None",
       "Transform": {
         "Position": [ 0, 100, -1000 ],
@@ -13,14 +11,12 @@
       "Components": [
         {
           "TypeName": "CameraComponent",
-          "ComponentID": 6
+          "ComponentTypeID": 5
         }
       ]
     },
     {
       "Name": "Ground",
-      "ID": 1,
-      "ParentID": -1,
       "RenderPass": "Deferred",
       "Transform": {
         "Position": [ 0, 0, 0 ],
@@ -30,15 +26,14 @@
       "Components": [
         {
           "TypeName": "MeshComponent",
-          "ComponentID": 0,
-          "Mesh": "GroundMesh"
+          "ComponentTypeID": 0,
+          "Mesh": "GroundMesh",
+          "Material": "M_GroundMaterial"
         }
       ]
     },
     {
       "Name": "Sphere",
-      "ID": 2,
-      "ParentID": -1,
       "RenderPass": "Deferred",
       "Transform": {
         "Position": [ -500, 50.0, 300.0 ],
@@ -48,25 +43,23 @@
       "Components": [
         {
           "TypeName": "MeshComponent",
-          "ComponentID": 0,
+          "ComponentTypeID": 0,
           "Mesh": "SphereMesh"
         },
         {
           "TypeName": "ControllerComponent",
-          "ComponentID": 4,
+          "ComponentTypeID": 3,
           "ControllerType": "USER"
         },
         {
           "TypeName": "AudioSourceComponent",
-          "ComponentID": 7,
+          "ComponentTypeID": 7,
           "File":  "\\Audio\\example_music.wav"
         }
       ]
     },
     {
       "Name": "PlaneH",
-      "ID": 3,
-      "ParentID": -1,
       "RenderPass": "Deferred",
       "Transform": {
         "Position": [ 0, 500.0, 50.0 ],
@@ -76,15 +69,13 @@
       "Components": [
         {
           "TypeName": "MeshComponent",
-          "ComponentID": 0,
+          "ComponentTypeID": 0,
           "Mesh": "HorizontalPlaneMesh"
         }
       ]
     },
     {
       "Name": "Cube",
-      "ID": 4,
-      "ParentID": -1,
       "RenderPass": "Deferred",
       "Transform": {
         "Position": [ 0, 500.0, 50.0 ],
@@ -94,7 +85,7 @@
       "Components": [
         {
           "TypeName": "MeshInstanceComponent",
-          "ComponentID": 1,
+          "ComponentTypeID": 1,
           "Mesh": "CubeMesh",
           "Instances": [
             {
@@ -122,8 +113,6 @@
     },
     {
       "Name": "Chest",
-      "ID": 5,
-      "ParentID": -1,
       "RenderPass": "Deferred",
       "Transform": {
         "Position": [ 0, 0, -300 ],
@@ -133,17 +122,13 @@
       "Components": [
         {
           "TypeName": "MeshComponent",
-          "ComponentID": 0,
-          "Mesh": "SM_Chest"
-        },
-        {
-          "TypeName": "MaterialComponent",
-          "ComponentID": 2,
+          "ComponentTypeID": 0,
+          "Mesh": "SM_Chest",
           "Material": "M_ChestMaterial"
         },
         {
           "TypeName": "ParticleSystemComponent",
-          "ComponentID": 5,
+          "ComponentTypeID": 4,
           "EmitterTypeName": "Other",
           "EmitterID": 2
         }
@@ -151,8 +136,6 @@
     },
     {
       "Name": "Bro",
-      "ID": 6,
-      "ParentID": -1,
       "RenderPass": "Deferred",
       "Transform": {
         "Position": [ 600, 0, 0 ],
@@ -162,17 +145,13 @@
       "Components": [
         {
           "TypeName": "MeshComponent",
-          "ComponentID": 0,
-          "Mesh": "SK_C_TGA_Bro"
-        },
-        {
-          "TypeName": "MaterialComponent",
-          "ComponentID": 2,
+          "ComponentTypeID": 0,
+          "Mesh": "SK_C_TGA_Bro",
           "Material": "M_BroMaterial"
         },
         {
           "TypeName": "AnimationComponent",
-          "ComponentID": 3,
+          "ComponentTypeID": 2,
           "Animations": [
             {
               "StateName": "Idle",
@@ -199,7 +178,7 @@
         },
         {
           "TypeName": "ParticleSystemComponent",
-          "ComponentID": 5,
+          "ComponentTypeID": 4,
           "EmitterTypeName": "StarParticle",
           "EmitterID": 1
         }
@@ -207,8 +186,6 @@
     },
     {
       "Name": "Buddha",
-      "ID": 7,
-      "ParentID": -1,
       "RenderPass": "Deferred",
       "Transform": {
         "Position": [ 0, 0, 600.0 ],
@@ -218,20 +195,14 @@
       "Components": [
         {
           "TypeName": "MeshComponent",
-          "ComponentID": 0,
-          "Mesh": "SM_Buddha"
-        },
-        {
-          "TypeName": "MaterialComponent",
-          "ComponentID": 2,
+          "ComponentTypeID": 0,
+          "Mesh": "SM_Buddha",
           "Material": "M_BuddhaMaterial"
         }
       ]
     },
     {
       "Name": "PlaneV",
-      "ID": 8,
-      "ParentID": -1,
       "RenderPass": "Forward",
       "Transform": {
         "Position": [ 0, 100, -800.0 ],
@@ -241,12 +212,8 @@
       "Components": [
         {
           "TypeName": "MeshComponent",
-          "ComponentID": 0,
-          "Mesh": "VerticalPlaneMesh"
-        },
-        {
-          "TypeName": "MaterialComponent",
-          "ComponentID": 2,
+          "ComponentTypeID": 0,
+          "Mesh": "VerticalPlaneMesh",
           "Material": "M_WoodMaterial"
         }
       ]

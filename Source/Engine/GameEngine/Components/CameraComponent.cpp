@@ -17,6 +17,7 @@ using namespace CommonUtilities;
 CameraComponent::CameraComponent(GameObject& aParent)
 	:Component(aParent)
 {
+	myComponentType = ComponentType::Camera;
 	myIsRotating = false;
 	mySpeed = 500.f;
 	myRotationSpeed = 20.0f;

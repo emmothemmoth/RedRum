@@ -4,7 +4,7 @@
 #include "GameObject.h"
 
 Component::Component(GameObject& aParent) : myParent(aParent)
-,myID(ComponentID::Count)
+,myComponentType(ComponentType::Count)
 {
 }
 
@@ -19,16 +19,6 @@ void Component::Update(const float aDeltaTime)
 
 void Component::Render()
 {
-}
-
-GameObject& Component::GetParent()
-{
-	return myParent;
-}
-
-ComponentID Component::GetID()
-{
-	return myID;
 }
 
 

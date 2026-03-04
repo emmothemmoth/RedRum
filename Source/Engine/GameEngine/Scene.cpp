@@ -277,8 +277,8 @@ bool Scene::AddPlayer(const CU::Vector3f& aSpawnPosition, unsigned char anID, bo
 	newObject->AddComponent(std::make_shared<MeshComponent>(*newObject, AssetManager::Get().GetAsset<MeshAsset>("SphereMesh")));
 	if (aIsUser)
 	{
+		newObject->GetLastAddedComponent<MeshComponent>()->AddMaterial(AssetManager::Get().GetAsset<MaterialAsset>("M_ChestMaterial"));
 		newObject->AddComponent(std::make_shared<ControllerComponent>(*newObject));
-		newObject->AddComponent(std::make_shared<MaterialComponent>(*newObject, AssetManager::Get().GetAsset<MaterialAsset>("M_ChestMaterial")));
 	}
 	return true;
 }
@@ -294,7 +294,7 @@ bool Scene::AddObject(const CU::Vector3f& aPosition, const char* aMesh, unsigned
 	newObject->AddComponent(std::make_shared<MeshComponent>(*newObject, AssetManager::Get().GetAsset<MeshAsset>(meshName.wstring())));
 	if (aIsUser)
 	{
-		newObject->AddComponent(std::make_shared<MaterialComponent>(*newObject, AssetManager::Get().GetAsset<MaterialAsset>("M_BuddhaMaterial")));
+		newObject->GetLastAddedComponent<MeshComponent>()->AddMaterial(AssetManager::Get().GetAsset<MaterialAsset>("M_BuddhaMaterial"));
 	}
 	return true;
 }

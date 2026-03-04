@@ -9,6 +9,7 @@ using namespace CommonUtilities;
 
 ControllerComponent::ControllerComponent(GameObject& aParent) : Component(aParent)
 {
+	myComponentType = ComponentType::Controller;
 	mySpeed = 200.0f;
 	myRotationSpeed = 100.0f;
 }

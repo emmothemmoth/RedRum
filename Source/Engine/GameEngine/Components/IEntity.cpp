@@ -6,6 +6,7 @@
 
 IEntity::IEntity()
 {
+
 }
 
 IEntity::~IEntity()
@@ -30,11 +31,11 @@ void IEntity::Render()
 {
 }
 
-
 void IEntity::AddComponent(std::shared_ptr<Component> aComponent)
 {
 	assert(aComponent != nullptr && "A component can't be nullptr!");
 	myComponents.push_back(aComponent);
+	myComponents.back()->SetID(myComponentIDCounter++);
 }
 
 CommonUtilities::Matrix4x4<float> IEntity::GetTransform()

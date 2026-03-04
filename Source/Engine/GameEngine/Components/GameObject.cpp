@@ -1,13 +1,15 @@
 #include "GameEngine.pch.h"
 #include "GameObject.h"
-
 #include "MeshComponent.h"
-
+#include "../AssetManager/AssetManager.h"
+#include "../GraphicsEngine/Objects/MeshAsset.h"
+#define DEFAULT_TRANSFORM_MESH "TransformGizmo"
 
 GameObject::GameObject(std::string_view aName, unsigned anID)
 {
 	myID = anID;
 	myName = aName;
+	AddComponent(std::make_shared<MeshComponent>(*this, AssetManager::Get().GetAsset<MeshAsset>(DEFAULT_TRANSFORM_MESH)));
 }
 
 GameObject::GameObject(unsigned anID)
