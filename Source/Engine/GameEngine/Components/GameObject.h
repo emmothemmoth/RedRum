@@ -4,8 +4,6 @@
 #include "GameObjectID.h"
 #include <string_view>
 
-
-
 class GameObject : public IEntity
 {
 public:
@@ -23,6 +21,9 @@ public:
 	void RotateAroundY(float anAngle);
 	void RotateAroundX(float anAngle);
 	void RotateAroundZ(float anAngle);
+
+	void OnSelected();
+	void OnDeselected();
 
 private:
 	unsigned myID;

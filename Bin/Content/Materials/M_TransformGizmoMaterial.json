@@ -1,0 +1,14 @@
+{
+  "AlbedoColorR": 1.0,
+  "AlbedoColorG": 1.0,
+  "AlbedoColorB": 1.0,
+  "AlbedoColorA": 1.0,
+  "UVTilingX": 1.0,
+  "UVTilingY": 1.0,
+  "NormalStrength": 0.0,
+  "Shininess": 0.0,
+  "EmissionStrength": 0.0,
+  "AlbedoTexture": "T_TransformGizmo_C.dds",
+  "NormalTexture": "T_TransformGizmo_N.dds",
+  "MaterialTexture": "T_TransformGizmo_M.dds"
+}

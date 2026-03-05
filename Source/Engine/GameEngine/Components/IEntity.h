@@ -73,7 +73,6 @@ inline std::shared_ptr<T> IEntity::GetComponent()
 	}
 	return std::shared_ptr<T>();
 }
-
 template<class T>
 inline std::shared_ptr<T> IEntity::GetLastAddedComponent()
 {

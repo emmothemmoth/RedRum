@@ -5,622 +5,287 @@
 
 typedef CommonUtilities::Vector3<float> Vector3f;
 
-struct CubeData
+struct PrimitiveElement
 {
-	CommonUtilities::Matrix4x4<float> transform;
-
-	//With normals
-	std::vector<Vertex> mdlVertices
-	{
-		{
-			//RIGHT SIDE
-				Vector3f(50.0f, 50.0f, 50.0f), //topRightBack
-				Vector2f(1.0f, 0.0f),
-				Vector3f(1.0f, 0.0f, 0.0f),
-				Vector3f(0.0f, 0.0f, 1.0f)
-			},
-			{
-				Vector3f(50.0f, 50.0f, -50.0f), //toprightfront
-				Vector2f(0.0f, 0.0f),
-				Vector3f(1.0f, 0.0f, 0.0f),
-				Vector3f(0.0f, 0.0f, 1.0f)
-			},
-			{
-				Vector3f(50.0f, -50.0f, 50.0f), //bottomrightback
-				Vector2f(1.0f, 1.0f),
-				Vector3f(1.0f, 0.0f, 0.0f),
-				Vector3f(0.0f, 0.0f, 1.0f)
-			},
-			{
-				Vector3f(50.0f, -50.0f, -50.0f), //bottomrightfront
-				Vector2f(0.0f, 1.0f),
-				Vector3f(1.0f, 0.0f, 0.0f),
-				Vector3f(0.0f, 0.0f, 1.0f)
-			},
-		//TOP
-		{
-			Vector3f(-50.0f, 50.0f, 50.0f), //topleftBack
-			Vector2f(0.0f, 0.0f),
-			Vector3f(0.0f, 1.0f, 0.0f),
-			Vector3f(1.0f, 0.0f, 0.0f)
-		},
-		{
-			Vector3f(-50.0f, 50.0f, -50.0f), //topleftfront
-			Vector2f(0.0f, 1.0f),
-			Vector3f(0.0f, 1.0f, 0.0f),
-			Vector3f(1.0f, 0.0f, 0.0f)
-		},
-		{
-			Vector3f(50.0f, 50.0f, 50.0f), //toprightback
-			Vector2f(1.0f, 0.0f),
-			Vector3f(0.0f, 1.0f, 0.0f),
-			Vector3f(1.0f, 0.0f, 0.0f)
-		},
-		{
-			Vector3f(50.0f, 50.0f, -50.0f), //toprightfront
-			Vector2f(1.0f, 1.0f),
-			Vector3f(0.0f, 1.0f, 0.0f),
-			Vector3f(1.0f, 0.0f, 0.0f)
-		},
-		//Bottom
-		{
-			Vector3f(-50.0f, -50.0f, 50.0f), //bottomleftback
-			Vector2f(0.0f, 1.0f),
-			Vector3f(0.0f, -1.0f, 0.0f),
-			Vector3f(1.0f, 0.0f, 0.0f)
-		},
-		{
-			Vector3f(-50.0f, -50.0f, -50.0f), //bottomleftfront
-			Vector2f(0.0f, 0.0f),
-			Vector3f(0.0f, -1.0f, 0.0f),
-			Vector3f(1.0f, 0.0f, 0.0f)
-		},
-		{
-			Vector3f(50.0f, -50.0f, 50.0f), //bottomrightback
-			Vector2f(1.0f, 1.0f),
-			Vector3f(0.0f, -1.0f, 0.0f),
-			Vector3f(1.0f, 0.0f, 0.0f)
-		},
-		{
-			Vector3f(50.0f, -50.0f, -50.0f), //bottomrightfront
-			Vector2f(1.0f, 0.0f),
-			Vector3f(0.0f, -1.0f, 0.0f),
-			Vector3f(1.0f, 0.0f, 0.0f)
-		},
-		//FRONT
-		{
-			Vector3f(-50.0f, 50.0f, -50.0f), //topleftfront
-			Vector2f(0.0f, 0.0f),
-			Vector3f(0.0f, 0.0f , -1.0f),
-			Vector3f(1.0f, 0.0f, 0.0f)
-		},
-		{
-			Vector3f(-50.0f, -50.0f, -50.0f), //bottomleftfront
-			Vector2f(0.0f, 1.0f),
-			Vector3f(0.0f, 0.0f , -1.0f),
-			Vector3f(1.0f, 0.0f, 0.0f)
-		},
-		{
-			Vector3f(50.0f, 50.0f, -50.0f), //toprightfront
-			Vector2f(1.0f, 0.0f),
-			Vector3f(0.0f, 0.0f , -1.0f),
-			Vector3f(1.0f, 0.0f, 0.0f)
-		},
-		{
-			Vector3f(50.0f, -50.0f, -50.0f), //bottomrightfront
-			Vector2f(1.0f, 1.0f),
-			Vector3f(0.0f, 0.0f , -1.0f),
-			Vector3f(1.0f, 0.0f, 0.0f)
-		},
-		//BACK
-		{
-			Vector3f(-50.0f, 50.0f, 50.0f), //topleftback
-			Vector2f(1.0f, 0.0f),
-			Vector3f(0.0f, 0.0f , 1.0f),
-			Vector3f(-1.0f, 0.0f, 0.0f)
-		},
-		{
-			Vector3f(-50.0f, -50.0f, 50.0f), //bottomleftback
-			Vector2f(1.0f, 1.0f),
-			Vector3f(0.0f, 0.0f , 1.0f),
-			Vector3f(-1.0f, 0.0f, 0.0f)
-		},
-		{
-			Vector3f(50.0f, 50.0f, 50.0f), //toprightback
-			Vector2f(0.0f, 0.0f),
-			Vector3f(0.0f, 0.0f , 1.0f),
-			Vector3f(-1.0f, 0.0f, 0.0f)
-		},
-		{
-			Vector3f(50.0f, -50.0f, 50.0f), //bottomrightback
-			Vector2f(0.0f, 1.0f),
-			Vector3f(0.0f, 0.0f , 1.0f),
-			Vector3f(-1.0f, 0.0f, 0.0f)
-		},
-		//LEFT SIDE
-		{
-			Vector3f(-50.0f, 50.0f, 50.0f), //topleftback
-			Vector2f(0.0f, 0.0f),
-			Vector3f(-1.0f, 0.0f, 0.0f),
-			Vector3f(0.0f, 0.0f, -1.0f)
-		},
-		{
-			Vector3f(-50.0f, -50.0f, 50.0f), //bottomleftback
-			Vector2f(0.0f, 1.0f),
-			Vector3f(-1.0f, 0.0f, 0.0f),
-			Vector3f(0.0f, 0.0f, -1.0f)
-		},
-		{
-			Vector3f(-50.0f, 50.0f, -50.0f), //topleftfront
-			Vector2f(1.0f, 0.0f),
-			Vector3f(-1.0f, 0.0f, 0.0f),
-			Vector3f(0.0f, 0.0f, -1.0f)
-		},
-		{
-			Vector3f(-50.0f, -50.0f, -50.0f), //bottomleftfront
-			Vector2f(1.0f, 1.0f),
-			Vector3f(-1.0f, 0.0f, 0.0f),
-			Vector3f(0.0f, 0.0f, -1.0f)
-		},
-
-	};
-
-	std::vector<UINT> mdlIndices =
-	{
-		0,2,1, //right side
-		1,2,3,
-		16,17,19,//Back side
-		19,18,16,
-		22,23,20, //Left side
-		20,23,21,
-		14,15,12, //Front side
-		12,15,13,
-		6,7,4, //Top
-		4,7,5,
-		11,10,9, //Bottom
-		9,10,8
-
-	};
+	std::vector<Vertex> Vertices;
+	std::vector<unsigned> Indices;
+	unsigned MaterialIndex = 0;
 };
 
-struct GroundData
+struct PrimitiveMesh
 {
-	std::vector<Vertex> mdlVertices
+	std::vector<PrimitiveElement> Elements;
+};
+
+struct CubeData : PrimitiveMesh
+{
+	CubeData()
 	{
-		//First
+		Elements.resize(1);
+		auto& e = Elements[0];
+
+		e.Vertices =
 		{
-			Vector3f(-10000.0f, 0.0f, -10000.0f),
-			Vector2f(0.0f, 1.0f),
-			Vector3f(0.0f, 1.0f, 0.0f),
-			Vector3f(1.0f, 0.0f, 0.0f)
-		},
+			{ Vector3f(50,50,50), {1,0}, {1,0,0}, {0,0,1} },
+			{ Vector3f(50,50,-50), {0,0}, {1,0,0}, {0,0,1} },
+			{ Vector3f(50,-50,50), {1,1}, {1,0,0}, {0,0,1} },
+			{ Vector3f(50,-50,-50), {0,1}, {1,0,0}, {0,0,1} },
+
+			{ Vector3f(-50,50,50), {0,0}, {0,1,0}, {1,0,0} },
+			{ Vector3f(-50,50,-50), {0,1}, {0,1,0}, {1,0,0} },
+			{ Vector3f(50,50,50), {1,0}, {0,1,0}, {1,0,0} },
+			{ Vector3f(50,50,-50), {1,1}, {0,1,0}, {1,0,0} },
+
+			{ Vector3f(-50,-50,50), {0,1}, {0,-1,0}, {1,0,0} },
+			{ Vector3f(-50,-50,-50), {0,0}, {0,-1,0}, {1,0,0} },
+			{ Vector3f(50,-50,50), {1,1}, {0,-1,0}, {1,0,0} },
+			{ Vector3f(50,-50,-50), {1,0}, {0,-1,0}, {1,0,0} },
+
+			{ Vector3f(-50,50,-50), {0,0}, {0,0,-1}, {1,0,0} },
+			{ Vector3f(-50,-50,-50), {0,1}, {0,0,-1}, {1,0,0} },
+			{ Vector3f(50,50,-50), {1,0}, {0,0,-1}, {1,0,0} },
+			{ Vector3f(50,-50,-50), {1,1}, {0,0,-1}, {1,0,0} },
+
+			{ Vector3f(-50,50,50), {1,0}, {0,0,1}, {-1,0,0} },
+			{ Vector3f(-50,-50,50), {1,1}, {0,0,1}, {-1,0,0} },
+			{ Vector3f(50,50,50), {0,0}, {0,0,1}, {-1,0,0} },
+			{ Vector3f(50,-50,50), {0,1}, {0,0,1}, {-1,0,0} },
+
+			{ Vector3f(-50,50,50), {0,0}, {-1,0,0}, {0,0,-1} },
+			{ Vector3f(-50,-50,50), {0,1}, {-1,0,0}, {0,0,-1} },
+			{ Vector3f(-50,50,-50), {1,0}, {-1,0,0}, {0,0,-1} },
+			{ Vector3f(-50,-50,-50), {1,1}, {-1,0,0}, {0,0,-1} }
+		};
+
+		e.Indices =
 		{
-			Vector3f(-10000.0f, 0.0f, 10000.0f),
-			Vector2f(0.0f, 0.0f),
-			Vector3f(0.0f, 1.0f, 0.0f),
-			Vector3f(1.0f, 0.0f, 0.0f)
-		},
+			0,2,1,1,2,3,
+			16,17,19,19,18,16,
+			22,23,20,20,23,21,
+			14,15,12,12,15,13,
+			6,7,4,4,7,5,
+			11,10,9,9,10,8
+		};
+	}
+};
+
+struct GroundData : PrimitiveMesh
+{
+	GroundData()
+	{
+		Elements.resize(1);
+		auto& e = Elements[0];
+
+		e.Vertices =
 		{
-			Vector3f(10000.0f, 0.0f, 10000.0f),
-			Vector2f(1.0f, 0.0f),
-			Vector3f(0.0f, 1.0f, 0.0f),
-			Vector3f(1.0f, 0.0f, 0.0f)
-		},
-		//Second
+			{ {-10000,0,-10000},{0,1},{0,1,0},{1,0,0} },
+			{ {-10000,0,10000},{0,0},{0,1,0},{1,0,0} },
+			{ {10000,0,10000},{1,0},{0,1,0},{1,0,0} },
+
+			{ {-10000,0,-10000},{0,1},{0,1,0},{1,0,0} },
+			{ {10000,0,-10000},{1,1},{0,1,0},{1,0,0} },
+			{ {10000,0,10000},{1,0},{0,1,0},{1,0,0} }
+		};
+
+		e.Indices =
 		{
-			Vector3f(-10000.0f, 0.0f, -10000.0f),
-			Vector2f(0.0f, 1.0f),
-			Vector3f(0.0f, 1.0f, 0.0f),
-			Vector3f(1.0f, 0.0f, 0.0f)
-		},
+			2,0,1,
+			5,4,3
+		};
+	}
+};
+
+struct SphereData : public PrimitiveMesh
+{
+	SphereData(float radius = 50.f, int slices = 24, int stacks = 16)
+	{
+		Elements.resize(1);
+		auto& e = Elements[0];
+
+		for (int stack = 0; stack <= stacks; ++stack)
 		{
-			Vector3f(10000.0f, 0.0f, -10000.0f),
-			Vector2f(1.0f, 1.0f),
-			Vector3f(0.0f, 1.0f, 0.0f),
-			Vector3f(1.0f, 0.0f, 0.0f)
-		},
-		{
-			Vector3f(10000.0f, 0.0f, 10000.0f),
-			Vector2f(1.0f, 0.0f),
-			Vector3f(0.0f, 1.0f, 0.0f),
-			Vector3f(1.0f, 0.0f, 0.0f)
+			float v = (float)stack / stacks;
+			float phi = v * 3.14159265359f;
+
+			for (int slice = 0; slice <= slices; ++slice)
+			{
+				float u = (float)slice / slices;
+				float theta = u * 2.0f * 3.14159265359f;
+
+				float x = std::sin(phi) * std::cos(theta);
+				float y = std::cos(phi);
+				float z = std::sin(phi) * std::sin(theta);
+
+				Vector3f normal = { x, y, z };
+				Vector3f pos = normal * radius;
+
+				e.Vertices.push_back({
+					pos,
+					{ u, v },
+					normal,
+					{1,0,0}
+					});
+			}
 		}
-	};
 
-	std::vector<UINT> mdlIndices =
-	{
-		2, 0, 1,
-		5, 4, 3
-	};
-};
-
-struct SphereData
-{
-	std::vector<Vertex> mdlVertices
-	{
+		for (int stack = 0; stack < stacks; ++stack)
 		{
-			//RIGHT SIDE
-				Vector3f(50.0f, 50.0f, 50.0f), //topRightBack
-				Vector2f(1.0f, 0.0f),
-				Vector3f(1.0f, 0.0f, 0.0f),
-				Vector3f(0.0f, 0.0f, 1.0f)
-			},
+			for (int slice = 0; slice < slices; ++slice)
 			{
-				Vector3f(50.0f, 50.0f, -50.0f), //toprightfront
-				Vector2f(0.0f, 0.0f),
-				Vector3f(1.0f, 0.0f, 0.0f),
-				Vector3f(0.0f, 0.0f, 1.0f)
-			},
-			{
-				Vector3f(50.0f, -50.0f, 50.0f), //bottomrightback
-				Vector2f(1.0f, 1.0f),
-				Vector3f(1.0f, 0.0f, 0.0f),
-				Vector3f(0.0f, 0.0f, 1.0f)
-			},
-			{
-				Vector3f(50.0f, -50.0f, -50.0f), //bottomrightfront
-				Vector2f(0.0f, 1.0f),
-				Vector3f(1.0f, 0.0f, 0.0f),
-				Vector3f(0.0f, 0.0f, 1.0f)
-			},
-		//TOP
-		{
-			Vector3f(-50.0f, 50.0f, 50.0f), //topleftBack
-			Vector2f(0.0f, 0.0f),
-			Vector3f(0.0f, 1.0f, 0.0f),
-			Vector3f(1.0f, 0.0f, 0.0f)
-		},
-		{
-			Vector3f(-50.0f, 50.0f, -50.0f), //topleftfront
-			Vector2f(0.0f, 1.0f),
-			Vector3f(0.0f, 1.0f, 0.0f),
-			Vector3f(1.0f, 0.0f, 0.0f)
-		},
-		{
-			Vector3f(50.0f, 50.0f, 50.0f), //toprightback
-			Vector2f(1.0f, 0.0f),
-			Vector3f(0.0f, 1.0f, 0.0f),
-			Vector3f(1.0f, 0.0f, 0.0f)
-		},
-		{
-			Vector3f(50.0f, 50.0f, -50.0f), //toprightfront
-			Vector2f(1.0f, 1.0f),
-			Vector3f(0.0f, 1.0f, 0.0f),
-			Vector3f(1.0f, 0.0f, 0.0f)
-		},
-		//Bottom
-		{
-			Vector3f(-50.0f, -50.0f, 50.0f), //bottomleftback
-			Vector2f(0.0f, 1.0f),
-			Vector3f(0.0f, -1.0f, 0.0f),
-			Vector3f(1.0f, 0.0f, 0.0f)
-		},
-		{
-			Vector3f(-50.0f, -50.0f, -50.0f), //bottomleftfront
-			Vector2f(0.0f, 0.0f),
-			Vector3f(0.0f, -1.0f, 0.0f),
-			Vector3f(1.0f, 0.0f, 0.0f)
-		},
-		{
-			Vector3f(50.0f, -50.0f, 50.0f), //bottomrightback
-			Vector2f(1.0f, 1.0f),
-			Vector3f(0.0f, -1.0f, 0.0f),
-			Vector3f(1.0f, 0.0f, 0.0f)
-		},
-		{
-			Vector3f(50.0f, -50.0f, -50.0f), //bottomrightfront
-			Vector2f(1.0f, 0.0f),
-			Vector3f(0.0f, -1.0f, 0.0f),
-			Vector3f(1.0f, 0.0f, 0.0f)
-		},
-		//FRONT
-		{
-			Vector3f(-50.0f, 50.0f, -50.0f), //topleftfront
-			Vector2f(0.0f, 0.0f),
-			Vector3f(0.0f, 0.0f , -1.0f),
-			Vector3f(1.0f, 0.0f, 0.0f)
-		},
-		{
-			Vector3f(-50.0f, -50.0f, -50.0f), //bottomleftfront
-			Vector2f(0.0f, 1.0f),
-			Vector3f(0.0f, 0.0f , -1.0f),
-			Vector3f(1.0f, 0.0f, 0.0f)
-		},
-		{
-			Vector3f(50.0f, 50.0f, -50.0f), //toprightfront
-			Vector2f(1.0f, 0.0f),
-			Vector3f(0.0f, 0.0f , -1.0f),
-			Vector3f(1.0f, 0.0f, 0.0f)
-		},
-		{
-			Vector3f(50.0f, -50.0f, -50.0f), //bottomrightfront
-			Vector2f(1.0f, 1.0f),
-			Vector3f(0.0f, 0.0f , -1.0f),
-			Vector3f(1.0f, 0.0f, 0.0f)
-		},
-		//BACK
-		{
-			Vector3f(-50.0f, 50.0f, 50.0f), //topleftback
-			Vector2f(1.0f, 0.0f),
-			Vector3f(0.0f, 0.0f , 1.0f),
-			Vector3f(-1.0f, 0.0f, 0.0f)
-		},
-		{
-			Vector3f(-50.0f, -50.0f, 50.0f), //bottomleftback
-			Vector2f(1.0f, 1.0f),
-			Vector3f(0.0f, 0.0f , 1.0f),
-			Vector3f(-1.0f, 0.0f, 0.0f)
-		},
-		{
-			Vector3f(50.0f, 50.0f, 50.0f), //toprightback
-			Vector2f(0.0f, 0.0f),
-			Vector3f(0.0f, 0.0f , 1.0f),
-			Vector3f(-1.0f, 0.0f, 0.0f)
-		},
-		{
-			Vector3f(50.0f, -50.0f, 50.0f), //bottomrightback
-			Vector2f(0.0f, 1.0f),
-			Vector3f(0.0f, 0.0f , 1.0f),
-			Vector3f(-1.0f, 0.0f, 0.0f)
-		},
-		//LEFT SIDE
-		{
-			Vector3f(-50.0f, 50.0f, 50.0f), //topleftback
-			Vector2f(0.0f, 0.0f),
-			Vector3f(-1.0f, 0.0f, 0.0f),
-			Vector3f(0.0f, 0.0f, -1.0f)
-		},
-		{
-			Vector3f(-50.0f, -50.0f, 50.0f), //bottomleftback
-			Vector2f(0.0f, 1.0f),
-			Vector3f(-1.0f, 0.0f, 0.0f),
-			Vector3f(0.0f, 0.0f, -1.0f)
-		},
-		{
-			Vector3f(-50.0f, 50.0f, -50.0f), //topleftfront
-			Vector2f(1.0f, 0.0f),
-			Vector3f(-1.0f, 0.0f, 0.0f),
-			Vector3f(0.0f, 0.0f, -1.0f)
-		},
-		{
-			Vector3f(-50.0f, -50.0f, -50.0f), //bottomleftfront
-			Vector2f(1.0f, 1.0f),
-			Vector3f(-1.0f, 0.0f, 0.0f),
-			Vector3f(0.0f, 0.0f, -1.0f)
-		},
+				int first = stack * (slices + 1) + slice;
+				int second = first + slices + 1;
 
-	};
+				e.Indices.push_back(first);
+				e.Indices.push_back(second);
+				e.Indices.push_back(first + 1);
 
-	std::vector<UINT> mdlIndices =
+				e.Indices.push_back(second);
+				e.Indices.push_back(second + 1);
+				e.Indices.push_back(first + 1);
+			}
+		}
+
+		e.MaterialIndex = 0;
+	}
+};
+
+struct HorizontalPlaneData : PrimitiveMesh
+{
+	HorizontalPlaneData(float size = 200.f)
 	{
-		0,2,1, //right side
-		1,2,3,
-		16,17,19,//Back side
-		19,18,16,
-		22,23,20, //Left side
-		20,23,21,
-		14,15,12, //Front side
-		12,15,13,
-		6,7,4, //Top
-		4,7,5,
-		11,10,9, //Bottom
-		9,10,8
+		Elements.resize(1);
+		auto& e = Elements[0];
 
-	};
+		float h = size * 0.5f;
+
+		e.Vertices =
+		{
+			{ {h,0,h},{0,1},{0,1,0},{-1,0,0} },
+			{ {h,0,-h},{0,0},{0,1,0},{-1,0,0} },
+			{ {-h,0,h},{1,1},{0,1,0},{-1,0,0} },
+			{ {-h,0,-h},{1,0},{0,1,0},{-1,0,0} }
+		};
+
+		e.Indices =
+		{
+			0,1,2,
+			3,2,1
+		};
+	}
 };
 
-struct HorizontalPlaneData
+struct VerticalPlaneData : PrimitiveMesh
 {
-	float aSize = 200.0f;
-	float halfSize = aSize / 2.f;
-	std::vector<Vertex> mdlVertices = {
-		{
-			Vector3f(halfSize, 0.f, halfSize),
-			Vector2f(0.f, 1.f),
-			Vector3f(0.f, 1.f, 0.f),
-			Vector3f(-1.f, 0.f, 0.f)
-		},
-		{
-			Vector3f(halfSize, 0.f, -halfSize),
-			Vector2f(0.f, 0.f),
-			Vector3f(0.f, 1.f, 0.f),
-			Vector3f(-1.f, 0.f, 0.f)
-		},
-		{
-			Vector3f(-halfSize, 0.f, halfSize),
-			Vector2f(1.f, 1.f),
-			Vector3f(0.f, 1.f, 0.f),
-			Vector3f(-1.f, 0.f, 0.f)
-		},
-		{
-			Vector3f(-halfSize, 0.f, -halfSize),
-			Vector2f(1.f, 0.f),
-			Vector3f(0.f, 1.f, 0.f),
-			Vector3f(-1.f, 0.f, 0.f)
-		},
-	};
+	VerticalPlaneData(float size = 200.f)
+	{
+		Elements.resize(1);
+		auto& e = Elements[0];
 
-	std::vector<unsigned> mdlIndices = {
-		0, 1, 2,
-		3, 2, 1
-	};
+		float h = size * 0.5f;
+
+		e.Vertices =
+		{
+			{ {h,h,0},{0,1},{0,0,1},{-1,0,0} },
+			{ {h,-h,0},{0,0},{0,0,1},{-1,0,0} },
+			{ {-h,h,0},{1,1},{0,0,1},{-1,0,0} },
+			{ {-h,-h,0},{1,0},{0,0,1},{-1,0,0} }
+		};
+
+		e.Indices =
+		{
+			1,2,3,
+			2,1,0
+		};
+	}
 };
 
-struct VerticalPlaneData
+struct TransformGizmoData : PrimitiveMesh
 {
-	float aSize = 200.0f;
-	float halfSize = aSize / 2.f;
-	std::vector<Vertex> mdlVertices = {
-		{
-			Vector3f(halfSize, halfSize, 0.f),
-			Vector2f(0.f, 1.f),
-			Vector3f(0.f, 0.f, 1.f),
-			Vector3f(-1.f, 0.f, 0.f)
-		},
-		{
-			Vector3f(halfSize, -halfSize, 0.f),
-			Vector2f(0.f, 0.f),
-			Vector3f(0.f, 0.f, 1.f),
-			Vector3f(-1.f, 0.f, 0.f)
-		},
-		{
-			Vector3f(-halfSize, halfSize, 0.f),
-			Vector2f(1.f, 1.f),
-			Vector3f(0.f, 0.f, 1.f),
-			Vector3f(-1.f, 0.f, 0.f)
-		},
-		{
-			Vector3f(-halfSize, -halfSize, 0.f),
-			Vector2f(1.f, 0.f),
-			Vector3f(0.f, 0.f, 1.f),
-			Vector3f(-1.f, 0.f, 0.f)
-		},
-	};
-	std::vector<UINT> mdlIndices{
-		//0,1,2,
-		//3,2,1
-		1,2,3,
-		2,1,0
-	};
-};
-
-struct TransformGizmoData
-{
-	std::vector<Vertex> mdlVertices;
-	std::vector<UINT> mdlIndices;
-
 	TransformGizmoData()
 	{
-		const float axisLength = 100.f;
-		const float shaftSize = 2.5f;
-		const float headSize = 10.f;
+		Elements.resize(3);
 
-		auto AddBox = [&](Vector3f center, Vector3f size)
-			{
-				int startIndex = (int)mdlVertices.size();
+		BuildX();
+		BuildY();
+		BuildZ();
+	}
 
-				float hx = size.x * 0.5f;
-				float hy = size.y * 0.5f;
-				float hz = size.z * 0.5f;
+private:
 
-				Vector3f v[8] =
-				{
-					center + Vector3f(-hx,-hy,-hz),
-					center + Vector3f(hx,-hy,-hz),
-					center + Vector3f(hx, hy,-hz),
-					center + Vector3f(-hx, hy,-hz),
+	void BuildX()
+	{
+		auto& e = Elements[0];
 
-					center + Vector3f(-hx,-hy, hz),
-					center + Vector3f(hx,-hy, hz),
-					center + Vector3f(hx, hy, hz),
-					center + Vector3f(-hx, hy, hz),
-				};
+		e.Vertices =
+		{
+			{ {0,0,0},{0.16f,0.5f},{1,0,0},{0,1,0} },
+			{ {100,0,0},{0.16f,0.5f},{1,0,0},{0,1,0} },
+			{ {80,4,4},{0.16f,0.5f},{1,0,0},{0,1,0} },
+			{ {80,-4,4},{0.16f,0.5f},{1,0,0},{0,1,0} },
+			{ {80,4,-4},{0.16f,0.5f},{1,0,0},{0,1,0} },
+			{ {80,-4,-4},{0.16f,0.5f},{1,0,0},{0,1,0} }
+		};
 
-				for (int i = 0; i < 8; i++)
-				{
-					mdlVertices.push_back(
-						{
-							v[i],
-							Vector2f(0,0),
-							Vector3f(0,1,0),
-							Vector3f(1,0,0)
-						});
-				}
+		e.Indices =
+		{
+			// Shaft (Connecting origin to base)
+			0,3,2,  0,4,3,  0,5,4,  0,2,5,
 
-				UINT inds[] =
-				{
-					0,1,2, 0,2,3,
-					4,6,5, 4,7,6,
-					0,4,5, 0,5,1,
-					1,5,6, 1,6,2,
-					2,6,7, 2,7,3,
-					3,7,4, 3,4,0
-				};
+			// Pyramid Head (Connecting base to the Tip at index 1)
+			1,2,3,  1,3,4,  1,4,5,  1,5,2,
 
-				for (UINT i : inds)
-					mdlIndices.push_back(startIndex + i);
-			};
+			// Base Cap (Optional, closes the bottom of the arrow head)
+			2,4,3,  2,5,4
+		};
+	}
 
-		auto AddPyramid = [&](Vector3f baseCenter, Vector3f dir)
-			{
-				int startIndex = (int)mdlVertices.size();
+	void BuildY()
+	{
+		auto& e = Elements[1];
 
-				Vector3f up = dir * headSize;
-				Vector3f right;
+		e.Vertices =
+		{
+			{ {0,0,0},{0.5f,0.5f},{0,1,0},{1,0,0} },
+			{ {0,100,0},{0.5f,0.5f},{0,1,0},{1,0,0} },
+			{ {4,80,4},{0.5f,0.5f},{0,1,0},{1,0,0} },
+			{ {-4,80,4},{0.5f,0.5f},{0,1,0},{1,0,0} },
+			{ {4,80,-4},{0.5f,0.5f},{0,1,0},{1,0,0} },
+			{ {-4,80,-4},{0.5f,0.5f},{0,1,0},{1,0,0} }
+		};
 
-				if (fabs(dir.y) > 0.5f)
-					right = Vector3f(1, 0, 0);
-				else
-					right = Vector3f(0, 1, 0);
+		e.Indices =
+		{
+			// Shaft
+			0,2,3,  0,3,4,  0,4,5,  0,5,2,
+			// Head (Tip is index 1)
+			1,3,2,  1,4,3,  1,5,4,  1,2,5,
+			// Base Cap
+			2,5,4,  2,4,3
+		};
+	}
 
-				Vector3f forward = dir.Cross(right);
-				right = forward.Cross(dir);
+	void BuildZ()
+	{
+		auto& e = Elements[2];
 
-				right.Normalize();
-				forward.Normalize();
+		e.Vertices =
+		{
+			{ {0,0,0},{0.83f,0.5f},{0,0,1},{1,0,0} },
+			{ {0,0,100},{0.83f,0.5f},{0,0,1},{1,0,0} },
+			{ {4,4,80},{0.83f,0.5f},{0,0,1},{1,0,0} },
+			{ {-4,4,80},{0.83f,0.5f},{0,0,1},{1,0,0} },
+			{ {4,-4,80},{0.83f,0.5f},{0,0,1},{1,0,0} },
+			{ {-4,-4,80},{0.83f,0.5f},{0,0,1},{1,0,0} }
+		};
 
-				right *= headSize * 0.5f;
-				forward *= headSize * 0.5f;
-
-				Vector3f tip = baseCenter + up;
-
-				Vector3f base[4] =
-				{
-					baseCenter + right + forward,
-					baseCenter - right + forward,
-					baseCenter - right - forward,
-					baseCenter + right - forward
-				};
-
-				mdlVertices.push_back({ tip, {}, dir, right });
-				for (int i = 0; i < 4; i++)
-					mdlVertices.push_back({ base[i], {}, dir, right });
-
-				UINT inds[] =
-				{
-					0,1,2,
-					0,2,3,
-					0,3,4,
-					0,4,1,
-					1,4,3,
-					1,3,2
-				};
-
-				for (UINT i : inds)
-					mdlIndices.push_back(startIndex + i);
-			};
-
-		// X axis
-		AddBox(
-			Vector3f(axisLength * 0.5f, 0, 0),
-			Vector3f(axisLength, shaftSize, shaftSize)
-		);
-
-		AddPyramid(
-			Vector3f(axisLength, 0, 0),
-			Vector3f(1, 0, 0)
-		);
-
-		// Y axis
-		AddBox(
-			Vector3f(0, axisLength * 0.5f, 0),
-			Vector3f(shaftSize, axisLength, shaftSize)
-		);
-
-		AddPyramid(
-			Vector3f(0, axisLength, 0),
-			Vector3f(0, 1, 0)
-		);
-
-		// Z axis
-		AddBox(
-			Vector3f(0, 0, axisLength * 0.5f),
-			Vector3f(shaftSize, shaftSize, axisLength)
-		);
-
-		AddPyramid(
-			Vector3f(0, 0, axisLength),
-			Vector3f(0, 0, 1)
-		);
+		e.Indices =
+		{
+			// Shaft
+			0,3,2,  0,4,3,  0,5,4,  0,2,5,
+			// Head (Tip is index 1)
+			1,2,3,  1,3,4,  1,4,5,  1,5,2,
+			// Base Cap
+			2,4,3,  2,5,4
+		};
 	}
 };

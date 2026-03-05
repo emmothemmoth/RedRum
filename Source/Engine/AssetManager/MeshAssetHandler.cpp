@@ -10,138 +10,56 @@
 void MeshAssetHandler::InitGround(MeshAsset& inOutAsset)
 {
 	GroundData ground;
-	inOutAsset.AddElement(ground.mdlVertices, ground.mdlIndices, 0);
+	for (auto& element : ground.Elements)
+	{
+		inOutAsset.AddElement(element.Vertices, element.Indices, element.MaterialIndex);
+	}
 }
 
 void MeshAssetHandler::InitCube(MeshAsset& inOutAsset)
 {
-	CubeData data;
-	inOutAsset.AddElement(data.mdlVertices, data.mdlIndices, 0);
+	CubeData cube;
+	for (auto& element : cube.Elements)
+	{
+		inOutAsset.AddElement(element.Vertices, element.Indices, element.MaterialIndex);
+	}
 }
 
 void MeshAssetHandler::InitSphere(MeshAsset& inOutAsset)
 {
-	const float radius = 50.0f;
-	const unsigned int sectors = 36;
-	const unsigned int stacks = 18;
-
-	std::vector<Vertex> mdlVertices;
-	std::vector<unsigned> mdlIndices;
-
-	float sectorStep = 2.0f * static_cast<float>(M_PI) / sectors;
-	float stackStep = static_cast<float>(M_PI) / stacks;
-	float sectorAngle, stackAngle;
-
-	for (unsigned int i = 0; i <= stacks; ++i)
+	SphereData sphere;
+	for (auto& element : sphere.Elements)
 	{
-		stackAngle = static_cast<float>(M_PI) / 2.0f - static_cast<float>(i * stackStep);
-		float xyOuter = radius * cosf(stackAngle);
-		float zOuter = radius * sinf(stackAngle);
-
-		for (unsigned int j = 0; j <= sectors; ++j)
-		{
-			sectorAngle = j * sectorStep;
-
-			float x = xyOuter * cosf(sectorAngle);
-			float y = xyOuter * sinf(sectorAngle);
-			float z = zOuter;
-
-			CommonUtilities::Vector3<float> normal(x, y, z);
-			normal.Normalize();
-
-
-			CommonUtilities::Vector3<float> tangent(1.0f, 0.0f, 0.0f);
-
-			float U = static_cast<float>(j) / sectors;
-			float V = static_cast<float>(i) / stacks;
-
-
-			CommonUtilities::Vector3<float> position{ x, y, z };
-			CommonUtilities::Vector2<float> uv{ U, V };
-			Vertex vertex(position, uv, normal, tangent);
-
-			mdlVertices.push_back(vertex);
-
-
-		}
+		inOutAsset.AddElement(element.Vertices, element.Indices, element.MaterialIndex);
 	}
-
-	unsigned int k1, k2;
-	for (unsigned int i = 0; i < stacks; ++i)
-	{
-		k1 = i * (sectors + 1);
-		k2 = k1 + sectors + 1;
-
-		for (unsigned int j = 0; j < sectors; ++j, ++k1, ++k2)
-		{
-			if (i != 0)
-			{
-				mdlIndices.push_back(k1);
-				mdlIndices.push_back(k2);
-				mdlIndices.push_back(k1 + 1);
-				//// Triangle 1
-				//if (isInverted)
-				//{
-				//	sphereIndices.push_back(k2);
-				//	sphereIndices.push_back(k1);
-				//	sphereIndices.push_back(k1 + 1);
-				//}
-				//else
-				//{
-				//	sphereIndices.push_back(k1);
-				//	sphereIndices.push_back(k2);
-				//	sphereIndices.push_back(k1 + 1);
-				//}
-			}
-			if (i != (stacks - 1))
-			{
-				mdlIndices.push_back(k1 + 1);
-				mdlIndices.push_back(k2);
-				mdlIndices.push_back(k2 + 1);
-				// Triangle 2
-				//if (isInverted)
-				//{
-				//	sphereIndices.push_back(k2 + 1);
-				//	sphereIndices.push_back(k2);
-				//	sphereIndices.push_back(k1 + 1);
-				//}
-				//else
-				//{
-				//	sphereIndices.push_back(k1 + 1);
-				//	sphereIndices.push_back(k2);
-				//	sphereIndices.push_back(k2 + 1);
-				//}
-			}
-		}
-	}
-
-	//Element element;
-	//element.VertexOffset = 0;
-	//element.IndexOffset = 0;
-	//element.NumVertices = static_cast<unsigned>(mdlVertices.size());
-	//element.NumIndices = static_cast<unsigned>(mdlIndices.size());
-
-
-//SphereData sphere;
-	inOutAsset.AddElement(mdlVertices, mdlIndices, 0);
 }
 
 void MeshAssetHandler::InitHorizontalPlane(MeshAsset& inOutAsset)
 {
 	HorizontalPlaneData plane;
-	inOutAsset.AddElement(plane.mdlVertices, plane.mdlIndices, 0);
+	for (auto& element : plane.Elements)
+	{
+		inOutAsset.AddElement(element.Vertices, element.Indices, element.MaterialIndex);
+	}
+	
 }
 
 void MeshAssetHandler::InitVerticalPlane(MeshAsset& inOutAsset)
 {
 	VerticalPlaneData plane;
-	inOutAsset.AddElement(plane.mdlVertices, plane.mdlIndices, 0);
+	for (auto& element : plane.Elements)
+	{
+		inOutAsset.AddElement(element.Vertices, element.Indices, element.MaterialIndex);
+	}
 }
 
 void MeshAssetHandler::InitTransformGizmo(MeshAsset& inOutAsset)
 {
 	TransformGizmoData transform;
-	inOutAsset.AddElement(transform.mdlVertices, transform.mdlIndices, 0);
+	for (auto& element : transform.Elements)
+	{
+		inOutAsset.AddElement(element.Vertices, element.Indices, element.MaterialIndex);
+	}
 }
 
 bool MeshAssetHandler::LoadMeshFromFBX(const std::filesystem::path& aPath, MeshAsset& inOutAsset)

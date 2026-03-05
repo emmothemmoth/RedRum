@@ -3,13 +3,20 @@
 #include "MeshComponent.h"
 #include "../AssetManager/AssetManager.h"
 #include "../GraphicsEngine/Objects/MeshAsset.h"
+#include "../GraphicsEngine/Objects/MaterialAsset.h"
 #define DEFAULT_TRANSFORM_MESH "TransformGizmo"
+#define DEFAULT_TRANSFORM_MATERIAL "M_TransformGizmoMaterial"
+#define TRANSFORM_GIZMO_COMPONENT_ID 0
+#define ICON_ID 1
 
 GameObject::GameObject(std::string_view aName, unsigned anID)
 {
 	myID = anID;
 	myName = aName;
 	AddComponent(std::make_shared<MeshComponent>(*this, AssetManager::Get().GetAsset<MeshAsset>(DEFAULT_TRANSFORM_MESH)));
+	auto transformGizmo = GetLastAddedComponent<MeshComponent>();
+	transformGizmo->AddMaterial(AssetManager::Get().GetAsset<MaterialAsset>(DEFAULT_TRANSFORM_MATERIAL));
+	transformGizmo->SetVisible(false);
 }
 
 GameObject::GameObject(unsigned anID)
@@ -28,13 +35,6 @@ GameObject::GameObject() = default;
 GameObject::~GameObject()
 {
 }
-
-//void GameObjectComponent::Update(const float& aDeltatime)
-//{
-//	//Bugg i animationplayer
-//	GameObject::Update(aDeltatime);
-//}
-
 
 void GameObject::Render()
 {
@@ -71,4 +71,14 @@ void GameObject::RotateAroundX(float anAngle)
 void GameObject::RotateAroundZ(float anAngle)
 {
 	myTransform = CommonUtilities::Matrix4x4<float>::CreateRotationAroundZ(anAngle * (3.14f / 180.0f)) * myTransform;
+}
+
+void GameObject::OnSelected()
+{
+	myComponents.at(TRANSFORM_GIZMO_COMPONENT_ID)->SetVisible(true);
+}
+
+void GameObject::OnDeselected()
+{
+	myComponents.at(TRANSFORM_GIZMO_COMPONENT_ID)->SetVisible(false);
 }

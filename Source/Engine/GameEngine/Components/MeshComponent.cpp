@@ -31,6 +31,7 @@ void MeshComponent::Update(const float aDeltaTime)
 
 void MeshComponent::Render()
 {
+	if (!myIsVisible) return;
 	if (myMaterials.empty())
 	{
 		myMaterials = GraphicsEngine::Get().GetDefaultMaterials();
