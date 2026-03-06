@@ -26,6 +26,9 @@ public:
 	void OnSelected();
 	void OnDeselected();
 
+	unsigned SetID(const unsigned anID) { myID = anID; }
+	unsigned GetID() const { return myID; }
+
 private:
 	unsigned myID = 0;
 	std::string myName;

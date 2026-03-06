@@ -9,7 +9,8 @@ enum class RenderStage
 	Debug = 4,
 	Custom = 5,
 	WorldSpaceUI = 6,
-	PostProcess = 7,
-	Sprite = 8,
+	ObjectIDRendering = 7,
+	PostProcess = 8,
+	Sprite = 9,
 	Count = 9
 };

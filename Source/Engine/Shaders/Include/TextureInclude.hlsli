@@ -5,6 +5,7 @@ Texture2D fxTexture : register(t3);
 Texture2D BlueNoiseTexture : register(t4);
 Texture2D ParticleTexture : register(t5);
 
+Texture2D ScreenPickingTexture : register(t118);
 Texture2D SSAOTexture : register(t119);
 TextureCube environmentCube : register(t120);
 Texture2D BRDG_LUT_Texture : register(t127);

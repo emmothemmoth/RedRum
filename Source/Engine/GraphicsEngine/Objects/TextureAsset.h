@@ -61,6 +61,7 @@ public:
 	const Microsoft::WRL::ComPtr<ID3D11DepthStencilView> GetDSV() { return myDSV; }
 	const Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> GetSRV() { return mySRV; }
 	const Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> GetSRV() const { return mySRV; }
+	const Microsoft::WRL::ComPtr<ID3D11Resource> GetResource() const { return myTexture; }
 
 	CU::Vector2f GetSize() { return { static_cast<float>(myViewPort.Width), static_cast<float>(myViewPort.Height) }; }
 

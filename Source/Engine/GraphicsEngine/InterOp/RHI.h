@@ -39,6 +39,7 @@ enum class RHITextureFormat : unsigned
 	R32_Typeless = 39,
 	D32_Float = 40,
 	R32_Float = 41,
+	R32_UINT = 42
 };
 
 class TextureAsset;
@@ -184,6 +185,8 @@ public:
 	void SetConstantBuffer(const ConstantBuffer& aBuffer);
 	void SetPrimitiveTopology(unsigned aTopology);
 	void SetInputLayout(const Microsoft::WRL::ComPtr<ID3D11InputLayout>& aInputLayout);
+
+	uint32_t ReadID(const int aPosX, const int aPosY, TextureAsset* anRTVTexture, TextureAsset* aStagingTexture);
 
 	FORCEINLINE std::shared_ptr<TextureAsset> GetBackBuffer() const { return myBackBuffer; }
 	FORCEINLINE std::shared_ptr<TextureAsset> GetDepthBuffer() const { return myDepthBuffer; }

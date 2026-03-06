@@ -6,14 +6,16 @@
 #include "GraphicsEngine.h"
 
 #include "Buffers\ObjectBuffer.h"
+#include <Buffers/ObjectIDBuffer.h>
 
-GCmdRenderSkeletalMesh::GCmdRenderSkeletalMesh(const std::shared_ptr<MeshAsset> aMesh, CU::Matrix4x4f aTransform,  const std::vector<CommonUtilities::Matrix4x4<float>> aBoneTransformList, std::vector<std::shared_ptr<MaterialAsset>> aMaterialList)
+GCmdRenderSkeletalMesh::GCmdRenderSkeletalMesh(const std::shared_ptr<MeshAsset> aMesh, CU::Matrix4x4f aTransform,  const std::vector<CommonUtilities::Matrix4x4<float>> aBoneTransformList, std::vector<std::shared_ptr<MaterialAsset>> aMaterialList, unsigned anID)
 {
 	myMesh = aMesh;
 	myTransform = aTransform;
 	myBoneTransforms.resize(aBoneTransformList.size());
 	myBoneTransforms = aBoneTransformList;
 	myMaterialList = aMaterialList;
+	myObjectID = anID;
 
 }
 
@@ -27,6 +29,10 @@ void GCmdRenderSkeletalMesh::Execute()
 		objectBuffer.BoneTransforms[index] = myBoneTransforms[index];
 	}
 	GraphicsEngine::Get().UpdateAndSetConstantBuffer(ConstantBufferType::ObjectBuffer, objectBuffer);
+
+	ObjectIDBufferData IDBuffer;
+	IDBuffer.ObjectID = myObjectID;
+	GraphicsEngine::Get().UpdateAndSetConstantBuffer(ConstantBufferType::ObjectIDBuffer, IDBuffer);
 
 	for (auto& element : myMesh->GetElements())
 	{

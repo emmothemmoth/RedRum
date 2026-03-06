@@ -31,7 +31,8 @@ enum class PSOType
 	GaussianV,
 	Bloom,
 	SSAO,
-	Custom
+	Custom,
+	ScreenPicking
 };
 
 struct PipelineStateObject

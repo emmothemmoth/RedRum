@@ -25,6 +25,7 @@
 #include "Buffers\MaterialBuffer.h"
 #include "Buffers\DebugBuffer.h"
 #include "Buffers\PostProcessBuffer.h"
+#include "Buffers\ObjectIDBuffer.h"
 #include "GraphicsCommands.h"
 #include "CommonUtilities\Matrix.hpp"
 #include "CommonUtilities\UtilityFunctions.hpp"
@@ -127,8 +128,10 @@ bool GraphicsEngine::Initialize(bool enableDeviceDebug)
 		CreateUIShaders();
 		CreateParticleShaders();
 		CreatePostProcessShaders();
+		CreateObjectIDShader();
 		myShaderMap;
 		CreateIntermediateBuffers();
+		CreateObjectIDBuffer();
 
 		if (!CreateForwardPSO())
 		{
@@ -256,7 +259,11 @@ bool GraphicsEngine::Initialize(bool enableDeviceDebug)
 			LOG(GELog, Error, "Failed to create Particle PSO");
 			return false;
 		}
-
+		if (!CreateObjectIDPSO())
+		{
+			LOG(GELog, Error, "Failed to create Screenpicking PSO");
+			return false;
+		}
 		if (!CreateDefaultMaterials())
 		{
 			LOG(GELog, Error, "Failed to create default materials");
@@ -304,12 +311,19 @@ bool GraphicsEngine::Initialize(bool enableDeviceDebug)
 			LOG(GELog, Error, "Failed to create post process buffer");
 			return false;
 		}
+		ConstantBuffer objectIDBuffer;
+		if (!myRHI->CreateConstantBuffer("ObjectIDBuffer", sizeof(ObjectIDBufferData), 6, PIPELINE_STAGE_PIXEL_SHADER, objectIDBuffer))
+		{
+			LOG(GELog, Error, "Failed to create object ID buffer");
+			return false;
+		}
 		myConstantBuffers.emplace(ConstantBufferType::FrameBuffer, std::move(frameBuffer));
 		myConstantBuffers.emplace(ConstantBufferType::ObjectBuffer, std::move(objectBuffer));
 		myConstantBuffers.emplace(ConstantBufferType::MaterialBuffer, std::move(materialBuffer));
 		myConstantBuffers.emplace(ConstantBufferType::LightBuffer, std::move(lightBuffer));
 		myConstantBuffers.emplace(ConstantBufferType::DebugBuffer, std::move(debugBuffer));
 		myConstantBuffers.emplace(ConstantBufferType::PostProcessBuffer, std::move(postProcessBuffer));
+		myConstantBuffers.emplace(ConstantBufferType::ObjectIDBuffer, std::move(objectIDBuffer));
 		InitPostProcessBuffer();
 
 	return true;
@@ -636,6 +650,25 @@ void GraphicsEngine::RenderDebugLines(const DebugLineObject& aDebugLineObject)
 	myRHI->DrawIndexed(0, aDebugLineObject.GetNumIndices());
 }
 
+uint32_t GraphicsEngine::GetIDFromPoint(const int aMousePosX, const int aMousePosY)
+{
+ 	myScreenPickingResult = myRHI->ReadID(aMousePosX, aMousePosY, myObjectIDTexture.get(), myScreenPickingTexture.get());
+	myPickingResultDone.store(true, std::memory_order_release);
+	return myScreenPickingResult;
+}
+
+void GraphicsEngine::ScreenPickingResult(bool& aResultDone, unsigned& inOutID)
+{
+	if (myPickingResultDone.load(std::memory_order_acquire))
+	{
+		aResultDone = true;
+		inOutID = myScreenPickingResult;
+
+		myScreenPickingResult = 0;
+		myPickingResultDone.store(false, std::memory_order_release);
+	}
+}
+
 
 void GraphicsEngine::ConfigureInputAssembler(unsigned aTopology, const ComPtr<ID3D11Buffer>& aVxBuffer, const ComPtr<ID3D11Buffer>& anIxBuffer, unsigned aVertexStride, const ComPtr<ID3D11InputLayout>& anInputLayout)
 {
@@ -818,6 +851,9 @@ void GraphicsEngine::ChangePipelineState(const unsigned aNewPipelineState)
 		break;
 	case PipelineStates::SSAO:
 		ChangePipelineState(mySSAOPSO);
+		break;
+	case PipelineStates::ObjectIDRendering:
+		ChangePipelineState(myObjectIDPSO);
 		break;
 	default:
 		break;
@@ -1131,7 +1167,7 @@ bool GraphicsEngine::CreateResamplingPSO()
 	myRHI->CreateSamplerState("DefaultClampSamplerState", samplerDesc);
 
 	myResamplingPSO->SamplerStates[1] = myRHI->GetSamplerState("DefaultClampSamplerState");
-	myDirLightPSO->SamplerStates[1] = myRHI->GetSamplerState("DefaultClampSamplerState");
+	myResamplingPSO->SamplerStates[1] = myRHI->GetSamplerState("DefaultClampSamplerState");
 
 	myResamplingPSO->RenderTarget[0] = nullptr;
 	myResamplingPSO->ClearRenderTarget[0] = false;
@@ -1279,6 +1315,37 @@ bool GraphicsEngine::CreateParticlePSO()
 	myParticlePSO->ClearRenderTarget[0] = false;
 	myParticlePSO->DepthStencil = nullptr;
 	myParticlePSO->ClearDepthStencil = false;
+	return true;
+}
+
+bool GraphicsEngine::CreateObjectIDPSO()
+{
+	myObjectIDPSO = std::make_shared<PipelineStateObject>();
+	myObjectIDPSO->Type = PSOType::ScreenPicking;
+
+	D3D11_BLEND_DESC blendDesc = {};
+	blendDesc.AlphaToCoverageEnable = FALSE; // Disable for ID picking
+	blendDesc.IndependentBlendEnable = FALSE;
+
+	blendDesc.RenderTarget[0].BlendEnable = FALSE;           // THE MOST IMPORTANT LINE
+	blendDesc.RenderTarget[0].SrcBlend = D3D11_BLEND_ONE;
+	blendDesc.RenderTarget[0].DestBlend = D3D11_BLEND_ZERO;
+	blendDesc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
+	blendDesc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
+	blendDesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO;
+	blendDesc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
+	blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+
+	myRHI->CreateBlendState("NoBlend", blendDesc);
+	myObjectIDPSO->BlendState = myRHI->GetBlendState("NoBlend");
+
+	myObjectIDPSO->SamplerStates[0] = myRHI->GetSamplerState("DefaultSamplerState");
+	myObjectIDPSO->DepthStencilState = myRHI->GetDepthStencilState(DepthState::DS_LessEqual);
+	myObjectIDPSO->RenderTargetCount = 1;
+	myObjectIDPSO->ClearRenderTarget[0] = true;
+	myObjectIDPSO->RenderTarget[0] = myObjectIDTexture;
+	myObjectIDPSO->DepthStencil = myRHI->GetDepthBuffer();
+	myObjectIDPSO->ClearDepthStencil = false;
 	return true;
 }
 
@@ -1555,6 +1622,25 @@ void GraphicsEngine::CreateIntermediateBuffers()
 	{
 		LOG(GELog, Error, "Unable to create Eight Size Buffer B");
 	}
+
+}
+
+void GraphicsEngine::CreateObjectIDBuffer()
+{
+	CU::Vector2f size = myRHI->GetBackBuffer()->GetSize();
+	myObjectIDTexture = std::make_shared<TextureAsset>();
+	myObjectIDTexture->SetSize(size);
+	if (!myRHI->CreateTexture("Object ID Buffer", static_cast<unsigned>(size.x), static_cast<unsigned>(size.y), RHITextureFormat::R32_UINT, myObjectIDTexture.get(), false, true, true, false, false))
+	{
+		LOG(GELog, Error, "Unable to create ObjectID buffer");
+	}
+	myScreenPickingTexture = std::make_shared<TextureAsset>();
+	myScreenPickingTexture->SetSize({ 1.0f, 1.0f });
+	if (!myRHI->CreateTexture("ScreenPicking", 1, 1, RHITextureFormat::R32_UINT, myScreenPickingTexture.get(), true, false, false, true, false))
+	{
+		LOG(GELog, Error, "Unable to create Screen picking staging texture");
+	}
+
 
 }
 
@@ -1897,6 +1983,19 @@ void GraphicsEngine::CreatePostProcessShaders()
 	if (!myRHI->LoadShaderFromMemory(myShaderNames.back(), *ssaoRadialBlurPixelShader, BuiltIn_SSAO_Radial_Blur_PS_ByteCode, sizeof(BuiltIn_SSAO_Radial_Blur_PS_ByteCode)))
 	{
 		LOG(GELog, Error, "Failed to load SSAO_Radial_Blur_PS from memory");
+	}
+}
+
+void GraphicsEngine::CreateObjectIDShader()
+{
+#include "CompiledHeaders/ObjectID_PS.h"
+	myShaderNames.emplace_back("ObjectID_PS");
+	myShaderMap.emplace(myShaderNames.back(), static_cast<unsigned>(myShaders.size()));
+	myShaders.push_back(std::make_shared<Shader>());
+	std::shared_ptr<Shader> objectIDShader = myShaders.back();
+	if (!myRHI->LoadShaderFromMemory(myShaderNames.back(), *objectIDShader, BuiltIn_ObjectID_PS_ByteCode, sizeof(BuiltIn_ObjectID_PS_ByteCode)))
+	{
+		LOG(GELog, Error, "Failed to load ObjectID_PS from memory");
 	}
 }
 

@@ -8,5 +8,5 @@ struct ObjectBufferData
 	CommonUtilities::Matrix4x4<float> BoneTransforms[128]{};
 	unsigned HasBone = false;
 	unsigned IsInstanced = false;
-	CommonUtilities::Vector2<float> Padding;
+	CommonUtilities::Vector2f Padding;
 };

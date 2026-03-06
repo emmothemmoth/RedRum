@@ -8,6 +8,7 @@
 #include "CommonUtilities\InputMapper.h"
 #include "..\GraphicsEngine\Commands\GraphicsCommandList.h"
 #include "..\GraphicsEngine\Commands\GCmdSetFrameBuffer.h"
+#include "..\GraphicsEngine\Commands\GCmdScreenPicking.h"
 #include "..\GraphicsEngine\Buffers\FrameBuffer.h"
 
 #include "../GraphicsEngine/GraphicsEngine.h"
@@ -44,6 +45,7 @@ CameraComponent::~CameraComponent()
 	MainSingleton::Get().GetInputMapper().UnRegister(ActionEventID::CameraMove_Right, this);
 	MainSingleton::Get().GetInputMapper().UnRegister(ActionEventID::CameraMove_Up, this);
 	MainSingleton::Get().GetInputMapper().UnRegister(ActionEventID::CameraRotation, this);
+	MainSingleton::Get().GetInputMapper().UnRegister(ActionEventID::ScreenPick, this);
 }
 
 
@@ -95,10 +97,15 @@ void CameraComponent::Init(CU::Vector3<float> aPoint, const CU::Vector3f& someRo
 	MainSingleton::Get().GetInputMapper().Register(ActionEventID::CameraMove_Right, this);
 	MainSingleton::Get().GetInputMapper().Register(ActionEventID::CameraMove_Up, this);
 	MainSingleton::Get().GetInputMapper().Register(ActionEventID::CameraRotation, this);
+	MainSingleton::Get().GetInputMapper().Register(ActionEventID::ScreenPick, this);
 }
 
 void CameraComponent::Update(float aDeltaTime)
 {
+	if (myIsAwaitingPickingResult)
+	{
+		PickFromScreen();
+	}
 	Move(myDirection, aDeltaTime);
 
 	if (myIsRotating)
@@ -125,6 +132,14 @@ void CameraComponent::Render()
 	myFrameBuffer->View = GetViewInverse();
 	myFrameBuffer->Resolution = GraphicsEngine::Get().GetViewPortSize();
 	MainSingleton::Get().GetRenderer().Enqueue<GCmdSetFrameBuffer>(RenderStage::Deferred, myFrameBuffer);
+
+	if (myShouldScreenPick)
+	{
+		POINT mousePos = CU::Input::GetMousePosition();
+		MainSingleton::Get().GetRenderer().Enqueue<GCmdScreenPicking>(RenderStage::PostProcess, static_cast<unsigned>(mousePos.x), static_cast<unsigned>(mousePos.y));
+		myShouldScreenPick = false;
+		myIsAwaitingPickingResult = true;
+	}
 }
 
 void CameraComponent::UpdateRotation()
@@ -230,6 +245,9 @@ void CameraComponent::RecieveEvent(const ActionEvent& anEvent)
 	case ActionEventID::CameraRotation:
 		myIsRotating = true;
 		break;
+	case ActionEventID::ScreenPick:
+		myShouldScreenPick = true;
+		break;
 	default:
 		break;
 	}
@@ -245,6 +263,19 @@ CU::Vector4<float> CameraComponent::ToCamera(const CU::Vector4<float>& aWorldPoi
 CU::Vector4<float> CameraComponent::ToClip(const CU::Vector4<float>& aCameraPoint)
 {
 	return aCameraPoint * myClipMatrix;
+}
+
+void CameraComponent::PickFromScreen()
+{
+	bool resultDone = false;
+	unsigned ID = 0;
+	GraphicsEngine::Get().ScreenPickingResult(resultDone, ID);
+	if (resultDone && ID > 0)
+	{
+		OnObjectSelected.Broadcast(ID);
+		myIsAwaitingPickingResult = false;
+		myShouldScreenPick = false;
+	}
 }
 
 

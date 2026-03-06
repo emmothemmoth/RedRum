@@ -8,13 +8,15 @@
 #include "../Objects/MaterialAsset.h"
 
 #include "Buffers\ObjectBuffer.h"
+#include "Buffers\ObjectIDBuffer.h"
 
 
-GCmdRenderMesh::GCmdRenderMesh(std::shared_ptr<MeshAsset> aMesh, CU::Matrix4x4f aTransform, std::vector<std::shared_ptr<MaterialAsset>> aMaterialList)
+GCmdRenderMesh::GCmdRenderMesh(std::shared_ptr<MeshAsset> aMesh, CU::Matrix4x4f aTransform, std::vector<std::shared_ptr<MaterialAsset>> aMaterialList, const unsigned anObjectID)
 {
 	myMesh = aMesh;
 	myTransform = aTransform;
 	myMaterialList = aMaterialList;
+	myObjectID = anObjectID;
 }
 
 void GCmdRenderMesh::Execute()
@@ -23,8 +25,11 @@ void GCmdRenderMesh::Execute()
 	objectBuffer.Transform = myTransform;
 	objectBuffer.InverseTranspose = CU::Matrix4x4f::Transpose(myTransform.GetInverse());
 	objectBuffer.HasBone =  !myMesh->GetSkeleton().bones.empty();
-
 	GraphicsEngine::Get().UpdateAndSetConstantBuffer(ConstantBufferType::ObjectBuffer, objectBuffer);
+
+	ObjectIDBufferData IDBuffer;
+	IDBuffer.ObjectID = myObjectID;
+	GraphicsEngine::Get().UpdateAndSetConstantBuffer(ConstantBufferType::ObjectIDBuffer, IDBuffer);
 
 	for (auto& element : myMesh->GetElements())
 	{

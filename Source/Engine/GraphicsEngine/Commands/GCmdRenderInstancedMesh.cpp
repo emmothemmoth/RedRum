@@ -7,13 +7,15 @@
 #include "../Buffers/ObjectBuffer.h"
 
 #include "GraphicsEngine.h"
+#include <Buffers/ObjectIDBuffer.h>
 
-GCmdRenderInstancedMesh::GCmdRenderInstancedMesh(const std::shared_ptr<MeshAsset> aMesh, const CU::Matrix4x4f& anObjectTransform, const std::shared_ptr<InstanceData> someInstanceData, std::vector<std::shared_ptr<MaterialAsset>> aMaterialList)
+GCmdRenderInstancedMesh::GCmdRenderInstancedMesh(const std::shared_ptr<MeshAsset> aMesh, const CU::Matrix4x4f& anObjectTransform, const std::shared_ptr<InstanceData> someInstanceData, std::vector<std::shared_ptr<MaterialAsset>> aMaterialList, const unsigned anObjectID)
 {
 	myMaterialList = aMaterialList;
 	myMesh = aMesh;
 	myInstanceData = someInstanceData;
 	myTransform = anObjectTransform;
+	myObjectID = anObjectID;
 }
 
 void GCmdRenderInstancedMesh::Execute()
@@ -23,6 +25,10 @@ void GCmdRenderInstancedMesh::Execute()
 	objectBuffer.HasBone = false;
 	objectBuffer.IsInstanced = true;
 	GraphicsEngine::Get().UpdateAndSetConstantBuffer(ConstantBufferType::ObjectBuffer, objectBuffer);
+
+	ObjectIDBufferData IDBuffer;
+	IDBuffer.ObjectID = myObjectID;
+	GraphicsEngine::Get().UpdateAndSetConstantBuffer(ConstantBufferType::ObjectIDBuffer, IDBuffer);
 
 	if (myMaterialList.empty())
 	{

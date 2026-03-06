@@ -15,6 +15,7 @@ Component::Component(GameObject& aParent) : myParent(aParent)
 	myRenderStages.insert({ RenderStage::WorldSpaceUI, false });
 	myRenderStages.insert({ RenderStage::PostProcess, false });
 	myRenderStages.insert({ RenderStage::Sprite, false });
+	myRenderStages.insert({ RenderStage::ObjectIDRendering, false });
 }
 
 Component::~Component()

@@ -40,7 +40,8 @@ enum class ConstantBufferType : unsigned
 	MaterialBuffer,
 	LightBuffer,
 	DebugBuffer,
-	PostProcessBuffer
+	PostProcessBuffer,
+	ObjectIDBuffer
 };
 
 enum class ShadowMaps
@@ -125,9 +126,14 @@ public:
 
 	void RenderDebugLines(const DebugLineObject& aDebugLineObject);
 
+	uint32_t GetIDFromPoint(const int aMousePosX, const int aMousePosY);
+
+	void ScreenPickingResult(bool& aResultDone, unsigned& inOutID);
+
 	void ConfigureInputAssembler(unsigned aTopology, const ComPtr<ID3D11Buffer>& aVxBuffer, const ComPtr<ID3D11Buffer>& anIxBuffer, unsigned aVertexStride, const ComPtr<ID3D11InputLayout>& anInputLayout);
 
 	bool SetTextureResource(unsigned aPipelineStages, unsigned aSlot, const TextureAsset& aTexture) const;
+
 
 	void SetPixelShader(const std::string_view& aShaderName);
 	void SetVertexShader(const std::string_view& aShaderName);
@@ -205,6 +211,7 @@ private:
 	bool CreateBloomPSO();
 	bool CreateSSAOPSO();
 	bool CreateParticlePSO();
+	bool CreateObjectIDPSO();
 
 	bool CreateDirLightShadowMap(const std::string& aName);
 	void CreatePointLightShadowMaps(const std::string& aName);
@@ -215,6 +222,7 @@ private:
 	bool SetGBufferResource() const;
 	bool CreateAdditiveBlendState();
 	void CreateIntermediateBuffers();
+	void CreateObjectIDBuffer();
 
 	bool CreateDefaultMaterials();
 
@@ -227,6 +235,8 @@ private:
 	void CreateParticleShaders();
 
 	void CreatePostProcessShaders();
+
+	void CreateObjectIDShader();
 
 	void InitPostProcessBuffer();
 
@@ -258,6 +268,7 @@ private:
 	std::shared_ptr<PipelineStateObject> myBloomPSO;
 	std::shared_ptr<PipelineStateObject> mySSAOPSO;
 	std::shared_ptr<PipelineStateObject> myCustomPSO;
+	std::shared_ptr<PipelineStateObject> myObjectIDPSO;
 
 	GBufferData myGBuffer;
 
@@ -278,6 +289,8 @@ private:
 	std::shared_ptr<TextureAsset> myLDRBuffer;
 	std::shared_ptr<TextureAsset> mySSAOBuffer;
 	std::shared_ptr<TextureAsset> myHDRBuffer;
+	std::shared_ptr<TextureAsset> myObjectIDTexture;
+	std::shared_ptr<TextureAsset> myScreenPickingTexture;
 
 	std::shared_ptr<TextureAsset> myBluenoiseTexture;
 
@@ -297,6 +310,9 @@ private:
 	std::shared_ptr<Shader> myCurrentPixelShader;
 	std::shared_ptr<VertexShader> myCurrentVertexShader;
 	std::shared_ptr<GeometryShader> myCurrentGeometryShader;
+
+	std::atomic<bool> myPickingResultDone = false;
+	unsigned myScreenPickingResult = 0;
 };
 
 

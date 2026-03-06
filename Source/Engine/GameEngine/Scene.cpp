@@ -70,6 +70,12 @@ void Scene::LoadScene(const std::filesystem::path& aPath, bool aIsNetworkLevel)
 		myCurrentLevel.Camera->AddComponent(std::make_shared<CameraComponent>(*myCurrentLevel.Camera));
 		//myCurrentLevel.Camera->GetComponent<CameraComponent>()->Init(CommonUtilities::Vector3<float>(-40.0f, 1625.0f, -560.0f));
 	}
+	mySelectionHandle = myCurrentLevel.Camera->GetLastAddedComponent<CameraComponent>()->OnObjectSelected.AddRaw(this, &Scene::SelectObject);
+	for (int index = 0; index < myCurrentLevel.GameObjects.size(); ++index)
+	{
+		myIDtoIndex.insert({ myCurrentLevel.GameObjects.at(index)->GetID(), static_cast<unsigned>(index) });
+	}
+
 	InitSortingLists();
 	myCurrentScene = aPath.string();
 }
@@ -421,6 +427,18 @@ void Scene::ResetScene(bool aShouldReload)
 	{
 		LoadScene(myCurrentScene);
 	}
+}
+
+void Scene::SelectObject(uint32_t anID)
+{
+	for (auto& gameObject : myCurrentLevel.GameObjects)
+	{
+		gameObject->OnDeselected();
+	}
+
+	assert(myIDtoIndex.contains(anID));
+	auto gameObject = myCurrentLevel.GameObjects.at(myIDtoIndex.at(anID));
+	gameObject->OnSelected();
 }
 
 

@@ -10,7 +10,7 @@
 class GCmdRenderSkeletalMesh : public GraphicsCommandBase
 {
 public:
-	GCmdRenderSkeletalMesh(const std::shared_ptr<MeshAsset> aMesh, CU::Matrix4x4f aTransform, const std::vector<CommonUtilities::Matrix4x4<float>> aBoneTransformList, std::vector<std::shared_ptr<MaterialAsset>> aMaterialList);
+	GCmdRenderSkeletalMesh(const std::shared_ptr<MeshAsset> aMesh, CU::Matrix4x4f aTransform, const std::vector<CommonUtilities::Matrix4x4<float>> aBoneTransformList, std::vector<std::shared_ptr<MaterialAsset>> aMaterialList, unsigned anID);
 
 	void Execute() override;
 	void Destroy() override;
@@ -19,4 +19,5 @@ private:
 	CommonUtilities::Matrix4x4<float> myTransform;
 	std::vector<CommonUtilities::Matrix4x4<float>> myBoneTransforms;
 	std::vector<std::shared_ptr<MaterialAsset>> myMaterialList;
+	unsigned myObjectID = 0;
 };

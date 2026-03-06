@@ -17,6 +17,7 @@ enum class ActionEventID
 	ExposureDown,
 	ChangeLuminanceMode,
 	Toggle_SSAO,
+	ScreenPick,
 	Count
 };
 

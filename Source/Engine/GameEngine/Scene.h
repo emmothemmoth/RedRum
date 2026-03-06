@@ -2,6 +2,7 @@
 
 #include "Level.h"
 #include "LevelLoader.h"
+#include "Events/DelegateHandle.h"
 
 #include "../Utilities/CommonUtilities\Timer.h"
 #include "../Utilities/CommonUtilities\InputObserver.h"
@@ -63,6 +64,7 @@ private:
 	void UpdateDebugInfo();
 	void ResetScene(bool aShouldReload = true);
 
+	void SelectObject(uint32_t anID);
 
 private:
 
@@ -79,9 +81,10 @@ private:
 
 	LevelLoader myLevelLoader;
 	Level myCurrentLevel;
-	std::unordered_map<unsigned char, unsigned> myIDtoIndex;
-	std::unordered_map<unsigned char, unsigned char> myPlayerIDToObjectID;
+	std::unordered_map<unsigned, unsigned> myIDtoIndex;
 
 	std::string myCurrentScene;
 	bool myShouldClear = false;
+
+	DelegateHandle mySelectionHandle;
 };

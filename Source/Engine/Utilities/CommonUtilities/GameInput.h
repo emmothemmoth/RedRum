@@ -16,5 +16,6 @@ enum class GameInput
 	ExposureUp,
 	ExposureDown,
 	ChangeLuminanceMode,
-	Toggle_SSAO
+	Toggle_SSAO,
+	MouseClick
 };

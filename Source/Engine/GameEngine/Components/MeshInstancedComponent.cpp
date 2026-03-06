@@ -18,6 +18,7 @@ MeshInstancedComponent::MeshInstancedComponent(GameObject& aParent, std::shared_
 	myInstanceData = std::make_shared<InstanceData>();
 	myRenderStages.at(RenderStage::ShadowMapping) = true;
 	myRenderStages.at(RenderStage::Deferred) = true;
+	myRenderStages.at(RenderStage::ObjectIDRendering) = true;
 }
 
 MeshInstancedComponent::~MeshInstancedComponent()
@@ -39,7 +40,7 @@ void MeshInstancedComponent::Render()
 	{
 		if (shouldRender)
 		{
-			MainSingleton::Get().GetRenderer().Enqueue<GCmdRenderInstancedMesh>(renderStage, myMesh, myParent.GetTransform(), myInstanceData, myMaterials);
+			MainSingleton::Get().GetRenderer().Enqueue<GCmdRenderInstancedMesh>(renderStage, myMesh, myParent.GetTransform(), myInstanceData, myMaterials, myParent.GetID());
 		}
 	}
 	//TODO: Check if animated, then use a different instancerendercommand OR change current to take in a bonetransformlist

@@ -4,8 +4,11 @@
 #include "../Utilities/CommonUtilities\InputObserver.h"
 #include "Component.h"
 
+#include "../Events/MulticastDelegate.h"
+
 #include <array>
 
+using FOnObjectSelected = MulticastDelegate<uint32_t>;
 struct FrameBufferData;
 
 class CameraComponent : public InputObserver, public Component
@@ -28,10 +31,13 @@ public:
 	void SetSpeed(const float aSpeed);
 
 	void RecieveEvent(const ActionEvent& anEvent);
+	FOnObjectSelected OnObjectSelected;
 
 private:
 	CU::Vector4<float> ToCamera(const CU::Vector4<float>& aWorldPoint);
 	CU::Vector4<float> ToClip(const CU::Vector4<float>& aCameraPoint);
+
+	void PickFromScreen();
 
 	std::shared_ptr<FrameBufferData> myFrameBuffer;
 
@@ -50,6 +56,9 @@ private:
 	float myNearPlaneZ;
 	float myFarPlaneZ;
 	bool myIsRotating;
+
+	bool myShouldScreenPick = false;
+	bool myIsAwaitingPickingResult = false;
 };
 
 

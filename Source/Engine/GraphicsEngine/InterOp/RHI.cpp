@@ -221,21 +221,35 @@ bool RHI::Initialize(HWND aWindowHandle, bool enableDeviceDebug)
 	rasterizerDesc.CullMode = D3D11_CULL_NONE;
 	myDevice->CreateRasterizerState(&rasterizerDesc, myRasterizerStates[RS_Wireframe].GetAddressOf());
 
-	myDepthStates[DS_Default] = nullptr;
-	D3D11_DEPTH_STENCIL_DESC depthStencilDesc = {};
-	depthStencilDesc.DepthEnable = true;
-	depthStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
-	depthStencilDesc.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
-	depthStencilDesc.StencilEnable = false;
-	result = myDevice->CreateDepthStencilState(&depthStencilDesc, myDepthStates[DS_LessEqual].GetAddressOf());
+	// 1. DS_Default: Standard Depth Testing (Write enabled, Less comparison)
+	D3D11_DEPTH_STENCIL_DESC defaultDepthDesc = {};
+	defaultDepthDesc.DepthEnable = true;
+	defaultDepthDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+	defaultDepthDesc.DepthFunc = D3D11_COMPARISON_LESS;
+	defaultDepthDesc.StencilEnable = false;
+	result = myDevice->CreateDepthStencilState(&defaultDepthDesc, myDepthStates[DS_Default].GetAddressOf());
 	if (FAILED(result))
 	{
 		LOG(RHILog, Error, "Failed to create default depth stencil state");
 		return false;
 	}
 
-	myDepthStates[DS_ReadOnly] = nullptr;
-	D3D11_DEPTH_STENCIL_DESC readOnlyDepth = CD3D11_DEPTH_STENCIL_DESC();
+	// 2. DS_LessEqual: Used for Picking Pass (Write disabled, Less-Equal comparison)
+	// This allows the picking pass to pass the test even if the depth is exactly the same
+	D3D11_DEPTH_STENCIL_DESC lessEqualDesc = {};
+	lessEqualDesc.DepthEnable = true;
+	lessEqualDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO; // No need to write for picking
+	lessEqualDesc.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;     // Allows Z == Z
+	lessEqualDesc.StencilEnable = false;
+	result = myDevice->CreateDepthStencilState(&lessEqualDesc, myDepthStates[DS_LessEqual].GetAddressOf());
+	if (FAILED(result))
+	{
+		LOG(RHILog, Error, "Failed to create LessEqual depth stencil state");
+		return false;
+	}
+
+	// 3. DS_ReadOnly: Used for Translucency/Particles (Write disabled, Less comparison)
+	D3D11_DEPTH_STENCIL_DESC readOnlyDepth = {};
 	readOnlyDepth.DepthEnable = true;
 	readOnlyDepth.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
 	readOnlyDepth.DepthFunc = D3D11_COMPARISON_LESS;
@@ -1174,6 +1188,7 @@ bool RHI::CreateTexture(std::string aName, unsigned aWidth, unsigned aHeight, RH
 	}
 
 	SetObjectName(texture, aName);
+	outTexture->myTexture = texture;
 
 	if (aShaderResource)
 	{
@@ -1648,4 +1663,35 @@ void RHI::SetPrimitiveTopology(unsigned aTopology)
 void RHI::SetInputLayout(const Microsoft::WRL::ComPtr<ID3D11InputLayout>& aInputLayout)
 {
 	myContext->IASetInputLayout(aInputLayout.Get());
+}
+
+uint32_t RHI::ReadID(const int aPosX, const int aPosY, TextureAsset* anRTVTexture, TextureAsset* aStagingTexture)
+{
+	// 1. Get the underlying D3D11 Resources from your wrappers
+	ID3D11Resource* gpuTexture = anRTVTexture->GetResource().Get();
+	ID3D11Resource* cpuTexture = aStagingTexture->GetResource().Get();
+
+	// 2. Define the source pixel area (1x1 at mouse pos)
+	D3D11_BOX srcBox;
+	srcBox.left = aPosX;
+	srcBox.right = aPosX + 1;
+	srcBox.top = aPosY;
+	srcBox.bottom = aPosY + 1;
+	srcBox.front = 0;
+	srcBox.back = 1;
+
+	// 3. Copy just that one pixel to our 1x1 staging texture
+	// Destination is (0,0,0) in our tiny 1x1 texture
+	myContext->CopySubresourceRegion(cpuTexture, 0, 0, 0, 0, gpuTexture, 0, &srcBox);
+
+	// 4. Map and Read
+	D3D11_MAPPED_SUBRESOURCE mapped;
+	uint32_t id = 0;
+	if (SUCCEEDED(myContext->Map(cpuTexture, 0, D3D11_MAP_READ, 0, &mapped)))
+	{
+		id = *(uint32_t*)mapped.pData;
+		myContext->Unmap(cpuTexture, 0);
+	}
+
+	return id;
 }

@@ -75,6 +75,10 @@ void CommonUtilities::InputMapper::Refresh()
 	{
 		TranslateToEvent(GameInput::Toggle_SSAO, 1.0f);
 	}
+	if (CU::Input::GetKeyUp(Keys::MOUSELBUTTON))
+	{
+		TranslateToEvent(GameInput::MouseClick, 1.0f);
+	}
 }
 
 CommonUtilities::InputMapper& CommonUtilities::InputMapper::GetInputMapper()
