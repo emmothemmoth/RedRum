@@ -29,6 +29,7 @@ struct Vertex
 	Vector4f BoneWeights = { 0.0f, 0.0f, 0.0f, 0.0f };
 	Vector2f myUV = { 0.0f, 0.0f };
 	Vector2f myUV1 = { 0.0f, 0.0f };
+	Vertex() = default;
 	Vertex(float anX, float aY, float aZ, float anR, float aG, float aB, float anAlpha = 1)
 	{
 		Position.x = anX;

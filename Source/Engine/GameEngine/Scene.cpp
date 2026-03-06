@@ -330,7 +330,7 @@ void Scene::SortObjects()
 	{
 		deferredObject.CameraDistance = (deferredObject.Object->GetPosition() - myCurrentLevel.Camera->GetPosition()).LengthSqr();
 	}
-	std::sort(mySortingList.begin(), mySortingList.end(), [](SortingInfo a, SortingInfo b) { return a.CameraDistance > b.CameraDistance; });
+	std::sort(mySortingList.begin(), mySortingList.end(), [](SortingInfo a, SortingInfo b) { return a.CameraDistance < b.CameraDistance; });
 }
 
 void Scene::InitSceneLights()

@@ -22,6 +22,7 @@ CameraComponent::CameraComponent(GameObject& aParent)
 	myRenderStages.at(RenderStage::Deferred) = false;
 	myRenderStages.at(RenderStage::WorldSpaceUI) = false;
 	myComponentType = ComponentType::Camera;
+	myParent.OnDeselected();
 	myIsRotating = false;
 	mySpeed = 500.f;
 	myRotationSpeed = 20.0f;

@@ -4,6 +4,7 @@
 #include "GameObjectID.h"
 #include <string_view>
 
+
 class GameObject : public IEntity
 {
 public:
@@ -26,7 +27,7 @@ public:
 	void OnDeselected();
 
 private:
-	unsigned myID;
+	unsigned myID = 0;
 	std::string myName;
 };
 

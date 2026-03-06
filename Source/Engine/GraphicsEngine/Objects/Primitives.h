@@ -2,7 +2,7 @@
 #include "MeshAsset.h"
 #include "CommonUtilities\Plane.hpp"
 #include "CommonUtilities\Vector3.hpp"
-
+#define PI 3.14159265358979323846f
 typedef CommonUtilities::Vector3<float> Vector3f;
 
 struct PrimitiveElement
@@ -205,87 +205,215 @@ struct TransformGizmoData : PrimitiveMesh
 	{
 		Elements.resize(3);
 
-		BuildX();
-		BuildY();
-		BuildZ();
+		BuildAxis(Elements[0], Axis::X);
+		BuildAxis(Elements[1], Axis::Y);
+		BuildAxis(Elements[2], Axis::Z);
 	}
 
 private:
 
-	void BuildX()
+	enum class Axis
 	{
-		auto& e = Elements[0];
+		X,
+		Y,
+		Z
+	};
 
-		e.Vertices =
+	// ------------------------------------------------------------
+
+	float GetAxisU(Axis axis)
+	{
+		switch (axis)
 		{
-			{ {0,0,0},{0.16f,0.5f},{1,0,0},{0,1,0} },
-			{ {100,0,0},{0.16f,0.5f},{1,0,0},{0,1,0} },
-			{ {80,4,4},{0.16f,0.5f},{1,0,0},{0,1,0} },
-			{ {80,-4,4},{0.16f,0.5f},{1,0,0},{0,1,0} },
-			{ {80,4,-4},{0.16f,0.5f},{1,0,0},{0,1,0} },
-			{ {80,-4,-4},{0.16f,0.5f},{1,0,0},{0,1,0} }
-		};
-
-		e.Indices =
-		{
-			// Shaft (Connecting origin to base)
-			0,3,2,  0,4,3,  0,5,4,  0,2,5,
-
-			// Pyramid Head (Connecting base to the Tip at index 1)
-			1,2,3,  1,3,4,  1,4,5,  1,5,2,
-
-			// Base Cap (Optional, closes the bottom of the arrow head)
-			2,4,3,  2,5,4
-		};
+		case Axis::X: return 0.16f;
+		case Axis::Y: return 0.50f;
+		case Axis::Z: return 0.83f;
+		}
+		return 0.5f;
 	}
 
-	void BuildY()
+	// ------------------------------------------------------------
+
+	CommonUtilities::Vector4f MakePosition(Axis axis, float a, float b, float c)
 	{
-		auto& e = Elements[1];
-
-		e.Vertices =
+		switch (axis)
 		{
-			{ {0,0,0},{0.5f,0.5f},{0,1,0},{1,0,0} },
-			{ {0,100,0},{0.5f,0.5f},{0,1,0},{1,0,0} },
-			{ {4,80,4},{0.5f,0.5f},{0,1,0},{1,0,0} },
-			{ {-4,80,4},{0.5f,0.5f},{0,1,0},{1,0,0} },
-			{ {4,80,-4},{0.5f,0.5f},{0,1,0},{1,0,0} },
-			{ {-4,80,-4},{0.5f,0.5f},{0,1,0},{1,0,0} }
-		};
+		case Axis::X: return { a, b, c, 1.0f };
+		case Axis::Y: return { b, a, c, 1.0f };
+		case Axis::Z: return { b, c, a, 1.0f };
+		}
 
-		e.Indices =
-		{
-			// Shaft
-			0,2,3,  0,3,4,  0,4,5,  0,5,2,
-			// Head (Tip is index 1)
-			1,3,2,  1,4,3,  1,5,4,  1,2,5,
-			// Base Cap
-			2,5,4,  2,4,3
-		};
+		return { 0,0,0,1 };
 	}
 
-	void BuildZ()
+	// ------------------------------------------------------------
+
+	void BuildAxis(PrimitiveElement& e, Axis axis)
 	{
-		auto& e = Elements[2];
+		const float shaftLength = 100.0f;
+		const float coneLength = 50.0f;
 
-		e.Vertices =
-		{
-			{ {0,0,0},{0.83f,0.5f},{0,0,1},{1,0,0} },
-			{ {0,0,100},{0.83f,0.5f},{0,0,1},{1,0,0} },
-			{ {4,4,80},{0.83f,0.5f},{0,0,1},{1,0,0} },
-			{ {-4,4,80},{0.83f,0.5f},{0,0,1},{1,0,0} },
-			{ {4,-4,80},{0.83f,0.5f},{0,0,1},{1,0,0} },
-			{ {-4,-4,80},{0.83f,0.5f},{0,0,1},{1,0,0} }
-		};
+		const float shaftRadius = 4.0f;
+		const float coneRadius = 13.0f;
 
-		e.Indices =
+		const int segments = 16;
+
+		BuildCylinder(e, axis, shaftLength, shaftRadius, segments);
+		BuildCone(e, axis, shaftLength, coneLength, coneRadius, segments);
+	}
+
+	// ------------------------------------------------------------
+
+	void BuildCylinder(
+		PrimitiveElement& e,
+		Axis axis,
+		float length,
+		float radius,
+		int segments)
+	{
+		float u = GetAxisU(axis);
+
+		unsigned baseIndex = (unsigned)e.Vertices.size();
+
+		for (int i = 0; i < segments; i++)
 		{
-			// Shaft
-			0,3,2,  0,4,3,  0,5,4,  0,2,5,
-			// Head (Tip is index 1)
-			1,2,3,  1,3,4,  1,4,5,  1,5,2,
-			// Base Cap
-			2,4,3,  2,5,4
-		};
+			float a0 = (float)i / segments * 2.0f * PI;
+			float a1 = (float)(i + 1) / segments * 2.0f *PI;
+
+			float c0 = cosf(a0) * radius;
+			float s0 = sinf(a0) * radius;
+
+			float c1 = cosf(a1) * radius;
+			float s1 = sinf(a1) * radius;
+
+			auto p0 = MakePosition(axis, 0, c0, s0);
+			auto p1 = MakePosition(axis, length, c0, s0);
+
+			auto p2 = MakePosition(axis, 0, c1, s1);
+			auto p3 = MakePosition(axis, length, c1, s1);
+
+			Vertex v0; v0.Position = p0; v0.myUV = { u,0.5f };
+			Vertex v1; v1.Position = p1; v1.myUV = { u,0.5f };
+			Vertex v2; v2.Position = p2; v2.myUV = { u,0.5f };
+			Vertex v3; v3.Position = p3; v3.myUV = { u,0.5f };
+
+			e.Vertices.push_back(v0);
+			e.Vertices.push_back(v1);
+			e.Vertices.push_back(v2);
+			e.Vertices.push_back(v3);
+
+			unsigned i0 = baseIndex + i * 4 + 0;
+			unsigned i1 = baseIndex + i * 4 + 1;
+			unsigned i2 = baseIndex + i * 4 + 2;
+			unsigned i3 = baseIndex + i * 4 + 3;
+
+			e.Indices.push_back(i0);
+			e.Indices.push_back(i1);
+			e.Indices.push_back(i2);
+
+			e.Indices.push_back(i2);
+			e.Indices.push_back(i1);
+			e.Indices.push_back(i3);
+		}
+	}
+
+	// ------------------------------------------------------------
+
+	void BuildCone(
+		PrimitiveElement& e,
+		Axis axis,
+		float basePos,
+		float length,
+		float radius,
+		int segments)
+	{
+		float u = GetAxisU(axis);
+
+		unsigned baseIndex = (unsigned)e.Vertices.size();
+
+		CommonUtilities::Vector4f tip;
+
+		switch (axis)
+		{
+		case Axis::X: tip = { basePos + length,0,0,1 }; break;
+		case Axis::Y: tip = { 0,basePos + length,0,1 }; break;
+		case Axis::Z: tip = { 0,0,basePos + length,1 }; break;
+		}
+
+		// Tip
+		Vertex tipV;
+		tipV.Position = tip;
+		tipV.myUV = { u,0.5f };
+
+		e.Vertices.push_back(tipV);
+
+		// Ring vertices
+		for (int i = 0; i < segments; i++)
+		{
+			float a = (float)i / segments * 2.0f * PI;
+
+			float c = cosf(a) * radius;
+			float s = sinf(a) * radius;
+
+			auto p = MakePosition(axis, basePos, c, s);
+
+			Vertex v;
+			v.Position = p;
+			v.myUV = { u,0.5f };
+
+			e.Vertices.push_back(v);
+		}
+
+		// Cone sides
+		for (int i = 0; i < segments; i++)
+		{
+			unsigned tipIndex = baseIndex;
+			unsigned v0 = baseIndex + 1 + i;
+			unsigned v1 = baseIndex + 1 + ((i + 1) % segments);
+
+			if (axis == Axis::Y)
+			{
+				e.Indices.push_back(tipIndex);
+				e.Indices.push_back(v1);
+				e.Indices.push_back(v0);
+			}
+			else
+			{
+				e.Indices.push_back(tipIndex);
+				e.Indices.push_back(v0);
+				e.Indices.push_back(v1);
+			}
+		}
+
+		// -------- NEW: Base cap --------
+
+		unsigned centerIndex = (unsigned)e.Vertices.size();
+
+		auto centerPos = MakePosition(axis, basePos, 0, 0);
+
+		Vertex center;
+		center.Position = centerPos;
+		center.myUV = { u,0.5f };
+
+		e.Vertices.push_back(center);
+
+		for (int i = 0; i < segments; i++)
+		{
+			unsigned v0 = baseIndex + 1 + i;
+			unsigned v1 = baseIndex + 1 + ((i + 1) % segments);
+
+			if (axis == Axis::Y)
+			{
+				e.Indices.push_back(centerIndex);
+				e.Indices.push_back(v0);
+				e.Indices.push_back(v1);
+			}
+			else
+			{
+				e.Indices.push_back(centerIndex);
+				e.Indices.push_back(v1);
+				e.Indices.push_back(v0);
+			}
+		}
 	}
 };
