@@ -15,6 +15,8 @@ GameObject::GameObject(std::string_view aName, unsigned anID)
 	myName = aName;
 	AddComponent(std::make_shared<MeshComponent>(*this, AssetManager::Get().GetAsset<MeshAsset>(DEFAULT_TRANSFORM_MESH)));
 	auto transformGizmo = GetLastAddedComponent<MeshComponent>();
+	transformGizmo->SetRenderStage(RenderStage::Deferred, false);
+	transformGizmo->SetRenderStage(RenderStage::WorldSpaceUI);
 	transformGizmo->AddMaterial(AssetManager::Get().GetAsset<MaterialAsset>(DEFAULT_TRANSFORM_MATERIAL));
 	transformGizmo->SetVisible(false);
 }

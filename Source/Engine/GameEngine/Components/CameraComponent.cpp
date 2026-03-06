@@ -1,5 +1,6 @@
 #include "GameEngine.pch.h"
 #include "CameraComponent.h"
+#include "GameObject.h"
 #include "MainSingleton.h"
 #define _USE_MATH_DEFINES
 #include <math.h>
@@ -19,6 +20,7 @@ CameraComponent::CameraComponent(GameObject& aParent)
 {
 	myRenderStages.at(RenderStage::ShadowMapping) = false;
 	myRenderStages.at(RenderStage::Deferred) = false;
+	myRenderStages.at(RenderStage::WorldSpaceUI) = false;
 	myComponentType = ComponentType::Camera;
 	myIsRotating = false;
 	mySpeed = 500.f;
@@ -111,6 +113,7 @@ void CameraComponent::Update(float aDeltaTime)
 	myViewTransform(4, 1) = myPosition.x;
 	myViewTransform(4, 2) = myPosition.y;
 	myViewTransform(4, 3) = myPosition.z;
+	GetParent().SetPosition({ myPosition.x, myPosition.y, myPosition.z });
 	myDirection = Vector4<float>(0, 0, 0, 0);
 }
 
