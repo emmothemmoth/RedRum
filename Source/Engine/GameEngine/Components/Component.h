@@ -1,5 +1,7 @@
 #pragma once
 #include "ComponentType.h"
+#include "../RenderStage.h"
+#include <unordered_map>
 
 class GameObject;
 
@@ -21,6 +23,7 @@ public:
 
 protected:
 	GameObject& myParent;
+	std::unordered_map<RenderStage, bool> myRenderStages;
 	ComponentType myComponentType;
 	unsigned myID;
 	bool myIsVisible = true;

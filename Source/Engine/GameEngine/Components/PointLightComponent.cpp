@@ -9,9 +9,12 @@
 PointLightComponent::PointLightComponent(GameObject& aParent)
 	: Component(aParent)
 {
+	myRenderStages.at(RenderStage::ShadowMapping) = false;
+	myRenderStages.at(RenderStage::Deferred) = false;
 	myComponentType = ComponentType::PointLight;
 	myLightData = std::make_shared<LightBuffer::PointLightData>();
 	MainSingleton::Get().GetInputMapper().Register(ActionEventID::Toggle_PointLights, this);
+	myRenderStages.at(RenderStage::Deferred) = false;
 }
 
 PointLightComponent::~PointLightComponent()

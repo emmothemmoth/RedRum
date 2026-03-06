@@ -17,6 +17,8 @@ using namespace CommonUtilities;
 CameraComponent::CameraComponent(GameObject& aParent)
 	:Component(aParent)
 {
+	myRenderStages.at(RenderStage::ShadowMapping) = false;
+	myRenderStages.at(RenderStage::Deferred) = false;
 	myComponentType = ComponentType::Camera;
 	myIsRotating = false;
 	mySpeed = 500.f;
@@ -118,7 +120,7 @@ void CameraComponent::Render()
 	myFrameBuffer->Projection = GetClipMatrix();
 	myFrameBuffer->View = GetViewInverse();
 	myFrameBuffer->Resolution = GraphicsEngine::Get().GetViewPortSize();
-	MainSingleton::Get().GetRenderer().Enqueue<GCmdSetFrameBuffer>(myFrameBuffer);
+	MainSingleton::Get().GetRenderer().Enqueue<GCmdSetFrameBuffer>(RenderStage::Deferred, myFrameBuffer);
 }
 
 void CameraComponent::UpdateRotation()

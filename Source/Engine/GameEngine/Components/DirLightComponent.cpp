@@ -8,6 +8,8 @@
 DirLightComponent::DirLightComponent(GameObject& aParent)
 	: Component(aParent)
 {
+	myRenderStages.at(RenderStage::ShadowMapping) = false;
+	myRenderStages.at(RenderStage::Deferred) = false;
 	myComponentType = ComponentType::DirectionalLight;
 	myLightData = std::make_shared<LightBuffer::DirLightData>();
 	MainSingleton::Get().GetInputMapper().Register(ActionEventID::Toggle_DirectionalLight, this);

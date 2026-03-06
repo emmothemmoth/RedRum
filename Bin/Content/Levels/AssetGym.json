@@ -2,7 +2,6 @@
   "Entities": [
     {
       "Name": "Camera",
-      "RenderPass": "None",
       "Transform": {
         "Position": [ 0, 100, -1000 ],
         "RotationDegrees": [ 0, 0, 0 ],
@@ -17,7 +16,6 @@
     },
     {
       "Name": "Ground",
-      "RenderPass": "Deferred",
       "Transform": {
         "Position": [ 0, 0, 0 ],
         "RotationDegrees": [ 0, 0, 0 ],
@@ -34,7 +32,6 @@
     },
     {
       "Name": "Sphere",
-      "RenderPass": "Deferred",
       "Transform": {
         "Position": [ -500, 50.0, 300.0 ],
         "RotationDegrees": [ 0, 0, 0 ],
@@ -60,7 +57,6 @@
     },
     {
       "Name": "PlaneH",
-      "RenderPass": "Deferred",
       "Transform": {
         "Position": [ 0, 500.0, 50.0 ],
         "RotationDegrees": [ 0, 180.0, 0 ],
@@ -76,7 +72,6 @@
     },
     {
       "Name": "Cube",
-      "RenderPass": "Deferred",
       "Transform": {
         "Position": [ 0, 500.0, 50.0 ],
         "RotationDegrees": [ 0, 0, 0 ],
@@ -113,7 +108,6 @@
     },
     {
       "Name": "Chest",
-      "RenderPass": "Deferred",
       "Transform": {
         "Position": [ 0, 0, -300 ],
         "RotationDegrees": [ 0, 180.0, 0 ],
@@ -136,7 +130,6 @@
     },
     {
       "Name": "Bro",
-      "RenderPass": "Deferred",
       "Transform": {
         "Position": [ 600, 0, 0 ],
         "RotationDegrees": [ 0, 180.0, 0 ],
@@ -186,7 +179,6 @@
     },
     {
       "Name": "Buddha",
-      "RenderPass": "Deferred",
       "Transform": {
         "Position": [ 0, 0, 600.0 ],
         "RotationDegrees": [ 0, 180.0, 0 ],
@@ -203,7 +195,6 @@
     },
     {
       "Name": "PlaneV",
-      "RenderPass": "Forward",
       "Transform": {
         "Position": [ 0, 100, -800.0 ],
         "RotationDegrees": [ 0, 180.0, 0 ],
@@ -213,6 +204,7 @@
         {
           "TypeName": "MeshComponent",
           "ComponentTypeID": 0,
+          "RenderPass": "Forward",
           "Mesh": "VerticalPlaneMesh",
           "Material": "M_WoodMaterial"
         }

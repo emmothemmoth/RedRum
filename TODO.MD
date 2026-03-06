@@ -1,8 +1,10 @@
-* Room component with Icon, transformation arrows
-* Listener Component, Audio Source Component
+* Componentsystem updates
+* TransformGizmo
+* Renderqueues, PSO and sorting rework
 * Screen picking
 * Editor commands, moving stuff in scene
 * Drag \& Drop audio files and meshes into scene
+* Listener Component, Audio Source Component
 * Serialization
 * Ray casted audio with compute shaders + line trace debug drawing
 * Global Play, pause, stop buttons
@@ -33,8 +35,8 @@
 
 
 * All stuff in the scene can be one of three states: Ready(edited) or Pending(being edited).
-  Once the state changes, the AudioEngine will update the preview. 
+  Once the state changes, the AudioEngine will update the preview.
 
 
 
-* As soon as anything changes in the editor, the engine will start computing the preview file (and gray out the big play button). 
+* As soon as anything changes in the editor, the engine will start computing the preview file (and gray out the big play button).

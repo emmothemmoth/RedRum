@@ -12,6 +12,8 @@ AnimationComponent::AnimationComponent(GameObject& aParent, const SkeletonAsset&
 	myComponentType = ComponentType::Animation;
 	myState = AnimationState::Walking;
 	myCurrentBoneTransforms.resize(mySkeleton.bones.size());
+	myRenderStages.at(RenderStage::ShadowMapping) = false;
+	myRenderStages.at(RenderStage::Deferred) = false;
 }
 
 AnimationComponent::~AnimationComponent()
@@ -20,6 +22,7 @@ AnimationComponent::~AnimationComponent()
 
 void AnimationComponent::Update(const float aDeltaTime)
 {
+	if (!myIsEnabled) return;
 	myAnimationPlayer.Play(mySkeleton.bones, GetAnimation(), aDeltaTime, myCurrentBoneTransforms);
 }
 

@@ -9,6 +9,8 @@ AudioSourceComponent::AudioSourceComponent(GameObject& aParent)
 	: Component(aParent)
 {
 	myComponentType = ComponentType::AudioSource;
+	myRenderStages.at(RenderStage::ShadowMapping) = false;
+	myRenderStages.at(RenderStage::Deferred) = false;
 	//Register audio source
 }
 

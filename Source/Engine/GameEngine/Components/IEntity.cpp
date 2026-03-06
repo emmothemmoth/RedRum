@@ -40,7 +40,7 @@ void IEntity::AddComponent(std::shared_ptr<Component> aComponent)
 
 CommonUtilities::Matrix4x4<float> IEntity::GetTransform()
 {
-	return myTransform;
+ 	return myTransform;
 }
 
 CommonUtilities::Vector3<float> IEntity::GetPosition()

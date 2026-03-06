@@ -8,6 +8,8 @@
 SpotLightComponent::SpotLightComponent(GameObject& aParent)
 	: Component(aParent)
 {
+	myRenderStages.at(RenderStage::ShadowMapping) = false;
+	myRenderStages.at(RenderStage::Deferred) = false;
 	myComponentType = ComponentType::SpotLight;
 	myLightData = std::make_shared<LightBuffer::SpotLightData>();
 	MainSingleton::Get().GetInputMapper().Register(ActionEventID::Toggle_SpotLights, this);

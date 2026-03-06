@@ -12,6 +12,8 @@
 
 LightComponent::LightComponent(GameObject& aParent) : Component(aParent)
 {
+	myRenderStages.at(RenderStage::ShadowMapping) = false;
+	myRenderStages.at(RenderStage::Deferred) = false;
 	myLightBuffer = std::make_shared<LightBuffer>();
 	MainSingleton::Get().GetInputMapper().Register(ActionEventID::Toggle_DirectionalLight, this);
 	MainSingleton::Get().GetInputMapper().Register(ActionEventID::Toggle_PointLights, this);

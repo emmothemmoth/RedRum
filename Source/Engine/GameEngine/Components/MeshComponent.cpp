@@ -18,6 +18,8 @@ MeshComponent::MeshComponent(GameObject& aParent, std::shared_ptr<MeshAsset> aMe
 {
 	myMesh = aMesh;
 	myComponentType = ComponentType::Mesh;
+	myRenderStages.at(RenderStage::ShadowMapping) = true;
+	myRenderStages.at(RenderStage::Deferred) = true;
 }
 
 MeshComponent::~MeshComponent()
@@ -36,15 +38,30 @@ void MeshComponent::Render()
 	{
 		myMaterials = GraphicsEngine::Get().GetDefaultMaterials();
 	}
-	if (this->GetParent().GetComponent<AnimationComponent>().get() != nullptr)
+	for (auto& [renderStage, shouldRender] : myRenderStages)
 	{
-		MainSingleton::Get().GetRenderer().Enqueue<GCmdRenderSkeletalMesh>(myMesh, myParent.GetTransform(),
-			this->GetParent().GetComponent<AnimationComponent>()->GetBoneTransforms(),  myMaterials);
+		if (shouldRender)
+		{
+			if(this->GetParent().GetComponent<AnimationComponent>().get() != nullptr)
+			{
+				MainSingleton::Get().GetRenderer().Enqueue<GCmdRenderSkeletalMesh>(renderStage, myMesh, myParent.GetTransform(),
+					this->GetParent().GetComponent<AnimationComponent>()->GetBoneTransforms(), myMaterials);
+			}
+		else
+		{
+			MainSingleton::Get().GetRenderer().Enqueue<GCmdRenderMesh>(renderStage, myMesh, myParent.GetTransform(), myMaterials);
+		}
+		}
 	}
-	else
-	{
-		MainSingleton::Get().GetRenderer().Enqueue<GCmdRenderMesh>(myMesh, myParent.GetTransform(), myMaterials);
-	}
+	//if (this->GetParent().GetComponent<AnimationComponent>().get() != nullptr)
+	//{
+	//	MainSingleton::Get().GetRenderer().Enqueue<GCmdRenderSkeletalMesh>(myMesh, myParent.GetTransform(),
+	//		this->GetParent().GetComponent<AnimationComponent>()->GetBoneTransforms(),  myMaterials);
+	//}
+	//else
+	//{
+	//	MainSingleton::Get().GetRenderer().Enqueue<GCmdRenderMesh>(myMesh, myParent.GetTransform(), myMaterials);
+	//}
 }
 
 std::shared_ptr<MeshAsset> MeshComponent::GetMesh()

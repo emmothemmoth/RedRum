@@ -4,9 +4,9 @@
 
 Renderer::Renderer()
 {
-    myUpdatePtr = &myFirstCmdList;
-    myIntermediatePtr = &mySecondCmdList;
-    myRenderPtr = &myThirdCmdList;
+    myUpdatePtr = &myFirstQueue;
+    myIntermediatePtr = &mySecondQueue;
+    myRenderPtr = &myThirdQueue;
 
     // ensure deterministic initial state
     myHasUpdated.store(false, std::memory_order_release);
@@ -40,6 +40,11 @@ void Renderer::SwitchRenderIntermediate()
     // Notify update thread that intermediate is free (if it was waiting)
     lock.unlock();
     myBufferCV.notify_one();
+}
+
+void Renderer::ChangeRenderPass(RenderStage aStage)
+{
+    myCurrentStage = aStage;
 }
 
 void Renderer::SwitchUpdateIntermediate()
@@ -80,10 +85,11 @@ void Renderer::RenderFrame()
     SwitchRenderIntermediate();
 
     // Now render what's in myRenderPtr
-    if (myRenderPtr->HasCommands())
-    {
-        myRenderPtr->Execute();
-    }
+    //if (myRenderPtr->HasCommands())
+    //{
+    //    myRenderPtr->Execute();
+    //}
+    myRenderPtr->RenderFrame();
 
     // Reset the render buffer after executing it
     myRenderPtr->Reset();

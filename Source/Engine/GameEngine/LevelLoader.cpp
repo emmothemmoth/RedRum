@@ -29,12 +29,7 @@ bool LevelLoader::LoadLevelFromJSON(const std::filesystem::path& aLevelPath, Lev
     {
         std::shared_ptr<GameObject> gameObject;
         std::string name = entity.at("Name");
-        std::string renderPass;
         float rotationX, rotationY, rotationZ;
-        if (jsonReader.contains("RenderPass"))
-        {
-            renderPass = entity.at("RenderPass");
-        }
         if (name.starts_with("Camera"))
         {
             inOutLevel.Camera = std::make_shared<GameObject>(name, gameObjectIDCounter++);
@@ -42,16 +37,8 @@ bool LevelLoader::LoadLevelFromJSON(const std::filesystem::path& aLevelPath, Lev
         }
         else
         {
-            if (renderPass == "Forward")
-            {
-                inOutLevel.ForwardObjects.emplace_back(std::make_shared<GameObject>(name, gameObjectIDCounter++));
-                gameObject = inOutLevel.ForwardObjects.back();
-            }
-            else
-            {
-                inOutLevel.DeferredObjects.emplace_back(std::make_shared<GameObject>(name, gameObjectIDCounter++));
-                gameObject = inOutLevel.DeferredObjects.back();
-            }
+            inOutLevel.GameObjects.emplace_back(std::make_shared<GameObject>(name, gameObjectIDCounter++));
+            gameObject = inOutLevel.GameObjects.back();
         }
    
         {
@@ -68,12 +55,20 @@ bool LevelLoader::LoadLevelFromJSON(const std::filesystem::path& aLevelPath, Lev
             for (auto& component : entity.at("Components"))
             {
                 unsigned componentType = component.at("ComponentTypeID");
-                unsigned emitterID;
                 switch (static_cast<ComponentType>(componentType))
                 {
                 case ComponentType::Mesh:
                 {
                     gameObject->AddComponent(std::make_shared<MeshComponent>(*gameObject, AssetManager::Get().GetAsset<MeshAsset>(component.at("Mesh"))));
+                    if (component.contains("RenderPass"))
+                    {
+                        std::string renderPass = component.at("RenderPass");
+                        if (renderPass.starts_with("forward"))
+                        {
+                            gameObject->GetLastAddedComponent<MeshComponent>()->SetRenderStage(RenderStage::Forward);
+                            gameObject->GetLastAddedComponent<MeshComponent>()->SetRenderStage(RenderStage::Deferred, false);
+                        }
+                    }
                     if (component.contains("Material"))
                     {
                         std::string material = component.at("Material");
@@ -87,6 +82,15 @@ bool LevelLoader::LoadLevelFromJSON(const std::filesystem::path& aLevelPath, Lev
                 case ComponentType::MeshInstance:
                 {
                     gameObject->AddComponent(std::make_shared<MeshInstancedComponent>(*gameObject, AssetManager::Get().GetAsset<MeshAsset>(component.at("Mesh"))));
+                    if (component.contains("RenderPass"))
+                    {
+                        std::string renderPass = component.at("RenderPass");
+                        if (renderPass.starts_with("forward"))
+                        {
+                            gameObject->GetLastAddedComponent<MeshComponent>()->SetRenderStage(RenderStage::Forward);
+                            gameObject->GetLastAddedComponent<MeshComponent>()->SetRenderStage(RenderStage::Deferred, false);
+                        }
+                    }
                     if (component.contains("Material"))
                     {
                         std::string material = component.at("Material");
@@ -126,10 +130,12 @@ bool LevelLoader::LoadLevelFromJSON(const std::filesystem::path& aLevelPath, Lev
                     gameObject->AddComponent(std::make_shared<ControllerComponent>(*gameObject));
                     break;
                 case ComponentType::ParticleSystem:
-                    emitterID = component.at("EmitterID");
+                {
+                    unsigned emitterID = component.at("EmitterID");
                     gameObject->AddComponent(std::make_shared<ParticleSystemComponent>(*gameObject));
                     gameObject->GetComponent<ParticleSystemComponent>()->Init(static_cast<ParticleEmitterType>(emitterID));
                     break;
+                }
                 case ComponentType::Camera:
                     gameObject->AddComponent(std::make_shared<CameraComponent>(*gameObject));
                     gameObject->GetComponent<CameraComponent>()->Init(gameObject->GetPosition(), {rotationX, rotationY, rotationZ});

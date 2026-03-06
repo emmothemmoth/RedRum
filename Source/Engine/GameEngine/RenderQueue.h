@@ -1,19 +1,7 @@
 #pragma once
 
 #include "../GraphicsEngine/Commands/GraphicsCommandList.h"
-
-enum class RenderQueueStage
-{
-	ShadowMapping = 0,
-	Deferred = 1,
-	Forward = 2,
-	Particles = 3,
-	Debug = 4,
-	Custom = 5,
-	PostProcess = 6,
-	Sprite = 7,
-	Count = 8
-};
+#include "RenderStage.h"
 
 class RenderQueue
 {
@@ -21,35 +9,38 @@ public:
 	RenderQueue();
 	~RenderQueue() = default;
 
-	void SetStage(RenderQueueStage aStage) { myCurrentStage = aStage; }
+	void SetStage(RenderStage aStage) { myCurrentStage = aStage; }
 
 	template<typename CommandClass, typename ...Args>
 	void Enqueue(Args&&... args)
 	{
 		switch (myCurrentStage)
 		{
-		case RenderQueueStage::ShadowMapping:
+		case RenderStage::ShadowMapping:
 			myShadowList.Enqueue<CommandClass>(std::forward<Args>(args)...);
 			break;
-		case RenderQueueStage::Deferred:
+		case RenderStage::Deferred:
 			myDeferredList.Enqueue<CommandClass>(std::forward<Args>(args)...);
 			break;
-		case RenderQueueStage::Forward:
+		case RenderStage::Forward:
 			myForwardList.Enqueue<CommandClass>(std::forward<Args>(args)...);
 			break;
-		case RenderQueueStage::Particles:
+		case RenderStage::Particles:
 			myParticleList.Enqueue<CommandClass>(std::forward<Args>(args)...);
 			break;
-		case RenderQueueStage::Debug:
+		case RenderStage::Debug:
 			myDebugList.Enqueue<CommandClass>(std::forward<Args>(args)...);
 			break;
-		case RenderQueueStage::Custom:
+		case RenderStage::Custom:
 			myCustomList.Enqueue<CommandClass>(std::forward<Args>(args)...);
 			break;
-		case RenderQueueStage::PostProcess:
+		case RenderStage::WorldSpaceUI:
+			myWorldSpaceUIList.Enqueue<CommandClass>(std::forward<Args>(args)...);
+			break;
+		case RenderStage::PostProcess:
 			myPostProcessList.Enqueue<CommandClass>(std::forward<Args>(args)...);
 			break;
-		case RenderQueueStage::Sprite:
+		case RenderStage::Sprite:
 			mySpriteList.Enqueue<CommandClass>(std::forward<Args>(args)...);
 			break;
 		default:
@@ -69,9 +60,10 @@ private:
 	GraphicsCommandList myParticleList;
 	GraphicsCommandList myDebugList;
 	GraphicsCommandList myCustomList;
+	GraphicsCommandList myWorldSpaceUIList;
 	GraphicsCommandList myPostProcessList;
 	GraphicsCommandList mySpriteList;
 
-	RenderQueueStage myCurrentStage = RenderQueueStage::ShadowMapping;
+	RenderStage myCurrentStage = RenderStage::ShadowMapping;
 };
 

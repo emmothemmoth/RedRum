@@ -7,8 +7,7 @@
 
 struct Level
 {
-	std::vector <std::shared_ptr<GameObject>> DeferredObjects;
-	std::vector <std::shared_ptr<GameObject>> ForwardObjects;
+	std::vector <std::shared_ptr<GameObject>> GameObjects;
 	std::shared_ptr<GameObject> Camera;
 	WorldBounds Bounds;
 };

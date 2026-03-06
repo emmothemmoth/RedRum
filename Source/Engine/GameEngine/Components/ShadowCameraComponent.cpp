@@ -12,6 +12,7 @@ ShadowCameraComponent::ShadowCameraComponent(GameObject& aParent)
 	: Component(aParent)
 {
 	myComponentType = ComponentType::ShadowCamera;
+	myRenderStages.at(RenderStage::Deferred) = false;
 }
 
 void ShadowCameraComponent::Init(const CU::Matrix4x4<float>& aView, const CU::Matrix4x4<float>& aProjection, const CU::Vector3<float>& aPosition)
@@ -26,7 +27,7 @@ void ShadowCameraComponent::Init(const CU::Matrix4x4<float>& aView, const CU::Ma
 
 void ShadowCameraComponent::Render()
 {
-	MainSingleton::Get().GetRenderer().Enqueue<GCmdSetFrameBuffer>(myFrameBuffer);
+	MainSingleton::Get().GetRenderer().Enqueue<GCmdSetFrameBuffer>(RenderStage::ShadowMapping, myFrameBuffer);
 }
 
 std::shared_ptr<FrameBufferData> ShadowCameraComponent::GetFrameBuffer()

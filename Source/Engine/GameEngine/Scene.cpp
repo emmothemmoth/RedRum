@@ -50,92 +50,6 @@ void Scene::Init()
 }
 
 
-void Scene::LoadScene()
-{
-
-	myWorldBounds.Radius = 1000.0f;
-	myWorldBounds.Origin = Vector3f({ 0.0f, 0.0f, 0.0f });
-
-	myLightBuffer = std::make_shared<LightBuffer>();
-	myDirLight = std::make_shared<GameObject>("DirLight");
-	myPointLights.reserve(4);
-	mySpotLights.reserve(4);
-	InitSceneLights();
-
-	myCamera = std::make_shared<GameObject>("Camera");
-	myCamera->AddComponent(std::make_shared<CameraComponent>(*myCamera));
-	myCamera->GetComponent<CameraComponent>()->Init(CommonUtilities::Vector3<float>(0, 100, -1000));
-
-	//myDeferredObjects.emplace_back(std::make_shared<GameObject>("Ground"));
-	//myDeferredObjects.back()->AddComponent(std::make_shared<MeshComponent>(*myDeferredObjects.back(), AssetManager::Get().GetAsset<MeshAsset>(L"GroundMesh")));
-	//myDeferredObjects.back()->SetPosition(0.0f, 0.0f, 0.0f);
-	//myGroundIsVisible = true;
-	//
-	//myDeferredObjects.emplace_back(std::make_shared<GameObject>("Sphere"));
-	//myDeferredObjects.back()->AddComponent(std::make_shared<MeshComponent>(*myDeferredObjects.back(), AssetManager::Get().GetAsset<MeshAsset>(L"SphereMesh")));
-	//myDeferredObjects.back()->SetPosition(-500.0f, 50.0f, 300.0f);
-	//
-	//myDeferredObjects.emplace_back(std::make_shared<GameObject>("PlaneH"));
-	//myDeferredObjects.back()->AddComponent(std::make_shared<MeshComponent>(*myDeferredObjects.back(), AssetManager::Get().GetAsset<MeshAsset>(L"HorizontalPlaneMesh")));
-	//myDeferredObjects.back()->RotateAroundY(180.0f);
-	//myDeferredObjects.back()->SetPosition(0.0f, 500.0f, 50.0f);
-	//
-	//myDeferredObjects.emplace_back(std::make_shared<GameObject>("Cube"));
-	//myDeferredObjects.back()->AddComponent(std::make_shared<MeshInstancedComponent>(*myDeferredObjects.back(), AssetManager::Get().GetAsset<MeshAsset>(L"CubeMesh")));
-	//for (int index = 0; index < 100; index++)
-	//{
-	//	CU::Matrix4x4f offset;
-	//	CU::Vector4f translation = { 50.0f * static_cast<float>(index) - 950.0f , 50.0f,  50.0f * static_cast<float>(index) - 950.0f, 1.0f };
-	//	offset.SetRow(translation, 4);
-	//	myDeferredObjects.back()->GetComponent<MeshInstancedComponent>()->AddInstance(offset);
-	//}
-	//myDeferredObjects.back()->GetComponent<MeshInstancedComponent>()->Init();
-	//
-	//myDeferredObjects.emplace_back(std::make_shared<GameObject>("Cube"));
-	//myDeferredObjects.back()->AddComponent(std::make_shared<MeshComponent>(*myDeferredObjects.back(), AssetManager::Get().GetAsset<MeshAsset>(L"CubeMesh")));
-	//myDeferredObjects.back()->AddComponent(std::make_shared<ControllerComponent>(*myDeferredObjects.back()));
-	//myDeferredObjects.back()->SetPosition(0.0f, 50.0f, -300.0f);
-	//
-	//myDeferredObjects.emplace_back(std::make_shared<GameObject>("Chest"));
-	//myDeferredObjects.back()->SetPosition(600.f, 0.f, 0.f);
-	//myDeferredObjects.back()->RotateAroundY(180.0f);
-	//myDeferredObjects.back()->AddComponent(std::make_shared<MeshComponent>(*myDeferredObjects.back(), AssetManager::Get().GetAsset<MeshAsset>(L"SM_Chest")));
-	//myDeferredObjects.back()->AddComponent(std::make_shared<MaterialComponent>(*myDeferredObjects.back(), AssetManager::Get().GetAsset<MaterialAsset>(L"M_ChestMaterial")));
-	//myDeferredObjects.back()->AddComponent(std::make_shared<ParticleSystemComponent>(*myDeferredObjects.back()));
-	//myDeferredObjects.back()->GetComponent<ParticleSystemComponent>()->Init(ParticleEmitterType::Other);
-	//
-	//myDeferredObjects.emplace_back(std::make_shared<GameObject>("Bro"));
-	//myDeferredObjects.back()->SetPosition(0.0f, 0.f, -300.f);
-	//myDeferredObjects.back()->RotateAroundY(180.0f);
-	//myDeferredObjects.back()->AddComponent(std::make_shared<MeshComponent>(*myDeferredObjects.back(), AssetManager::Get().GetAsset<MeshAsset>(L"SK_C_TGA_Bro")));
-	//myDeferredObjects.back()->AddComponent(std::make_shared<MaterialComponent>(*myDeferredObjects.back(), AssetManager::Get().GetAsset<MaterialAsset>(L"M_BroMaterial")));
-	//myDeferredObjects.back()->AddComponent(std::make_shared<AnimationComponent>(*myDeferredObjects.back(), myDeferredObjects.back()->GetComponent<MeshComponent>()->GetMesh()->GetSkeleton()));
-	//myDeferredObjects.back()->GetComponent<AnimationComponent>()->AddAnimation(AnimationState::Idle, AssetManager::Get().GetAsset<AnimationAsset>(L"A_C_TGA_Bro_Idle_Brething"));
-	//myDeferredObjects.back()->GetComponent<AnimationComponent>()->AddAnimation(AnimationState::Waving, AssetManager::Get().GetAsset<AnimationAsset>(L"A_C_TGA_Bro_Idle_Wave"));
-	//myDeferredObjects.back()->GetComponent<AnimationComponent>()->AddAnimation(AnimationState::Running, AssetManager::Get().GetAsset<AnimationAsset>(L"A_C_TGA_Bro_Run"));
-	//myDeferredObjects.back()->GetComponent<AnimationComponent>()->AddAnimation(AnimationState::Walking, AssetManager::Get().GetAsset<AnimationAsset>(L"A_C_TGA_Bro_Walk"));
-	//myDeferredObjects.back()->GetComponent<AnimationComponent>()->SetAnimationState(AnimationState::Running);
-	//myDeferredObjects.back()->AddComponent(std::make_shared<ParticleSystemComponent>(*myDeferredObjects.back()));
-	//myDeferredObjects.back()->GetComponent<ParticleSystemComponent>()->Init(ParticleEmitterType::StarParticle);
-	//
-	//myDeferredObjects.emplace_back(std::make_shared<GameObject>("Buddha"));
-	//myDeferredObjects.back()->SetPosition(0.0f, 0.f, 600.0f);
-	//myDeferredObjects.back()->RotateAroundY(180.0f);
-	//myDeferredObjects.back()->AddComponent(std::make_shared< MeshComponent >(*myDeferredObjects.back(), AssetManager::Get().GetAsset<MeshAsset>(L"SM_Buddha")));
-	//myDeferredObjects.back()->AddComponent(std::make_shared< MaterialComponent >(*myDeferredObjects.back(), AssetManager::Get().GetAsset<MaterialAsset>(L"M_BuddhaMaterial")));
-	//
-	//myForwardObjects.emplace_back(std::make_shared<GameObject>("PlaneV"));
-	//myForwardObjects.back()->AddComponent(std::make_shared<MeshComponent>(*myForwardObjects.back(), AssetManager::Get().GetAsset<MeshAsset>(L"VerticalPlaneMesh")));
-	//myForwardObjects.back()->RotateAroundY(180.0f);
-	//myForwardObjects.back()->AddComponent(std::make_shared<MaterialComponent>(*myForwardObjects.back(), AssetManager::Get().GetAsset<MaterialAsset>(L"M_WoodMaterial")));
-	//myForwardObjects.back()->SetPosition(0.0f, 100.0f, -800.0f);
-	//
-	//mySingleObject = std::make_shared<GameObject>("SingleObject");
-	//mySingleObject->RotateAroundY(180.0f);
-	//
-	InitSortingLists();
-}
-
 void Scene::LoadScene(const std::filesystem::path& aPath, bool aIsNetworkLevel)
 {
 	myWorldBounds.Radius = 2000.0f;
@@ -153,7 +67,7 @@ void Scene::LoadScene(const std::filesystem::path& aPath, bool aIsNetworkLevel)
 	else
 	{
 		myCurrentLevel.Camera = std::make_shared<GameObject>("Camera");
-		myCurrentLevel.Camera->AddComponent(std::make_shared<CameraComponent>(*myCamera));
+		myCurrentLevel.Camera->AddComponent(std::make_shared<CameraComponent>(*myCurrentLevel.Camera));
 		//myCurrentLevel.Camera->GetComponent<CameraComponent>()->Init(CommonUtilities::Vector3<float>(-40.0f, 1625.0f, -560.0f));
 	}
 	InitSortingLists();
@@ -162,19 +76,12 @@ void Scene::LoadScene(const std::filesystem::path& aPath, bool aIsNetworkLevel)
 
 void Scene::InitSortingLists()
 {
-	myDeferredSort.clear();
-	for (auto& object : myCurrentLevel.DeferredObjects)
+	mySortingList.clear();
+	for (auto& object : myCurrentLevel.GameObjects)
 	{
-		myDeferredSort.emplace_back(SortingInfo());
-		myDeferredSort.back().CameraDistance = 0.0f;
-		myDeferredSort.back().Object = object;
-	}
-	myForwardSort.clear();
-	for (auto& object : myCurrentLevel.ForwardObjects)
-	{
-		myForwardSort.emplace_back(SortingInfo());
-		myForwardSort.back().CameraDistance = 0.0f;
-		myForwardSort.back().Object = object;
+		mySortingList.emplace_back(SortingInfo());
+		mySortingList.back().CameraDistance = 0.0f;
+		mySortingList.back().Object = object;
 	}
 }
 
@@ -267,45 +174,6 @@ void Scene::InitSortingLists()
 //}
 
 
-
-bool Scene::AddPlayer(const CU::Vector3f& aSpawnPosition, unsigned char anID, bool aIsUser)
-{
-	myIDtoIndex.insert({ anID, static_cast<unsigned>(myCurrentLevel.DeferredObjects.size()) });
-	myCurrentLevel.DeferredObjects.emplace_back(std::make_shared<GameObject>(anID));
-	std::shared_ptr<GameObject> newObject = myCurrentLevel.DeferredObjects.back();
-	newObject->SetPosition(aSpawnPosition);
-	newObject->AddComponent(std::make_shared<MeshComponent>(*newObject, AssetManager::Get().GetAsset<MeshAsset>("SphereMesh")));
-	if (aIsUser)
-	{
-		newObject->GetLastAddedComponent<MeshComponent>()->AddMaterial(AssetManager::Get().GetAsset<MaterialAsset>("M_ChestMaterial"));
-		newObject->AddComponent(std::make_shared<ControllerComponent>(*newObject));
-	}
-	return true;
-}
-
-bool Scene::AddObject(const CU::Vector3f& aPosition, const char* aMesh, unsigned char anID, bool aIsActive, bool aIsUser)
-{
-	myIDtoIndex.insert({ anID, static_cast<unsigned>(myCurrentLevel.DeferredObjects.size()) });
-	myCurrentLevel.DeferredObjects.emplace_back(std::make_shared<GameObject>(anID));
-	std::shared_ptr<GameObject> newObject = myCurrentLevel.DeferredObjects.back();
-	newObject->SetPosition(aPosition);
-	newObject->SetIsActive(aIsActive);
-	std::filesystem::path meshName = aMesh;
-	newObject->AddComponent(std::make_shared<MeshComponent>(*newObject, AssetManager::Get().GetAsset<MeshAsset>(meshName.wstring())));
-	if (aIsUser)
-	{
-		newObject->GetLastAddedComponent<MeshComponent>()->AddMaterial(AssetManager::Get().GetAsset<MaterialAsset>("M_BuddhaMaterial"));
-	}
-	return true;
-}
-
-bool Scene::RemoveObjectByID(unsigned char anID)
-{
-	myCurrentLevel.DeferredObjects.erase(myCurrentLevel.DeferredObjects.begin() + myIDtoIndex.at(anID));
-	myIDtoIndex.erase(anID);
-	return true;
-}
-
 void Scene::ClearScene()
 {
 	myShouldClear = true;
@@ -319,11 +187,7 @@ void Scene::UpdateScene(const float aDeltaTime)
 		return;
 	}
 	myCurrentLevel.Camera->Update(aDeltaTime);
-	for (auto& object : myCurrentLevel.ForwardObjects)
-	{
-		object->Update(aDeltaTime);
-	}
-	for (auto& object : myCurrentLevel.DeferredObjects)
+	for (auto& object : myCurrentLevel.GameObjects)
 	{
 		object->Update(aDeltaTime);
 	}
@@ -334,110 +198,79 @@ void Scene::UpdateScene(const float aDeltaTime)
 void Scene::RenderScene()
 {
 	auto& renderer = MainSingleton::Get().GetRenderer();
+	renderer.ChangeRenderPass(RenderStage::ShadowMapping);
 	renderer.Enqueue<GCmdSetDebugBuffer>(myDebugBuffer);
 
-	renderer.Enqueue<GCmdBeginEvent>("DirLightShadowMapping");
-	renderer.Enqueue<GCmdSetVertexShader>("Default_VS");
-	renderer.Enqueue<GCmdSetPixelShader>("None");
-	renderer.Enqueue<GCmdChangePipelineState>(static_cast<int>(PipelineStates::DirlightShadowMapping));
+	//renderer.Enqueue<GCmdBeginEvent>("DirLightShadowMapping");
+	//renderer.Enqueue<GCmdSetVertexShader>("Default_VS");
+	//renderer.Enqueue<GCmdSetPixelShader>("None");
+	//renderer.Enqueue<GCmdChangePipelineState>(static_cast<int>(PipelineStates::DirlightShadowMapping));
 	myDirLight->GetComponent<ShadowCameraComponent>()->Render();
-	
-	for (auto& object : myDeferredSort)
-	{
-		object.Object->Render();
-	}
-	for (auto& object : myForwardSort)
-	{
-		object.Object->Render();
-	}
-	renderer.Enqueue<GCmdEndEvent>();
-
-	//renderer.Enqueue<GCmdBeginEvent>("PointLightShadowMapping");
-	//renderer.Enqueue<GCmdChangePipelineState>(static_cast<int>(PipelineStates::PointlightShadowMapping));
-	//myPointLights[0]->GetComponent<ShadowCameraComponent>()->Render();
-	////TODO: draw on all shadowmaps!
-	//
-	//for (auto& object : myDeferredSort)
-	//{
-	//	object.Object->Render();
-	//}
-	//for (auto& object : myForwardSort)
-	//{
-	//	object.Object->Render();
-	//}
-	//renderer.Enqueue<GCmdEndEvent>();
-	//
-	//renderer.Enqueue<GCmdBeginEvent>("SpotLightShadowMapping");
-	//renderer.Enqueue<GCmdChangePipelineState>(static_cast<int>(PipelineStates::SpotlightShadowMapping));
-	//mySpotLights[0]->GetComponent<ShadowCameraComponent>()->Render();
-	//for (auto& object : myDeferredSort)
-	//{
-	//	object.Object->Render();
-	//}
-	//for (auto& object : myForwardSort)
-	//{
-	//	object.Object->Render();
-	//}
-	//renderer.Enqueue<GCmdEndEvent>();
-	
-	renderer.Enqueue<GCmdBeginEvent>("Deferred Rendering");
-	renderer.Enqueue<GCmdSetPixelShader>("GBuffer_PS");
-	renderer.Enqueue<GCmdChangePipelineState>(static_cast<int>(PipelineStates::DeferredRendering));
 	myCurrentLevel.Camera->Render(); 
-
-	for (auto& object : myDeferredSort)
+	renderer.Enqueue<GCmdSetLightBuffer>(RenderStage::Deferred, myLightBuffer);
+	
+	for (auto& object : mySortingList)
 	{
 		object.Object->Render();
 	}
+	//renderer.Enqueue<GCmdEndEvent>();
+	
+	//renderer.Enqueue<GCmdBeginEvent>("Deferred Rendering");
+	//renderer.Enqueue<GCmdSetPixelShader>("GBuffer_PS");
+	//renderer.Enqueue<GCmdChangePipelineState>(static_cast<int>(PipelineStates::DeferredRendering));
 
-	renderer.Enqueue<GCmdSetLightBuffer>(myLightBuffer);
-	renderer.Enqueue<GCmdClearBackBuffer>();
-	renderer.Enqueue <GCmdSetMarker>("Light");
-	renderer.Enqueue<GCmdSetPixelShader>("Dirlight_PS");
-	renderer.Enqueue<GCmdSetVertexShader>("Quad_VS");
-	renderer.Enqueue<GCmdChangePipelineState>(static_cast<int>(PipelineStates::DirlightRendering));
-	renderer.Enqueue<GCmdDrawQuad>();
-	renderer.Enqueue<GCmdSetPixelShader>("Pointlight_PS");
-	renderer.Enqueue<GCmdChangePipelineState>(static_cast<int>(PipelineStates::PointlightRendering));
-	renderer.Enqueue<GCmdDrawQuad>();
-	renderer.Enqueue<GCmdSetPixelShader>("Spotlight_PS");
-	renderer.Enqueue<GCmdChangePipelineState>(static_cast<int>(PipelineStates::SpotlightRendering));
-	renderer.Enqueue<GCmdDrawQuad>();
-	renderer.Enqueue<GCmdClearTextureResource>(119);
-	renderer.Enqueue<GCmdEndEvent>();
+	//for (auto& object : mySortingList)
+	//{
+	//	object.Object->Render();
+	//}
 
-	renderer.Enqueue<GCmdBeginEvent>("Forward Rendering");
-	renderer.Enqueue<GCmdSetPixelShader>("Default_PS");
-	renderer.Enqueue<GCmdSetVertexShader>("Default_VS");
-	renderer.Enqueue<GCmdChangePipelineState>(static_cast<int>(PipelineStates::ForwardRendering));
+	renderer.Enqueue<GCmdClearBackBuffer>(RenderStage::Deferred);
+	renderer.Enqueue<GCmdSetMarker>(RenderStage::Deferred, "Light");
+	renderer.Enqueue<GCmdSetPixelShader>(RenderStage::Deferred, "Dirlight_PS");
+	renderer.Enqueue<GCmdSetVertexShader>(RenderStage::Deferred, "Quad_VS");
+	renderer.Enqueue<GCmdChangePipelineState>(static_cast<int>(RenderStage::Deferred, PipelineStates::DirlightRendering));
+	renderer.Enqueue<GCmdDrawQuad>(RenderStage::Deferred);
+	renderer.Enqueue<GCmdSetPixelShader>(RenderStage::Deferred, "Pointlight_PS");
+	renderer.Enqueue<GCmdChangePipelineState>(static_cast<int>(RenderStage::Deferred, PipelineStates::PointlightRendering));
+	renderer.Enqueue<GCmdDrawQuad>(RenderStage::Deferred);
+	renderer.Enqueue<GCmdSetPixelShader>(RenderStage::Deferred, "Spotlight_PS");
+	renderer.Enqueue<GCmdChangePipelineState>(static_cast<int>(RenderStage::Deferred, PipelineStates::SpotlightRendering));
+	renderer.Enqueue<GCmdDrawQuad>(RenderStage::Deferred);
+	renderer.Enqueue<GCmdClearTextureResource>(RenderStage::Deferred, 119);
+	//renderer.Enqueue<GCmdEndEvent>();
 
-	for (auto& object : myForwardSort)
-	{
-		object.Object->Render();
-	}
-	renderer.Enqueue<GCmdEndEvent>();
-	renderer.Enqueue<GCmdClearTextureResource>(100);
+	//renderer.Enqueue<GCmdBeginEvent>("Forward Rendering");
+	//renderer.Enqueue<GCmdSetPixelShader>("Default_PS");
+	//renderer.Enqueue<GCmdSetVertexShader>("Default_VS");
+	//renderer.Enqueue<GCmdChangePipelineState>(static_cast<int>(PipelineStates::ForwardRendering));
 
-	renderer.Enqueue<GCmdBeginEvent>("Particles");
-	for (auto& object : myDeferredSort)
-	{
-		if (object.Object->GetComponent<ParticleSystemComponent>())
-		{
-			renderer.Enqueue<GCmdRenderParticles>(object.Object->GetTransform(), object.Object->GetComponent<ParticleSystemComponent>()->GetParticleSystem());
-		}
-	}
+	//for (auto& object : mySortingList)
+	//{
+	//	object.Object->Render();
+	//}
+	//renderer.Enqueue<GCmdEndEvent>();
+	//renderer.Enqueue<GCmdClearTextureResource>(100);
 
-	renderer.Enqueue<GCmdEndEvent>();
+	//renderer.Enqueue<GCmdBeginEvent>("Particles");
+	//for (auto& object : mySortingList)
+	//{
+	//	if (object.Object->GetComponent<ParticleSystemComponent>())
+	//	{
+	//		renderer.Enqueue<GCmdRenderParticles>(object.Object->GetTransform(), object.Object->GetComponent<ParticleSystemComponent>()->GetParticleSystem());
+	//	}
+	//}
+
+	//renderer.Enqueue<GCmdEndEvent>();
 
 
-	renderer.Enqueue<GCmdBeginEvent>("Post Processing");
-	renderer.Enqueue<GCmdTonemap>();
-	renderer.Enqueue<GCmdBloom>();
+	//renderer.Enqueue<GCmdBeginEvent>("Post Processing");
+	renderer.Enqueue<GCmdTonemap>(RenderStage::PostProcess);
+	renderer.Enqueue<GCmdBloom>(RenderStage::PostProcess);
 	if (myDebugBuffer->SSAOActive)
 	{
-		renderer.Enqueue<GCmdSSAO>();
+		renderer.Enqueue<GCmdSSAO>(RenderStage::PostProcess);
 	}
-	renderer.Enqueue<GCmdEndEvent>();
+	//renderer.Enqueue<GCmdEndEvent>();
 
 	renderer.SwitchUpdateIntermediate();
 
@@ -488,53 +321,16 @@ Level& Scene::GetCurrentLevel()
 std::shared_ptr<GameObject>& Scene::GetObjectByID(unsigned char anID)
 {
 	assert(myIDtoIndex.contains(anID) && "Trying to get object by ID but object is not in the scene!");
-	return myCurrentLevel.DeferredObjects[myIDtoIndex.at(anID)];
-}
-
-std::vector<SortingInfo> Scene::SortObjectsBackToFront(std::vector<std::shared_ptr<GameObject>> someObjects)
-{
-	std::vector<SortingInfo> backToFrontRenderCue;
-	for (std::shared_ptr<GameObject> object : someObjects)
-	{
-		SortingInfo info;
-		info.CameraDistance = (object->GetPosition() - myCamera->GetPosition()).LengthSqr();
-		info.Object = object;
-		backToFrontRenderCue.push_back(info);
-	}
-
-	std::sort(backToFrontRenderCue.begin(), backToFrontRenderCue.end(), [](SortingInfo a, SortingInfo b) { return (a.CameraDistance) < b.CameraDistance; });
-	return backToFrontRenderCue;
-}
-
-std::vector<SortingInfo> Scene::SortObjectsFrontToBack(std::vector<std::shared_ptr<GameObject>> someObjects) //TODO: don't copy whole vectors...
-{
-	std::vector<SortingInfo> frontToBackRenderCue;
-	for (std::shared_ptr<GameObject> object : someObjects)
-	{
-		SortingInfo info;
-		info.CameraDistance = (object->GetPosition() - myCamera->GetPosition()).LengthSqr();
-		info.Object = object;
-		frontToBackRenderCue.emplace_back(info);
-	}
-
-
-	std::sort(frontToBackRenderCue.begin(), frontToBackRenderCue.end(), [](SortingInfo a, SortingInfo b) { return a.CameraDistance > b.CameraDistance; });
-	return frontToBackRenderCue;
+	return myCurrentLevel.GameObjects[myIDtoIndex.at(anID)];
 }
 
 void Scene::SortObjects()
 {
-	for (auto& deferredObject : myDeferredSort)
+	for (auto& deferredObject : mySortingList)
 	{
 		deferredObject.CameraDistance = (deferredObject.Object->GetPosition() - myCurrentLevel.Camera->GetPosition()).LengthSqr();
 	}
-	std::sort(myDeferredSort.begin(), myDeferredSort.end(), [](SortingInfo a, SortingInfo b) { return a.CameraDistance > b.CameraDistance; });
-
-	for (auto& forwardObject : myForwardSort)
-	{
-		forwardObject.CameraDistance = (forwardObject.Object->GetPosition() - myCurrentLevel.Camera->GetPosition()).LengthSqr();
-	}
-	std::sort(myForwardSort.begin(), myForwardSort.end(), [](SortingInfo a, SortingInfo b) { return (a.CameraDistance) < b.CameraDistance; });
+	std::sort(mySortingList.begin(), mySortingList.end(), [](SortingInfo a, SortingInfo b) { return a.CameraDistance > b.CameraDistance; });
 }
 
 void Scene::InitSceneLights()
@@ -616,11 +412,9 @@ void Scene::UpdateDebugInfo()
 
 void Scene::ResetScene(bool aShouldReload)
 {
-	myCurrentLevel.DeferredObjects.clear();
-	myCurrentLevel.ForwardObjects.clear();
+	myCurrentLevel.GameObjects.clear();
 	myCurrentLevel.Camera = nullptr;
-	myDeferredSort.clear();
-	myForwardSort.clear();
+	mySortingList.clear();
 	myShouldClear = false;
 
 	if (aShouldReload)

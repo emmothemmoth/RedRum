@@ -3,10 +3,15 @@
 
 #include "../GraphicsEngine/GraphicsEngine.h"
 #include "../GraphicsEngine/Commands/GCmdChangePipelineState.h"
+#include "../GraphicsEngine/Commands/GCmdBeginEvent.h"
+#include "../GraphicsEngine/Commands/GCmdEndEvent.h"
+#include "../GraphicsEngine/Commands/GCmdSetVertexShader.h"
+#include "../GraphicsEngine/Commands/GCmdSetPixelShader.h"
 
 #include "../GraphicsEngine/PipelineStates.h"
 
 #include <iostream>
+#include "../GraphicsEngine/Commands/GCmdClearTextureResource.h"
 
 RenderQueue::RenderQueue()
 {
@@ -51,6 +56,12 @@ void RenderQueue::RenderFrame()
 	}
 	myCustomList.Reset();
 
+	if (myWorldSpaceUIList.HasCommands())
+	{
+		myWorldSpaceUIList.Execute();
+	}
+	myWorldSpaceUIList.Reset();
+
 	if (myPostProcessList.HasCommands())
 	{
 		myPostProcessList.Execute();
@@ -74,17 +85,54 @@ void RenderQueue::Reset(bool aClearLists)
 		myParticleList.Reset();
 		myDebugList.Reset();
 		myCustomList.Reset();
+		myWorldSpaceUIList.Reset();
 		myPostProcessList.Reset();
 		mySpriteList.Reset();
 	}
-
+	myShadowList.Enqueue<GCmdEndEvent>();
+	myShadowList.Enqueue<GCmdBeginEvent>("Dirlight Shadow Mapping");
 	myShadowList.Enqueue<GCmdChangePipelineState>(static_cast<unsigned>(PipelineStates::DirlightShadowMapping));
+	myShadowList.Enqueue<GCmdSetVertexShader>("Default_VS");
+	myShadowList.Enqueue<GCmdSetPixelShader>("None");
+
+	myDeferredList.Enqueue<GCmdEndEvent>();
+	myDeferredList.Enqueue<GCmdBeginEvent>("Deferred");
 	myDeferredList.Enqueue<GCmdChangePipelineState>(static_cast<unsigned>(PipelineStates::DeferredRendering));
+	myDeferredList.Enqueue<GCmdSetVertexShader>("Default_VS");
+	myDeferredList.Enqueue<GCmdSetPixelShader>("GBuffer_PS");
+
+	myForwardList.Enqueue<GCmdEndEvent>();
+	myForwardList.Enqueue<GCmdBeginEvent>("Forward");
 	myForwardList.Enqueue<GCmdChangePipelineState>(static_cast<unsigned>(PipelineStates::ForwardRendering));
-	myParticleList.Enqueue<GCmdChangePipelineState>(static_cast<unsigned>(PipelineStates::ParticleRendering));
+	myForwardList.Enqueue<GCmdSetVertexShader>("Default_VS");
+	myForwardList.Enqueue<GCmdSetPixelShader>("Default_PS");
+
+	myParticleList.Enqueue<GCmdClearTextureResource>(100);
+	myParticleList.Enqueue<GCmdEndEvent>();
+	myParticleList.Enqueue<GCmdBeginEvent>("Particles");
+
+	myCustomList.Enqueue<GCmdEndEvent>();
+	myCustomList.Enqueue<GCmdBeginEvent>("Custom");
 	myCustomList.Enqueue<GCmdChangePipelineState>(static_cast<unsigned>(PipelineStates::CustomRendering));
+	myCustomList.Enqueue<GCmdSetVertexShader>("Default_VS");
+	myCustomList.Enqueue<GCmdSetPixelShader>("Default_PS");
+
+	myWorldSpaceUIList.Enqueue<GCmdEndEvent>();
+	myWorldSpaceUIList.Enqueue<GCmdBeginEvent>("WorldspaceUI");
+	//myWorldSpaceUIList.Enqueue<GCmdChangePipelineState>(static_cast<unsigned>(PipelineStates::ParticleRendering));
+	myWorldSpaceUIList.Enqueue<GCmdSetVertexShader>("Default_VS");
+	myWorldSpaceUIList.Enqueue<GCmdSetPixelShader>("Default_PS");
+
+
+	myPostProcessList.Enqueue<GCmdEndEvent>();
+	myPostProcessList.Enqueue<GCmdBeginEvent>("PostProcessing");
 	myPostProcessList.Enqueue<GCmdChangePipelineState>(static_cast<unsigned>(PipelineStates::CustomPostProcess));
+
+	mySpriteList.Enqueue<GCmdEndEvent>();
+	mySpriteList.Enqueue<GCmdBeginEvent>("UI");
 	mySpriteList.Enqueue<GCmdChangePipelineState>(static_cast<unsigned>(PipelineStates::SpriteRendering));
+	mySpriteList.Enqueue<GCmdSetVertexShader>("UI_VS");
+	mySpriteList.Enqueue<GCmdSetPixelShader>("UI_PS");
 }
 
 void RenderQueue::PrintDebugInfo()
@@ -95,6 +143,7 @@ void RenderQueue::PrintDebugInfo()
 	std::cout << "Particle commands size: " << myParticleList.GetSize() << std::endl;
 	std::cout << "Debug commands size: " << myDebugList.GetSize() << std::endl;
 	std::cout << "Custom commands size: " << myCustomList.GetSize() << std::endl;
+	std::cout << "WorldspaceUI commands size: " << myWorldSpaceUIList.GetSize() << std::endl;
 	std::cout << "Post process commands size: " << myPostProcessList.GetSize() << std::endl;
 	std::cout << "Sprite commands size: " << mySpriteList.GetSize() << std::endl;
 }

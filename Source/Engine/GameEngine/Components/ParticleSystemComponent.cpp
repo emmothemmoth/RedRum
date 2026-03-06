@@ -1,15 +1,18 @@
 #include "GameEngine.pch.h"
 #include "ParticleSystemComponent.h"
+#include <MainSingleton.h>
+#include "GameObject.h"
 
 #include "../GraphicsEngine/Objects/ParticleSystem.h"
 #include "../GraphicsEngine/Objects/ParticleEmitterSettings.h"
 #include "../GraphicsEngine/Objects/StarParticleEmitter.h"
 #include "../GraphicsEngine/Objects/OtherParticleEmitter.h"
-
-#include <fstream>
+#include "../GraphicsEngine/Commands/GCmdRenderParticles.h"
 
 #include "../AssetManager/AssetManager.h"
 #include "..\External\nlohmann\json.hpp"
+#include <fstream>
+
 
 
 ParticleSystemComponent::ParticleSystemComponent(GameObject& aParent)
@@ -17,6 +20,9 @@ ParticleSystemComponent::ParticleSystemComponent(GameObject& aParent)
 {
 	myComponentType = ComponentType::ParticleSystem;
 	myParticleSystem = std::make_shared<ParticleSystem>();
+	myRenderStages.at(RenderStage::ShadowMapping) = false;
+	myRenderStages.at(RenderStage::Deferred) = false;
+	myRenderStages.at(RenderStage::Particles) = true;
 }
 
 ParticleSystemComponent::~ParticleSystemComponent()
@@ -87,12 +93,14 @@ bool ParticleSystemComponent::Init(const std::filesystem::path& aFileNameWithExt
 
 void ParticleSystemComponent::Update(const float aDeltaTime)
 {
+	if (!myIsEnabled) return;
 	myParticleSystem->Update(aDeltaTime);
 }
 
 void ParticleSystemComponent::Render()
 {
-
+	if (!myIsVisible) return;
+	MainSingleton::Get().GetRenderer().Enqueue<GCmdRenderParticles>(RenderStage::Particles, GetParent().GetTransform(), myParticleSystem);
 }
 
 std::shared_ptr<ParticleSystem> ParticleSystemComponent::GetParticleSystem() const

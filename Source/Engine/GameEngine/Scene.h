@@ -34,19 +34,9 @@ public:
 
 	void Init();
 
-	void LoadScene();
-
 	void LoadScene(const std::filesystem::path& aPath, bool aIsNetworkLevel = false);
 
 	void InitSortingLists();
-	//MV
-	void AddToScene(const std::filesystem::path& aPath);
-
-	bool AddPlayer(const CU::Vector3f& aSpawnPosition, unsigned char anID, bool aIsUser = false);
-
-	bool AddObject(const CU::Vector3f& aPosition, const char* aMesh, unsigned char anID, bool aIsActive = true, bool aIsUser = false);
-
-	bool RemoveObjectByID(unsigned char anID);
 
 	void ClearScene();
 
@@ -62,19 +52,11 @@ public:
 
 	Level& GetCurrentLevel();
 
-	std::vector<std::shared_ptr<GameObject>>& GetDeferredObjects() { return myCurrentLevel.DeferredObjects; }
+	std::vector<std::shared_ptr<GameObject>>& GetGameObjects() { return myCurrentLevel.GameObjects; }
 
 	std::shared_ptr<GameObject>& GetObjectByID(unsigned char anID);
 
 private:
-	//Modelviewer
-	void AddMeshToScene(const std::wstring& aFileName);
-	void AddAnimationToMesh(const std::wstring& aFileName);
-	void AddMaterialToMesh(const std::wstring& aFileName);
-	void AddTextureToMesh(const std::wstring& aFileName);
-
-	std::vector<SortingInfo> SortObjectsBackToFront(std::vector<std::shared_ptr<GameObject>> someObjects);
-	std::vector<SortingInfo> SortObjectsFrontToBack(std::vector<std::shared_ptr<GameObject>> someObjects);
 	void SortObjects();
 	void InitSceneLights();
 	void UpdateLights();
@@ -85,19 +67,13 @@ private:
 private:
 
 	WorldBounds myWorldBounds;
-	std::vector<std::shared_ptr<GameObject>> myDeferredObjects;
-	std::vector<std::shared_ptr<GameObject>> myForwardObjects;
 
-	std::vector<SortingInfo> myDeferredSort;
-	std::vector<SortingInfo> myForwardSort;
+	std::vector<SortingInfo> mySortingList;
 
 	std::shared_ptr<GameObject> myDirLight;
 	std::vector < std::shared_ptr<GameObject>> myPointLights;
 	std::vector < std::shared_ptr<GameObject>> mySpotLights;
 	std::shared_ptr<LightBuffer> myLightBuffer;
-
-	std::shared_ptr<GameObject> myCamera;
-	std::shared_ptr<GameObject> myShadowCamera;
 
 	std::shared_ptr<DebugBuffer> myDebugBuffer;
 
