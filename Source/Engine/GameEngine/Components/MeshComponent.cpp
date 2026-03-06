@@ -54,15 +54,6 @@ void MeshComponent::Render()
 			}
 		}
 	}
-	//if (this->GetParent().GetComponent<AnimationComponent>().get() != nullptr)
-	//{
-	//	MainSingleton::Get().GetRenderer().Enqueue<GCmdRenderSkeletalMesh>(myMesh, myParent.GetTransform(),
-	//		this->GetParent().GetComponent<AnimationComponent>()->GetBoneTransforms(),  myMaterials);
-	//}
-	//else
-	//{
-	//	MainSingleton::Get().GetRenderer().Enqueue<GCmdRenderMesh>(myMesh, myParent.GetTransform(), myMaterials);
-	//}
 }
 
 std::shared_ptr<MeshAsset> MeshComponent::GetMesh()
