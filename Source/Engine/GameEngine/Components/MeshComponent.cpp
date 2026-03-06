@@ -47,10 +47,10 @@ void MeshComponent::Render()
 				MainSingleton::Get().GetRenderer().Enqueue<GCmdRenderSkeletalMesh>(renderStage, myMesh, myParent.GetTransform(),
 					this->GetParent().GetComponent<AnimationComponent>()->GetBoneTransforms(), myMaterials);
 			}
-		else
-		{
-			MainSingleton::Get().GetRenderer().Enqueue<GCmdRenderMesh>(renderStage, myMesh, myParent.GetTransform(), myMaterials);
-		}
+			else
+			{
+				MainSingleton::Get().GetRenderer().Enqueue<GCmdRenderMesh>(renderStage, myMesh, myParent.GetTransform(), myMaterials);
+			}
 		}
 	}
 	//if (this->GetParent().GetComponent<AnimationComponent>().get() != nullptr)

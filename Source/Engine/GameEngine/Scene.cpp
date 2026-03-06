@@ -207,12 +207,12 @@ void Scene::RenderScene()
 	//renderer.Enqueue<GCmdChangePipelineState>(static_cast<int>(PipelineStates::DirlightShadowMapping));
 	myDirLight->GetComponent<ShadowCameraComponent>()->Render();
 	myCurrentLevel.Camera->Render(); 
-	renderer.Enqueue<GCmdSetLightBuffer>(RenderStage::Deferred, myLightBuffer);
 	
 	for (auto& object : mySortingList)
 	{
 		object.Object->Render();
 	}
+	renderer.Enqueue<GCmdSetLightBuffer>(RenderStage::Deferred, myLightBuffer);
 	//renderer.Enqueue<GCmdEndEvent>();
 	
 	//renderer.Enqueue<GCmdBeginEvent>("Deferred Rendering");
@@ -228,13 +228,13 @@ void Scene::RenderScene()
 	renderer.Enqueue<GCmdSetMarker>(RenderStage::Deferred, "Light");
 	renderer.Enqueue<GCmdSetPixelShader>(RenderStage::Deferred, "Dirlight_PS");
 	renderer.Enqueue<GCmdSetVertexShader>(RenderStage::Deferred, "Quad_VS");
-	renderer.Enqueue<GCmdChangePipelineState>(static_cast<int>(RenderStage::Deferred, PipelineStates::DirlightRendering));
+	renderer.Enqueue<GCmdChangePipelineState>(RenderStage::Deferred, static_cast<int>(PipelineStates::DirlightRendering));
 	renderer.Enqueue<GCmdDrawQuad>(RenderStage::Deferred);
 	renderer.Enqueue<GCmdSetPixelShader>(RenderStage::Deferred, "Pointlight_PS");
-	renderer.Enqueue<GCmdChangePipelineState>(static_cast<int>(RenderStage::Deferred, PipelineStates::PointlightRendering));
+	renderer.Enqueue<GCmdChangePipelineState>(RenderStage::Deferred, static_cast<int>(PipelineStates::PointlightRendering));
 	renderer.Enqueue<GCmdDrawQuad>(RenderStage::Deferred);
 	renderer.Enqueue<GCmdSetPixelShader>(RenderStage::Deferred, "Spotlight_PS");
-	renderer.Enqueue<GCmdChangePipelineState>(static_cast<int>(RenderStage::Deferred, PipelineStates::SpotlightRendering));
+	renderer.Enqueue<GCmdChangePipelineState>(RenderStage::Deferred, static_cast<int>(PipelineStates::SpotlightRendering));
 	renderer.Enqueue<GCmdDrawQuad>(RenderStage::Deferred);
 	renderer.Enqueue<GCmdClearTextureResource>(RenderStage::Deferred, 119);
 	//renderer.Enqueue<GCmdEndEvent>();

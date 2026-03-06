@@ -63,7 +63,7 @@ bool LevelLoader::LoadLevelFromJSON(const std::filesystem::path& aLevelPath, Lev
                     if (component.contains("RenderPass"))
                     {
                         std::string renderPass = component.at("RenderPass");
-                        if (renderPass.starts_with("forward"))
+                        if (renderPass.starts_with("Forward"))
                         {
                             gameObject->GetLastAddedComponent<MeshComponent>()->SetRenderStage(RenderStage::Forward);
                             gameObject->GetLastAddedComponent<MeshComponent>()->SetRenderStage(RenderStage::Deferred, false);

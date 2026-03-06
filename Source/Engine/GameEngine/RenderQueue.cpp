@@ -15,6 +15,7 @@
 
 RenderQueue::RenderQueue()
 {
+	Reset(true);
 }
 
 void RenderQueue::RenderFrame()

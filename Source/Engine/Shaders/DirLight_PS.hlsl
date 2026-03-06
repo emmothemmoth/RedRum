@@ -14,61 +14,61 @@ float4 main(QuadVStoPS pixel) : SV_TARGET
     float shadow = 0.0f;
     float3 kA = 0.0f;
  
-        float3 albedo = GBufferAlbedo.Sample(defaultSampler, pixel.UV).rgb;
-        float3 material = GBufferMaterial.Sample(defaultSampler, pixel.UV).rgb;
-        float3 pixelNormal = GBufferNormal.Sample(defaultSampler, pixel.UV).rgb;
-        float3 worldPos = GBufferWorldPos.Sample(defaultSampler, pixel.UV).rgb;
+    float3 albedo = GBufferAlbedo.Sample(defaultSampler, pixel.UV).rgb;
+    float3 material = GBufferMaterial.Sample(defaultSampler, pixel.UV).rgb;
+    float3 pixelNormal = GBufferNormal.Sample(defaultSampler, pixel.UV).rgb;
+    float3 worldPos = GBufferWorldPos.Sample(defaultSampler, pixel.UV).rgb;
         
         
-        const float occlusionMap = material.r;
-        const float roughMap = material.g;
-        const float metalMap = material.b;
+    const float occlusionMap = material.r;
+    const float roughMap = material.g;
+    const float metalMap = material.b;
         
-        const float ssaoMap = SSAOTexture.Sample(defaultClampSampler, pixel.UV).r;
-        float ao = min(occlusionMap, ssaoMap);
+    const float ssaoMap = SSAOTexture.Sample(defaultClampSampler, pixel.UV).r;
+    float ao = min(occlusionMap, ssaoMap);
         
         //Perfect Specular surface color
-        const float3 specularColor = lerp(float3(0.04f, 0.04, 0.04), albedo, metalMap);
+    const float3 specularColor = lerp(float3(0.04f, 0.04, 0.04), albedo, metalMap);
         //Perfect Diffuse surface color
-        const float3 diffuseColor = lerp(float3(0.00f, 0.0, 0.0), albedo, 1 - metalMap);
+    const float3 diffuseColor = lerp(float3(0.00f, 0.0, 0.0), albedo, 1 - metalMap);
         
-        float3 toView = normalize(FB_CameraPosition.xyz - worldPos);
+    float3 toView = normalize(FB_CameraPosition.xyz - worldPos);
         
-        float3 toDirLight = normalize(DirLight.LightPos.xyz - worldPos);
-        float3 halfAngle = normalize((toDirLight + toView));
+    float3 toDirLight = normalize(DirLight.LightPos.xyz - worldPos);
+    float3 halfAngle = normalize((toDirLight + toView));
         
         //Direct lighting
-        float3 kS = SpecularBRDF(roughMap, pixelNormal, halfAngle, toView, toDirLight, specularColor);
+    float3 kS = SpecularBRDF(roughMap, pixelNormal, halfAngle, toView, toDirLight, specularColor);
         
-        float3 kD = DiffuseBRDF(diffuseColor);
+    float3 kD = DiffuseBRDF(diffuseColor);
         
-        kD *= (1.0f - kS);
-        const float3 lightColorAndIntensity = DirLight.Color * DirLight.Intensity;
+    kD *= (1.0f - kS);
+    const float3 lightColorAndIntensity = DirLight.Color * DirLight.Intensity;
         
         
-        float3 directlightDirectRadiance = (kD + kS) * lightColorAndIntensity * saturate(dot(pixelNormal, toDirLight));
-        float dirLightAttenuation = saturate(dot(pixelNormal, normalize(-DirLight.LightDir.rgb)));
+    float3 directlightDirectRadiance = (kD + kS) * lightColorAndIntensity * saturate(dot(pixelNormal, toDirLight));
+    float dirLightAttenuation = saturate(dot(pixelNormal, normalize(-DirLight.LightDir.rgb)));
         
         //Indirect lighting
-        float2 integratedBRDF = IntegrateBRDF(pixel.UV.x, pixel.UV.y);
+    float2 integratedBRDF = IntegrateBRDF(pixel.UV.x, pixel.UV.y);
         
-        const float3 diffuseIBL = DiffuseIBL(pixelNormal);
-        const float3 specularIBL = SpecularIBL(pixelNormal, toView, roughMap, specularColor);
+    const float3 diffuseIBL = DiffuseIBL(pixelNormal);
+    const float3 specularIBL = SpecularIBL(pixelNormal, toView, roughMap, specularColor);
         
         
-       kA = (diffuseColor * diffuseIBL + specularIBL);
-        if (DB_SSAOActive == true)
-        {
-            kA *= ao;
-        }
-        else
-        {
-            kA *= occlusionMap;
-        }
+    kA = (diffuseColor * diffuseIBL + specularIBL);
+    if (DB_SSAOActive == true)
+    {
+        kA *= ao;
+    }
+    else
+    {
+        kA *= occlusionMap;
+    }
         
-        shadow = GetDirLightShadow(float4(worldPos, 1));
+    shadow = GetDirLightShadow(float4(worldPos, 1));
         
-        directlightRadiance = directlightDirectRadiance;
+    directlightRadiance = directlightDirectRadiance;
     
     [flatten]
     if (DirLight.Active == false)

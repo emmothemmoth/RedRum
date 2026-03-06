@@ -56,32 +56,32 @@ DefaultMaterial_Result main(DefaultMaterial_VStoPS input)
     
     //DIRECTIONAL LIGHT
     float3 directlightRadiance = 0.0f;
-        float3 toDirLight = normalize(DirLight.LightPos.xyz - input.WorldPosition.xyz);
-        float3 halfAngle = normalize((toDirLight + toView));
+    float3 toDirLight = normalize(DirLight.LightPos.xyz - input.WorldPosition.xyz);
+    float3 halfAngle = normalize((toDirLight + toView));
         
         //Direct lighting
-        float3 kS = SpecularBRDF(roughMap, pixelNormal, halfAngle, toView, toDirLight, specularColor);
+    float3 kS = SpecularBRDF(roughMap, pixelNormal, halfAngle, toView, toDirLight, specularColor);
         
-        float3 kD = DiffuseBRDF(diffuseColor);
+    float3 kD = DiffuseBRDF(diffuseColor);
         
-        kD *= (1.0f - kS);
-        const float3 lightColorAndIntensity = DirLight.Color * DirLight.Intensity;
+    kD *= (1.0f - kS);
+    const float3 lightColorAndIntensity = DirLight.Color * DirLight.Intensity;
         
         
-        float3 directlightDirectRadiance = (kD + kS) * lightColorAndIntensity * saturate(dot(pixelNormal, toDirLight));
-        float dirLightAttenuation = saturate(dot(pixelNormal, normalize(-DirLight.LightDir.rgb)));
+    float3 directlightDirectRadiance = (kD + kS) * lightColorAndIntensity * saturate(dot(pixelNormal, toDirLight));
+    float dirLightAttenuation = saturate(dot(pixelNormal, normalize(-DirLight.LightDir.rgb)));
         
         //Indirect lighting
-        float2 integratedBRDF = IntegrateBRDF(input.UV0.x, input.UV0.y);
+    float2 integratedBRDF = IntegrateBRDF(input.UV0.x, input.UV0.y);
         
-        const float3 diffuseIBL = DiffuseIBL(pixelNormal);
-        const float3 specularIBL = SpecularIBL(pixelNormal, toView, roughMap, specularColor);
+    const float3 diffuseIBL = DiffuseIBL(pixelNormal);
+    const float3 specularIBL = SpecularIBL(pixelNormal, toView, roughMap, specularColor);
         
         
-        kA = (diffuseColor * diffuseIBL + specularIBL) * occlusionMap;
+    kA = (diffuseColor * diffuseIBL + specularIBL) * occlusionMap;
         
 
-        float shadow = GetDirLightShadow(input.WorldPosition);
+    float shadow = GetDirLightShadow(input.WorldPosition);
         [flatten]
     if (DirLight.Active == false)
     {
