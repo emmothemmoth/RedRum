@@ -32,7 +32,8 @@ enum class PSOType
 	Bloom,
 	SSAO,
 	Custom,
-	ScreenPicking
+	ObjectID,
+	WorldSpaceUI
 };
 
 struct PipelineStateObject

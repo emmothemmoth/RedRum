@@ -9,7 +9,7 @@
 BoxComponent::BoxComponent(GameObject& aParent)
 	: Component(aParent)
 {
-	myRenderStages.at(RenderStage::Debug) = true;
+	myRenderStages.at(RenderStage::WorldSpaceUI) = true;
 	myIsVisible = false;
 }
 
@@ -55,7 +55,7 @@ void BoxComponent::Render()
 {
 	if (!myIsVisible) return;
 	auto& renderer = RENDERER;
-	renderer.Enqueue<GCmdDrawDebugLines>(RenderStage::Debug, myDebugObject, myParent.GetTransform());
+	renderer.Enqueue<GCmdDrawDebugLines>(RenderStage::WorldSpaceUI, myDebugObject, myParent.GetTransform());
 }
 
 void BoxComponent::ShowLines()

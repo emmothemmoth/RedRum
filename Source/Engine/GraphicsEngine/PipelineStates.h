@@ -21,5 +21,6 @@ enum class PipelineStates
 	Bloom,
 	SSAO,
 	SpriteRendering,
-	ObjectIDRendering
+	ObjectIDRendering,
+	WorldspaceUI
 };

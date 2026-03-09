@@ -1,8 +1,8 @@
-* Componentsystem updates
-* TransformGizmo
-* Renderqueues, PSO and sorting rework
-* Screen picking
-* Debug rendering
+* Componentsystem updates \*
+* TransformGizmo \*
+* Renderqueues, PSO and sorting rework \*
+* Screen picking \*
+* Debug rendering \*
 * Icons
 * Editor commands, moving stuff in scene
 * Drag \& Drop audio files and meshes into scene

@@ -39,12 +39,6 @@ void RenderQueue::RenderFrame()
 	}
 	myForwardList.Reset();
 
-	if (myDebugList.HasCommands())
-	{
-		myDebugList.Execute();
-	}
-	myDebugList.Reset();
-
 	if (myObjectIDRenderList.HasCommands())
 	{
 		myObjectIDRenderList.Execute();
@@ -57,12 +51,6 @@ void RenderQueue::RenderFrame()
 	}
 	myParticleList.Reset();
 
-	if (myWorldSpaceUIList.HasCommands())
-	{
-		myWorldSpaceUIList.Execute();
-	}
-	myWorldSpaceUIList.Reset();
-
 	if (myCustomList.HasCommands())
 	{
 		myCustomList.Execute();
@@ -74,6 +62,12 @@ void RenderQueue::RenderFrame()
 		myPostProcessList.Execute();
 	}
 	myPostProcessList.Reset();
+
+	if (myWorldSpaceUIList.HasCommands())
+	{
+		myWorldSpaceUIList.Execute();
+	}
+	myWorldSpaceUIList.Reset();
 
 	if (mySpriteList.HasCommands())
 	{
@@ -91,7 +85,6 @@ void RenderQueue::Reset(bool aClearLists)
 		myForwardList.Reset();
 		myObjectIDRenderList.Reset();
 		myParticleList.Reset();
-		myDebugList.Reset();
 		myCustomList.Reset();
 		myWorldSpaceUIList.Reset();
 		myPostProcessList.Reset();
@@ -115,11 +108,6 @@ void RenderQueue::Reset(bool aClearLists)
 	myForwardList.Enqueue<GCmdSetVertexShader>("Default_VS");
 	myForwardList.Enqueue<GCmdSetPixelShader>("Default_PS");
 
-	myDebugList.Enqueue<GCmdEndEvent>();
-	myDebugList.Enqueue<GCmdBeginEvent>("Debug");
-	myDebugList.Enqueue<GCmdSetVertexShader>("Default_VS");
-	myDebugList.Enqueue<GCmdSetPixelShader>("DebugLine_PS");
-
 	myParticleList.Enqueue<GCmdClearTextureResource>(100);
 	myParticleList.Enqueue<GCmdEndEvent>();
 	myParticleList.Enqueue<GCmdBeginEvent>("Particles");
@@ -130,12 +118,6 @@ void RenderQueue::Reset(bool aClearLists)
 	myCustomList.Enqueue<GCmdSetVertexShader>("Default_VS");
 	myCustomList.Enqueue<GCmdSetPixelShader>("Default_PS");
 
-	myWorldSpaceUIList.Enqueue<GCmdEndEvent>();
-	myWorldSpaceUIList.Enqueue<GCmdBeginEvent>("WorldspaceUI");
-	//myWorldSpaceUIList.Enqueue<GCmdChangePipelineState>(static_cast<unsigned>(PipelineStates::ParticleRendering));
-	myWorldSpaceUIList.Enqueue<GCmdSetVertexShader>("Default_VS");
-	myWorldSpaceUIList.Enqueue<GCmdSetPixelShader>("Default_PS");
-
 	myObjectIDRenderList.Enqueue<GCmdEndEvent>();
 	myObjectIDRenderList.Enqueue<GCmdBeginEvent>("ObjectID");
 	myObjectIDRenderList.Enqueue<GCmdChangePipelineState>(static_cast<unsigned>(PipelineStates::ObjectIDRendering));
@@ -145,6 +127,12 @@ void RenderQueue::Reset(bool aClearLists)
 	myPostProcessList.Enqueue<GCmdEndEvent>();
 	myPostProcessList.Enqueue<GCmdBeginEvent>("PostProcessing");
 	myPostProcessList.Enqueue<GCmdChangePipelineState>(static_cast<unsigned>(PipelineStates::CustomPostProcess));
+
+	myWorldSpaceUIList.Enqueue<GCmdEndEvent>();
+	myWorldSpaceUIList.Enqueue<GCmdBeginEvent>("WorldspaceUI");
+	myWorldSpaceUIList.Enqueue<GCmdChangePipelineState>(static_cast<unsigned>(PipelineStates::WorldspaceUI));
+	myWorldSpaceUIList.Enqueue<GCmdSetVertexShader>("Default_VS");
+	myWorldSpaceUIList.Enqueue<GCmdSetPixelShader>("WorldspaceUI_PS");
 
 	mySpriteList.Enqueue<GCmdEndEvent>();
 	mySpriteList.Enqueue<GCmdBeginEvent>("UI");
@@ -159,9 +147,8 @@ void RenderQueue::PrintDebugInfo()
 	std::cout << "Deferred commands size: " << myDeferredList.GetSize() << std::endl;
 	std::cout << "Forward commands size: " << myForwardList.GetSize() << std::endl;
 	std::cout << "Particle commands size: " << myParticleList.GetSize() << std::endl;
-	std::cout << "Debug commands size: " << myDebugList.GetSize() << std::endl;
 	std::cout << "Custom commands size: " << myCustomList.GetSize() << std::endl;
-	std::cout << "WorldspaceUI commands size: " << myWorldSpaceUIList.GetSize() << std::endl;
 	std::cout << "Post process commands size: " << myPostProcessList.GetSize() << std::endl;
+	std::cout << "WorldspaceUI commands size: " << myWorldSpaceUIList.GetSize() << std::endl;
 	std::cout << "Sprite commands size: " << mySpriteList.GetSize() << std::endl;
 }

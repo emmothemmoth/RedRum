@@ -212,6 +212,7 @@ private:
 	bool CreateSSAOPSO();
 	bool CreateParticlePSO();
 	bool CreateObjectIDPSO();
+	bool CreateWorldspaceUIPSO();
 
 	bool CreateDirLightShadowMap(const std::string& aName);
 	void CreatePointLightShadowMaps(const std::string& aName);
@@ -269,6 +270,7 @@ private:
 	std::shared_ptr<PipelineStateObject> mySSAOPSO;
 	std::shared_ptr<PipelineStateObject> myCustomPSO;
 	std::shared_ptr<PipelineStateObject> myObjectIDPSO;
+	std::shared_ptr<PipelineStateObject> myWorldspaceUIPSO;
 
 	GBufferData myGBuffer;
 

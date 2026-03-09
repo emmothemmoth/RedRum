@@ -28,9 +28,6 @@ public:
 		case RenderStage::Particles:
 			myParticleList.Enqueue<CommandClass>(std::forward<Args>(args)...);
 			break;
-		case RenderStage::Debug:
-			myDebugList.Enqueue<CommandClass>(std::forward<Args>(args)...);
-			break;
 		case RenderStage::Custom:
 			myCustomList.Enqueue<CommandClass>(std::forward<Args>(args)...);
 			break;
@@ -61,7 +58,6 @@ private:
 	GraphicsCommandList myDeferredList;
 	GraphicsCommandList myForwardList;
 	GraphicsCommandList myParticleList;
-	GraphicsCommandList myDebugList;
 	GraphicsCommandList myCustomList;
 	GraphicsCommandList myWorldSpaceUIList;
 	GraphicsCommandList myPostProcessList;

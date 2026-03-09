@@ -264,6 +264,11 @@ bool GraphicsEngine::Initialize(bool enableDeviceDebug)
 			LOG(GELog, Error, "Failed to create Screenpicking PSO");
 			return false;
 		}
+		if (!CreateWorldspaceUIPSO())
+		{
+			LOG(GELog, Error, "Failed to create Debug PSO");
+			return false;
+		}
 		if (!CreateDefaultMaterials())
 		{
 			LOG(GELog, Error, "Failed to create default materials");
@@ -643,11 +648,13 @@ void GraphicsEngine::RenderPoints(const unsigned aParticleCount)
 
 void GraphicsEngine::RenderDebugLines(const DebugLineObject& aDebugLineObject)
 {
+	SetPixelShader("DebugLine_PS");
 	myRHI->SetVertexBuffer(aDebugLineObject.GetVertexBuffer(), myCurrentVertexShader->VertexStride, 0);
 	myRHI->SetIndexBuffer(aDebugLineObject.GetIndexBuffer());
 	myRHI->SetPrimitiveTopology(aDebugLineObject.GetPrimitiveTopology());
 
 	myRHI->DrawIndexed(0, aDebugLineObject.GetNumIndices());
+	SetPixelShader("WorldspaceUI_PS");
 }
 
 uint32_t GraphicsEngine::GetIDFromPoint(const int aMousePosX, const int aMousePosY)
@@ -855,6 +862,9 @@ void GraphicsEngine::ChangePipelineState(const unsigned aNewPipelineState)
 	case PipelineStates::ObjectIDRendering:
 		ChangePipelineState(myObjectIDPSO);
 		break;
+	case PipelineStates::WorldspaceUI:
+		ChangePipelineState(myWorldspaceUIPSO);
+		break;
 	default:
 		break;
 	}
@@ -955,7 +965,6 @@ bool GraphicsEngine::CreateForwardPSO()
 
 	myRHI->CreateSamplerState("DefaultSamplerState", defaultSamplerDesc);
 	myForwardPSO->SamplerStates[0] = myRHI->GetSamplerState("DefaultSamplerState");
-
 
 	myForwardPSO->RenderTarget[0] = myHDRBuffer;
 	myForwardPSO->ClearRenderTarget[0] = false;
@@ -1321,7 +1330,7 @@ bool GraphicsEngine::CreateParticlePSO()
 bool GraphicsEngine::CreateObjectIDPSO()
 {
 	myObjectIDPSO = std::make_shared<PipelineStateObject>();
-	myObjectIDPSO->Type = PSOType::ScreenPicking;
+	myObjectIDPSO->Type = PSOType::ObjectID;
 
 	D3D11_BLEND_DESC blendDesc = {};
 	blendDesc.AlphaToCoverageEnable = FALSE; // Disable for ID picking
@@ -1346,6 +1355,25 @@ bool GraphicsEngine::CreateObjectIDPSO()
 	myObjectIDPSO->RenderTarget[0] = myObjectIDTexture;
 	myObjectIDPSO->DepthStencil = myRHI->GetDepthBuffer();
 	myObjectIDPSO->ClearDepthStencil = false;
+	return true;
+}
+
+bool GraphicsEngine::CreateWorldspaceUIPSO()
+{
+	myWorldspaceUIPSO = std::make_shared<PipelineStateObject>();
+	myWorldspaceUIPSO->RenderTargetCount = 1;
+	myWorldspaceUIPSO->Type = PSOType::WorldSpaceUI;
+
+	myWorldspaceUIPSO->DepthStencilState = myRHI->GetDepthStencilState(DepthState::DS_ReadOnly);
+	myWorldspaceUIPSO->BlendState = myRHI->GetBlendState("ForwardBlendState");
+	myWorldspaceUIPSO->SamplerStates[0] = myRHI->GetSamplerState("DefaultSamplerState");
+
+
+	myWorldspaceUIPSO->RenderTarget[0] = myRHI->GetBackBuffer();
+	myWorldspaceUIPSO->ClearRenderTarget[0] = false;
+
+	myWorldspaceUIPSO->DepthStencil = nullptr;
+	myWorldspaceUIPSO->ClearDepthStencil = false;
 	return true;
 }
 
@@ -1852,6 +1880,20 @@ void GraphicsEngine::CreateUIShaders()
 	{
 		LOG(GELog, Error, "Failed to load pixel shader from memory, {}", debugLinePS);
 	}
+	{
+#include "CompiledHeaders/WorldspaceUI_PS.h"
+		std::string_view worldspaceUIPS = "WorldspaceUI_PS";
+		myShaderMap.emplace(worldspaceUIPS, static_cast<unsigned>(myShaders.size()));
+		myShaders.push_back(std::make_shared<Shader>());
+		myShaders.back()->type = ShaderType::PixelShader;
+		std::shared_ptr<Shader> worldspaceUIPSShader = std::dynamic_pointer_cast<Shader>(myShaders.back());
+		if (!myRHI->LoadShaderFromMemory(worldspaceUIPS, *worldspaceUIPSShader, BuiltIn_WorldspaceUI_PS_ByteCode, sizeof(BuiltIn_WorldspaceUI_PS_ByteCode)))
+		{
+			LOG(GELog, Error, "Failed to load pixel shader from memory, {}", worldspaceUIPS);
+		}
+
+	}
+
 }
 
 void GraphicsEngine::CreateParticleShaders()
