@@ -13,7 +13,7 @@ GameObject::GameObject(std::string_view aName, unsigned anID)
 {
 	myID = anID;
 	myName = aName;
-	AddComponent(std::make_shared<MeshComponent>(*this, AssetManager::Get().GetAsset<MeshAsset>(DEFAULT_TRANSFORM_MESH)));
+	AddComponent(std::make_shared<MeshComponent>(*this, AssetManager::Get().GetAsset<MeshAsset>(DEFAULT_TRANSFORM_MESH), false));
 	auto transformGizmo = GetLastAddedComponent<MeshComponent>();
 	transformGizmo->SetRenderStage(RenderStage::Deferred, false);
 	transformGizmo->SetRenderStage(RenderStage::WorldSpaceUI);
@@ -78,10 +78,12 @@ void GameObject::RotateAroundZ(float anAngle)
 
 void GameObject::OnSelected()
 {
+	OnComponentSelected.Broadcast();
 	myComponents.at(TRANSFORM_GIZMO_COMPONENT_ID)->SetVisible(true);
 }
 
 void GameObject::OnDeselected()
 {
+	OnComponentDeselected.Broadcast();
 	myComponents.at(TRANSFORM_GIZMO_COMPONENT_ID)->SetVisible(false);
 }

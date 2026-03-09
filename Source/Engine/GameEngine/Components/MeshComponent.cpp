@@ -12,8 +12,9 @@
 #include "..\GraphicsEngine\Commands\GCmdRenderSkeletalMesh.h"
 
 #include "..\GraphicsEngine\GraphicsEngine.h"
+#include "BoxComponent.h"
 
-MeshComponent::MeshComponent(GameObject& aParent, std::shared_ptr<MeshAsset> aMesh)
+MeshComponent::MeshComponent(GameObject& aParent, std::shared_ptr<MeshAsset> aMesh, bool aShouldRenderLines)
 	: Component(aParent)
 {
 	myMesh = aMesh;
@@ -21,6 +22,11 @@ MeshComponent::MeshComponent(GameObject& aParent, std::shared_ptr<MeshAsset> aMe
 	myRenderStages.at(RenderStage::ShadowMapping) = true;
 	myRenderStages.at(RenderStage::Deferred) = true;
 	myRenderStages.at(RenderStage::ObjectIDRendering) = true;
+	if (aShouldRenderLines)
+	{
+		myParent.AddComponent(std::make_shared<BoxComponent>(myParent));
+		myParent.GetLastAddedComponent<BoxComponent>()->Initialize(myMesh->GetMinPoint(), myMesh->GetMaxPoint());
+	}
 }
 
 MeshComponent::~MeshComponent()

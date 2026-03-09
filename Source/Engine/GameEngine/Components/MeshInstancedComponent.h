@@ -11,7 +11,7 @@ class MeshInstancedComponent : public Component
 {
 public:
 	MeshInstancedComponent() = delete;
-	MeshInstancedComponent(GameObject& aParent, std::shared_ptr<MeshAsset> aMesh);
+	MeshInstancedComponent(GameObject& aParent, std::shared_ptr<MeshAsset> aMesh, bool aShouldRenderLines = true);
 	~MeshInstancedComponent();
 	void Update(const float aDeltaTime) override;
 

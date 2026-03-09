@@ -38,6 +38,8 @@ private:
 	std::filesystem::path myPath;
 	std::wstring myName;
 	unsigned myPrimitiveTopology = 0;
+	CU::Vector3f myMin = { FLT_MAX, FLT_MAX, FLT_MAX };
+	CU::Vector3f myMax = { -FLT_MAX,  -FLT_MAX, -FLT_MAX };
 public:
 	MeshAsset();
 	MeshAsset(const std::filesystem::path& aPath);
@@ -58,7 +60,8 @@ public:
 
 	void SetMaterial(const std::shared_ptr<MaterialAsset>& aMaterial, const unsigned int& anElementIndex);
 
-
+	const CU::Vector3f& GetMinPoint() const { return myMin; }
+	const CU::Vector3f& GetMaxPoint() const { return myMax; }
 public:
 	SkeletonAsset mySkeleton;
 

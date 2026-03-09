@@ -9,8 +9,9 @@
 #include "../GraphicsEngine/Objects/InstanceData.h"
 #include "../GraphicsEngine/GraphicsEngine.h"
 #include "../GraphicsEngine/Commands/GCmdRenderInstancedMesh.h"
+#include "BoxComponent.h"
 
-MeshInstancedComponent::MeshInstancedComponent(GameObject& aParent, std::shared_ptr<MeshAsset> aMesh)
+MeshInstancedComponent::MeshInstancedComponent(GameObject& aParent, std::shared_ptr<MeshAsset> aMesh, bool aShouldRenderLines)
 	: Component(aParent)
 {
 	myComponentType = ComponentType::MeshInstance;
@@ -19,6 +20,11 @@ MeshInstancedComponent::MeshInstancedComponent(GameObject& aParent, std::shared_
 	myRenderStages.at(RenderStage::ShadowMapping) = true;
 	myRenderStages.at(RenderStage::Deferred) = true;
 	myRenderStages.at(RenderStage::ObjectIDRendering) = true;
+	if (aShouldRenderLines)
+	{
+		myParent.AddComponent(std::make_shared<BoxComponent>(myParent));
+		myParent.GetLastAddedComponent<BoxComponent>()->Initialize(myMesh->GetMinPoint(), myMesh->GetMaxPoint());
+	}
 }
 
 MeshInstancedComponent::~MeshInstancedComponent()

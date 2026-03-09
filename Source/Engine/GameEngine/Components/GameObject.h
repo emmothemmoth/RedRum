@@ -2,9 +2,12 @@
 #include "IEntity.h"
 #include "Component.h"
 #include "GameObjectID.h"
+#include "../Events/MulticastDelegate.h"
+
 #include <string_view>
 
-
+using FOnComponentSelected = MulticastDelegate<>;
+using FOnComponentDeselected = MulticastDelegate<>;
 class GameObject : public IEntity
 {
 public:
@@ -29,8 +32,14 @@ public:
 	unsigned SetID(const unsigned anID) { myID = anID; }
 	unsigned GetID() const { return myID; }
 
+
+public:
+	FOnComponentSelected OnComponentSelected;
+	FOnComponentDeselected OnComponentDeselected;
+
 private:
 	unsigned myID = 0;
 	std::string myName;
+	bool myIsSelected = false;
 };
 

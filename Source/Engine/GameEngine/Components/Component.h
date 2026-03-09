@@ -11,7 +11,7 @@ public:
 	Component(GameObject& aParent);
 	virtual				~Component();
 	virtual void		Update(const float aDeltaTime);
-	virtual void Render();
+	virtual void Render() {};
 
 	void SetID(const unsigned anID) { myID = anID; }
 	void SetVisible(const bool aIsVisible) { myIsVisible = aIsVisible; }

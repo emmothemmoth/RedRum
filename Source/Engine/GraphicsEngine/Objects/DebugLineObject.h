@@ -16,8 +16,10 @@ public:
 
 	void Initialize(const std::vector<Vertex>& aVertexList,const std::vector<unsigned>& aIndexList, DebugColor aColor = DebugColor::Red, std::string_view aName = "", bool aFromMesh = false);
 	void InitializeFromPoints(const std::vector<CU::Vector3f>& aPointList, std::vector<unsigned>& anIndexList, DebugColor aColor = DebugColor::Red, std::string_view aName = "");
+	void Initialize();
 
 	void AddLine(const CU::Vector3f& aStart, const CU::Vector3f& anEnd);
+	void SetColor(const DebugColor aColor);
 
 	Microsoft::WRL::ComPtr<ID3D11Buffer> GetVertexBuffer() const;
 	Microsoft::WRL::ComPtr<ID3D11Buffer> GetIndexBuffer() const;

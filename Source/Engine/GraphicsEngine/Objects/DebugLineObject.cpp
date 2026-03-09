@@ -68,6 +68,11 @@ void DebugLineObject::InitializeFromPoints(const std::vector<CU::Vector3f>& aPoi
 	GraphicsEngine::Get().CreateIndexBuffer(myName + " index buffer", myIndices, myIndexBuffer);
 }
 
+void DebugLineObject::Initialize()
+{
+	Init();
+}
+
 void DebugLineObject::AddLine(const CU::Vector3f& aStart, const CU::Vector3f& anEnd)
 {
 	myIndices.emplace_back(static_cast<unsigned>(myVertices.size()));
@@ -77,11 +82,11 @@ void DebugLineObject::AddLine(const CU::Vector3f& aStart, const CU::Vector3f& an
 
 	myNumIndices = static_cast<unsigned>(myIndices.size());
 	myNumVertices = static_cast<unsigned>(myVertices.size());
+}
 
-	if (myVertexBuffer == nullptr || myIndexBuffer == nullptr)
-	{
-		Init();
-	}
+void DebugLineObject::SetColor(const DebugColor aColor)
+{
+	SetVertexColor(aColor);
 }
 
 Microsoft::WRL::ComPtr<ID3D11Buffer> DebugLineObject::GetVertexBuffer() const

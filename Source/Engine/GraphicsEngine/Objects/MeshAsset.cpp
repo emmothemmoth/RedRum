@@ -34,6 +34,17 @@ void MeshAsset::AddElement(const std::vector<Vertex>& someMdlVertices, const std
 	{
 		return;
 	}
+	for (auto& vertex : someMdlVertices)
+	{
+		if (vertex.Position.x < myMin.x) myMin.x = vertex.Position.x;
+		if (vertex.Position.x > myMax.x) myMax.x = vertex.Position.x;
+
+		if (vertex.Position.y < myMin.y) myMin.y = vertex.Position.y;
+		if (vertex.Position.y > myMax.y) myMax.y = vertex.Position.y;
+
+		if (vertex.Position.z < myMin.z) myMin.z = vertex.Position.z;
+		if (vertex.Position.z > myMax.z) myMax.z = vertex.Position.z;
+	}
 
 	Element mesh = {};
 	mesh.vertexBuffer = std::move(vertexBuffer);

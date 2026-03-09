@@ -27,9 +27,6 @@ void Component::Update(const float aDeltaTime)
 	aDeltaTime;
 }
 
-void Component::Render()
-{
-}
 
 
 

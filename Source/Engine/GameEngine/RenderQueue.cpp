@@ -39,6 +39,12 @@ void RenderQueue::RenderFrame()
 	}
 	myForwardList.Reset();
 
+	if (myDebugList.HasCommands())
+	{
+		myDebugList.Execute();
+	}
+	myDebugList.Reset();
+
 	if (myObjectIDRenderList.HasCommands())
 	{
 		myObjectIDRenderList.Execute();
@@ -62,14 +68,6 @@ void RenderQueue::RenderFrame()
 		myCustomList.Execute();
 	}
 	myCustomList.Reset();
-
-
-	if (myDebugList.HasCommands())
-	{
-		myDebugList.Execute();
-	}
-	myDebugList.Reset();
-
 
 	if (myPostProcessList.HasCommands())
 	{
@@ -117,6 +115,11 @@ void RenderQueue::Reset(bool aClearLists)
 	myForwardList.Enqueue<GCmdSetVertexShader>("Default_VS");
 	myForwardList.Enqueue<GCmdSetPixelShader>("Default_PS");
 
+	myDebugList.Enqueue<GCmdEndEvent>();
+	myDebugList.Enqueue<GCmdBeginEvent>("Debug");
+	myDebugList.Enqueue<GCmdSetVertexShader>("Default_VS");
+	myDebugList.Enqueue<GCmdSetPixelShader>("DebugLine_PS");
+
 	myParticleList.Enqueue<GCmdClearTextureResource>(100);
 	myParticleList.Enqueue<GCmdEndEvent>();
 	myParticleList.Enqueue<GCmdBeginEvent>("Particles");
@@ -138,7 +141,6 @@ void RenderQueue::Reset(bool aClearLists)
 	myObjectIDRenderList.Enqueue<GCmdChangePipelineState>(static_cast<unsigned>(PipelineStates::ObjectIDRendering));
 	myObjectIDRenderList.Enqueue<GCmdSetVertexShader>("Default_VS");
 	myObjectIDRenderList.Enqueue<GCmdSetPixelShader>("ObjectID_PS");
-
 
 	myPostProcessList.Enqueue<GCmdEndEvent>();
 	myPostProcessList.Enqueue<GCmdBeginEvent>("PostProcessing");
