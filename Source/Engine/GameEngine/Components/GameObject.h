@@ -25,14 +25,15 @@ public:
 	void RotateAroundY(float anAngle);
 	void RotateAroundX(float anAngle);
 	void RotateAroundZ(float anAngle);
-
-	void OnSelected();
-	void OnDeselected();
+	void SetIcon(ComponentType aComponentType, const CU::Vector4f& anOffset = {0.0f, 0.0f, 0.0f, 0.0f});
 
 	unsigned SetID(const unsigned anID) { myID = anID; }
 	unsigned GetID() const { return myID; }
 
+	std::string_view GetName() const { return myName; }
 
+	void OnSelected();
+	void OnDeselected();
 public:
 	FOnComponentSelected OnComponentSelected;
 	FOnComponentDeselected OnComponentDeselected;

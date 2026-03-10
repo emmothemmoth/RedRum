@@ -1,9 +1,11 @@
 #include "GameEngine.pch.h"
 #include "GameObject.h"
 #include "MeshComponent.h"
+#include "BillboardComponent.h"
 #include "../AssetManager/AssetManager.h"
 #include "../GraphicsEngine/Objects/MeshAsset.h"
 #include "../GraphicsEngine/Objects/MaterialAsset.h"
+#include "../GraphicsEngine/Objects/TextureAsset.h"
 #define DEFAULT_TRANSFORM_MESH "TransformGizmo"
 #define DEFAULT_TRANSFORM_MATERIAL "M_TransformGizmoMaterial"
 #define TRANSFORM_GIZMO_COMPONENT_ID 0
@@ -44,7 +46,7 @@ void GameObject::Render()
 	if (!myIsVisible) return;
 	for (auto component : myComponents)
 	{
-		component->Render();
+ 		component->Render();
 	}
 }
 
@@ -76,6 +78,30 @@ void GameObject::RotateAroundZ(float anAngle)
 {
 	myTransform = CommonUtilities::Matrix4x4<float>::CreateRotationAroundZ(anAngle * (3.14f / 180.0f)) * myTransform;
 }
+
+void GameObject::SetIcon(ComponentType aComponentType, const CU::Vector4f& anOffset)
+{
+	std::shared_ptr<BillboardComponent> icon = GetComponent<BillboardComponent>();
+	if (!icon)
+	{
+		AddComponent(std::make_shared<BillboardComponent>(*this));
+		icon = GetLastAddedComponent<BillboardComponent>();
+	}
+	icon->SetOffset(anOffset);
+	 switch (aComponentType)
+	 {
+	 case ComponentType::AudioSource:
+		 icon->SetTexture(AssetManager::Get().GetAsset<TextureAsset>("T_SourceIcon_C"));
+		 icon->SetVisible(true);
+		 return;
+	 case ComponentType::Mesh:
+	 case ComponentType::MeshInstance:
+		 icon->SetTexture(AssetManager::Get().GetAsset<TextureAsset>("T_ObjectIcon_C"));
+		 icon->SetVisible(true);
+		 return;
+	 }
+}
+
 
 void GameObject::OnSelected()
 {

@@ -5,4 +5,6 @@ cbuffer FrameBuffer : register(b0)
     float4 FB_CameraPosition;
     float2 FB_Resolution;
     float2 FB_Padding2;
+    float4 FB_CameraRight;
+    float4 FB_CameraUp;
 }

@@ -7,7 +7,6 @@
 
 class Component;
 
-
 class IEntity
 {
 public:
@@ -77,12 +76,16 @@ template<class T>
 inline std::shared_ptr<T> IEntity::GetLastAddedComponent()
 {
 	assert(myComponents.size() > 0);
-	std::shared_ptr<T> ptr = std::dynamic_pointer_cast<T>(myComponents.back());
-	if (ptr.get() != nullptr)
+	std::shared_ptr<T> cPtr = nullptr;
+	for (auto& c : myComponents)
 	{
-		return ptr;
+		std::shared_ptr<T> ptr = std::dynamic_pointer_cast<T>(c);
+		if (ptr.get() != nullptr)
+		{
+			cPtr = ptr;
+		}
 	}
-	return std::shared_ptr<T>();
+	return cPtr;
 }
 
 template<class T>

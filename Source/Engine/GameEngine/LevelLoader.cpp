@@ -60,13 +60,14 @@ bool LevelLoader::LoadLevelFromJSON(const std::filesystem::path& aLevelPath, Lev
                 case ComponentType::Mesh:
                 {
                     gameObject->AddComponent(std::make_shared<MeshComponent>(*gameObject, AssetManager::Get().GetAsset<MeshAsset>(component.at("Mesh"))));
+                    std::shared_ptr<MeshComponent> meshComp = gameObject->GetLastAddedComponent<MeshComponent>();
                     if (component.contains("RenderPass"))
                     {
                         std::string renderPass = component.at("RenderPass");
                         if (renderPass.starts_with("Forward"))
                         {
-                            gameObject->GetLastAddedComponent<MeshComponent>()->SetRenderStage(RenderStage::Forward);
-                            gameObject->GetLastAddedComponent<MeshComponent>()->SetRenderStage(RenderStage::Deferred, false);
+                            meshComp->SetRenderStage(RenderStage::Forward);
+                            meshComp->SetRenderStage(RenderStage::Deferred, false);
                         }
                     }
                     if (component.contains("Material"))
@@ -74,21 +75,24 @@ bool LevelLoader::LoadLevelFromJSON(const std::filesystem::path& aLevelPath, Lev
                         std::string material = component.at("Material");
                         if (!material.empty())
                         {
-                            gameObject->GetLastAddedComponent<MeshComponent>()->AddMaterial(AssetManager::Get().GetAsset<MaterialAsset>(material));
+                            meshComp->AddMaterial(AssetManager::Get().GetAsset<MaterialAsset>(material));
                         }
                     }
+                   //CU::Vector4f iconOffset = { 0.0f, meshComp->GetMesh()->GetMaxPoint().y + 50.0f, 0.0f, 0.0f };
+                    gameObject->SetIcon(ComponentType::Mesh/*, iconOffset*/);
                     break;
                 }
                 case ComponentType::MeshInstance:
                 {
                     gameObject->AddComponent(std::make_shared<MeshInstancedComponent>(*gameObject, AssetManager::Get().GetAsset<MeshAsset>(component.at("Mesh"))));
+                    std::shared_ptr<MeshInstancedComponent> meshInstancedComp = gameObject->GetLastAddedComponent<MeshInstancedComponent>();
                     if (component.contains("RenderPass"))
                     {
                         std::string renderPass = component.at("RenderPass");
                         if (renderPass.starts_with("forward"))
                         {
-                            gameObject->GetLastAddedComponent<MeshComponent>()->SetRenderStage(RenderStage::Forward);
-                            gameObject->GetLastAddedComponent<MeshComponent>()->SetRenderStage(RenderStage::Deferred, false);
+                            meshInstancedComp->SetRenderStage(RenderStage::Forward);
+                            meshInstancedComp->SetRenderStage(RenderStage::Deferred, false);
                         }
                     }
                     if (component.contains("Material"))
@@ -96,7 +100,7 @@ bool LevelLoader::LoadLevelFromJSON(const std::filesystem::path& aLevelPath, Lev
                         std::string material = component.at("Material");
                         if (!material.empty())
                         {
-                            gameObject->GetLastAddedComponent<MeshInstancedComponent>()->AddMaterial(AssetManager::Get().GetAsset<MaterialAsset>(material));
+                            meshInstancedComp->AddMaterial(AssetManager::Get().GetAsset<MaterialAsset>(material));
                         }
                     }
                     for (auto& instance : component.at("Instances"))
@@ -112,9 +116,11 @@ bool LevelLoader::LoadLevelFromJSON(const std::filesystem::path& aLevelPath, Lev
                         matrix = matrix * CU::Matrix4x4f::CreateRotationAroundY(instance.at("RotationDegrees")[1]);
                         matrix = matrix * CU::Matrix4x4f::CreateRotationAroundZ(instance.at("RotationDegrees")[2]);
                         matrix.SetRow(translation, 4);
-                        gameObject->GetComponent<MeshInstancedComponent>()->AddInstance(matrix);
+                        meshInstancedComp->AddInstance(matrix);
                     }
                     gameObject->GetComponent<MeshInstancedComponent>()->Init();
+                    //CU::Vector4f iconOffset = { 0.0f, meshInstancedComp->GetMesh()->GetMaxPoint().y + 50.0f, 0.0f, 0.0f };
+                    gameObject->SetIcon(ComponentType::MeshInstance/*, iconOffset*/);
                     break;
                 }
                 case ComponentType::Animation:
@@ -142,7 +148,7 @@ bool LevelLoader::LoadLevelFromJSON(const std::filesystem::path& aLevelPath, Lev
                     break;
                 case ComponentType::AudioSource:
                     gameObject->AddComponent(std::make_shared<AudioSourceComponent>(*gameObject));
-                    gameObject->GetComponent<AudioSourceComponent>()->Init(component.at("File"));
+                    gameObject->SetIcon(ComponentType::AudioSource);
                     break;
                 default:
                     break;
@@ -151,6 +157,21 @@ bool LevelLoader::LoadLevelFromJSON(const std::filesystem::path& aLevelPath, Lev
         }
 
 
+    }
+
+    //Find ground
+    for (auto& object : inOutLevel.GameObjects)
+    {
+        if (object->GetName().find("Ground") != std::string::npos
+            ||
+            object->GetName().find("ground") != std::string::npos)
+        {
+            std::shared_ptr<BillboardComponent> billboard = object->GetComponent<BillboardComponent>();
+            if (billboard)
+            {
+                billboard->SetVisible(false);
+            }
+        }
     }
     return true;
 }

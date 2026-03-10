@@ -1,7 +1,6 @@
 #pragma once
 #include "../../Utilities/CommonUtilities/Matrix4x4.hpp"
 
-
 struct FrameBufferData
 {
 	CommonUtilities::Matrix4x4<float> View;
@@ -9,4 +8,6 @@ struct FrameBufferData
 	CommonUtilities::Vector4<float> CameraPosition;
 	CommonUtilities::Vector2<float> Resolution;
 	CommonUtilities::Vector2<float> Padding;
+	CommonUtilities::Vector4<float> CameraRight;
+	CommonUtilities::Vector4<float> CameraUp;
 };

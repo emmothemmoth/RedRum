@@ -9,6 +9,7 @@
 BoxComponent::BoxComponent(GameObject& aParent)
 	: Component(aParent)
 {
+	myComponentType = ComponentType::Box;
 	myRenderStages.at(RenderStage::WorldSpaceUI) = true;
 	myIsVisible = false;
 }

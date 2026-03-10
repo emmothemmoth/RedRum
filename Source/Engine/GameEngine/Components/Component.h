@@ -21,6 +21,7 @@ public:
 	ComponentType GetComponentType() { return myComponentType; }
 	unsigned GetID() { return myID; }
 
+	void SetRenderStage(RenderStage aStage, bool aShouldRender = true) { myRenderStages.at(aStage) = aShouldRender; }
 protected:
 	GameObject& myParent;
 	std::unordered_map<RenderStage, bool> myRenderStages;

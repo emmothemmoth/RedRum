@@ -13,3 +13,4 @@
 #include "AnimationComponent.h"
 #include "ParticleSystemComponent.h"
 #include "AudioSourceComponent.h"
+#include "BillboardComponent.h"

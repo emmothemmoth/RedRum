@@ -1,7 +1,7 @@
 #include "GameEngine.pch.h"
 #include "ShadowCameraComponent.h"
 #include "MainSingleton.h"
-
+#include "GameObject.h"
 #include "..\GraphicsEngine\Buffers\FrameBuffer.h"
 
 #include "..\GraphicsEngine\GraphicsEngine.h"
@@ -23,6 +23,8 @@ void ShadowCameraComponent::Init(const CU::Matrix4x4<float>& aView, const CU::Ma
 	myFrameBuffer->CameraPosition.z = aPosition.z;
 	myFrameBuffer->Projection = aProjection;
 	myFrameBuffer->View = aView;
+	myFrameBuffer->CameraRight = myParent.GetTransform().GetRow(1);
+	myFrameBuffer->CameraUp = myParent.GetTransform().GetRow(2);
 }
 
 void ShadowCameraComponent::Render()

@@ -128,6 +128,8 @@ void CameraComponent::Update(float aDeltaTime)
 void CameraComponent::Render()
 {
 	myFrameBuffer->CameraPosition = myPosition;
+	myFrameBuffer->CameraRight = myViewTransform.GetRow(1);
+	myFrameBuffer->CameraUp = myViewTransform.GetRow(2);
 	myFrameBuffer->Projection = GetClipMatrix();
 	myFrameBuffer->View = GetViewInverse();
 	myFrameBuffer->Resolution = GraphicsEngine::Get().GetViewPortSize();

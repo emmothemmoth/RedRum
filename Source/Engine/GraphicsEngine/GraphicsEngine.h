@@ -108,17 +108,15 @@ public:
 	void EndEvent() const;
 	void SetMarker(std::string_view aMarker) const;
 
-
 	void DrawQuad(const CU::Vector2f& aSize = {-1.0f, -1.0f});
-
 
 	void EndFrame();
 
-
 	void RenderMesh(const MeshAsset& aMesh, const std::vector<std::shared_ptr<MaterialAsset>>& someMaterials) const;
 
-	void RenderSprite2D(const SpriteAsset& anElement) const;
+	void RenderBillboard(std::shared_ptr<TextureAsset> aTexture);
 
+	void RenderSprite2D(const SpriteAsset& anElement) const;
 
 	void RenderInstancedMesh(const MeshAsset& aMesh, const std::vector<std::shared_ptr<MaterialAsset>>& someMaterials, const InstanceData& anInstanceData) const;
 
@@ -191,7 +189,6 @@ public:
 	HWND GetWindowHandle() const;
 	SIZE GetWindowSize() const;
 	CU::Vector2f GetRenderSize() const;
-
 
 private:
 	bool CreateForwardPSO();
@@ -315,6 +312,9 @@ private:
 
 	std::atomic<bool> myPickingResultDone = false;
 	unsigned myScreenPickingResult = 0;
+	ComPtr<ID3D11Buffer> myBillboardIndexBuffer;
+	ComPtr<ID3D11Buffer> myBillboardVertexBuffer;
+
 };
 
 

@@ -13,5 +13,7 @@ enum class ComponentType
 	DirectionalLight,
 	PointLight,
 	SpotLight,
+	Box,
+	Billboard,
 	Count
 };

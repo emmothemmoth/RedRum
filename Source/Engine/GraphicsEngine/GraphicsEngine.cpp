@@ -17,6 +17,7 @@
 #include "Objects/MaterialAsset.h"
 #include "Objects\SpriteAsset.h"
 #include "Objects/DebugLineObject.h"
+#include "Objects/BillBoardVertex.h"
 #include "Buffers/LightBuffer.h"
 #include "Buffers\FrameBuffer.h"
 #include "Buffers\ObjectBuffer.h"
@@ -274,7 +275,19 @@ bool GraphicsEngine::Initialize(bool enableDeviceDebug)
 			LOG(GELog, Error, "Failed to create default materials");
 			return false;
 		}
-
+		
+		{
+			if (!myRHI->CreateVertexBuffer("Billboard Vertex buffer", BillboardVertices, myBillboardVertexBuffer))
+			{
+				LOG(GELog, Error, "Failed to create Billboard Vertex buffer");
+				return false;
+			}
+			if (!myRHI->CreateIndexBuffer("Billboard Index buffer", BillboardIndices, myBillboardIndexBuffer))
+			{
+				LOG(GELog, Error, "Failed to create Billboard Index buffer");
+				return false;
+			}
+		}
 
 		ConstantBuffer frameBuffer;
 		if (!myRHI->CreateConstantBuffer("FrameBuffer", sizeof(FrameBufferData), 0, PIPELINE_STAGE_VERTEX_SHADER | PIPELINE_STAGE_PIXEL_SHADER, frameBuffer))
@@ -537,6 +550,27 @@ void GraphicsEngine::RenderMesh(const MeshAsset& aMesh, const std::vector<std::s
 	}
 }
 
+void GraphicsEngine::RenderBillboard(std::shared_ptr<TextureAsset> aTexture)
+{
+	SetVertexShader("Billboard_VS");
+	SetPixelShader("Billboard_PS");
+	myRHI->SetVertexBuffer(myBillboardVertexBuffer, myCurrentVertexShader->VertexStride, 0);
+	myRHI->SetIndexBuffer(myBillboardIndexBuffer);
+	myRHI->SetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	if (!SetTextureResource(PIPELINE_STAGE_PIXEL_SHADER, 0, *aTexture))
+	{
+		LOG(GELog, Error, "Couldn't set albedo texture on slot 0");
+	}
+	myRHI->DrawIndexed(0, static_cast<unsigned>(BillboardIndices.size()));
+
+	if (!myRHI->ClearTextureResourceSlot(PIPELINE_STAGE_PIXEL_SHADER, 0))
+	{
+		LOG(GELog, Error, "Failed to clear texture resource slot");
+	}
+	SetVertexShader("Default_VS");
+	SetPixelShader("WorldspaceUI_PS");
+}
+
 void GraphicsEngine::RenderSprite2D(const SpriteAsset& anElement) const
 {
 	myRHI->SetIndexBuffer(nullptr);
@@ -648,12 +682,14 @@ void GraphicsEngine::RenderPoints(const unsigned aParticleCount)
 
 void GraphicsEngine::RenderDebugLines(const DebugLineObject& aDebugLineObject)
 {
+	SetVertexShader("Default_VS");
 	SetPixelShader("DebugLine_PS");
 	myRHI->SetVertexBuffer(aDebugLineObject.GetVertexBuffer(), myCurrentVertexShader->VertexStride, 0);
 	myRHI->SetIndexBuffer(aDebugLineObject.GetIndexBuffer());
 	myRHI->SetPrimitiveTopology(aDebugLineObject.GetPrimitiveTopology());
 
 	myRHI->DrawIndexed(0, aDebugLineObject.GetNumIndices());
+	SetVertexShader("Default_VS");
 	SetPixelShader("WorldspaceUI_PS");
 }
 
@@ -1891,6 +1927,41 @@ void GraphicsEngine::CreateUIShaders()
 		{
 			LOG(GELog, Error, "Failed to load pixel shader from memory, {}", worldspaceUIPS);
 		}
+
+	}
+	{
+#include "CompiledHeaders/Billboard_VS.h"
+		myShaderNames.emplace_back("Billboard_VS");
+		myShaderMap.emplace(myShaderNames.back(), static_cast<unsigned>(myShaders.size()));
+		myShaders.push_back(std::make_shared<VertexShader>());
+		std::shared_ptr<VertexShader> billboardVertexShader = std::dynamic_pointer_cast<VertexShader>(myShaders.back());
+		if (uiVertexShader == nullptr)
+		{
+			LOG(GELog, Error, "{} is not a vertex shader", myShaderNames.back());
+		}
+		if (!myRHI->LoadShaderFromMemory(myShaderNames.back(), *billboardVertexShader, BuiltIn_Billboard_VS_ByteCode, sizeof(BuiltIn_Billboard_VS_ByteCode)))
+		{
+			LOG(GELog, Error, "Failed to load VS-Shader from memory, {}", myShaderNames.back());
+		}
+		if (!myRHI->CreateInputLayout("Billboard Input layout", billboardVertexShader->inputLayout, BillboardVertex::InputLayoutDefinition, BuiltIn_Billboard_VS_ByteCode, sizeof(BuiltIn_Billboard_VS_ByteCode)))
+		{
+			LOG(GELog, Error, "Failed to create input layout for {}", myShaderNames.back());
+		}
+		billboardVertexShader->VertexStride = sizeof(BillboardVertex);
+		billboardVertexShader->type = ShaderType::VertexShader;
+	}
+
+	{
+#include "CompiledHeaders/Billboard_PS.h"
+	std::string_view billboardPS = "Billboard_PS";
+	myShaderMap.emplace(billboardPS, static_cast<unsigned>(myShaders.size()));
+	myShaders.push_back(std::make_shared<Shader>());
+	myShaders.back()->type = ShaderType::PixelShader;
+	std::shared_ptr<Shader> billboardPSShader = std::dynamic_pointer_cast<Shader>(myShaders.back());
+	if (!myRHI->LoadShaderFromMemory(billboardPS, *billboardPSShader, BuiltIn_Billboard_PS_ByteCode, sizeof(BuiltIn_Billboard_PS_ByteCode)))
+	{
+		LOG(GELog, Error, "Failed to load pixel shader from memory, {}", billboardPS);
+	}
 
 	}
 
