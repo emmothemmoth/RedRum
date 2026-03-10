@@ -28,11 +28,11 @@ void GCmdRenderMesh::Execute()
 	GraphicsEngine::Get().UpdateAndSetConstantBuffer(ConstantBufferType::ObjectBuffer, objectBuffer);
 
 	ObjectIDBufferData IDBuffer;
-	IDBuffer.ObjectID = myObjectID;
-	GraphicsEngine::Get().UpdateAndSetConstantBuffer(ConstantBufferType::ObjectIDBuffer, IDBuffer);
 
 	for (auto& element : myMesh->GetElements())
 	{
+		IDBuffer.ObjectID = EncodeID(element.PartID);
+		GraphicsEngine::Get().UpdateAndSetConstantBuffer(ConstantBufferType::ObjectIDBuffer, IDBuffer);
 		GraphicsEngine::Get().UpdateAndSetConstantBuffer(ConstantBufferType::MaterialBuffer,
 			myMaterialList[element.MaterialIndex]->GetMaterialBuffer());
 	}
@@ -49,4 +49,9 @@ void GCmdRenderMesh::Destroy()
 		material = nullptr;
 	}
 	myMaterialList.clear();
+}
+
+uint32_t GCmdRenderMesh::EncodeID(uint8_t aPartID)
+{
+	return (myObjectID << 8) | aPartID;
 }

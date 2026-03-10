@@ -22,7 +22,7 @@ MeshAsset::MeshAsset(const std::filesystem::path& aPath)
 
 
 
-void MeshAsset::AddElement(const std::vector<Vertex>& someMdlVertices, const std::vector<UINT>& someMdlIndices, const UINT aMaterialIndex)
+void MeshAsset::AddElement(const std::vector<Vertex>& someMdlVertices, const std::vector<UINT>& someMdlIndices, const UINT aMaterialIndex, uint8_t aPartID)
 {
 	Microsoft::WRL::ComPtr<ID3D11Buffer> vertexBuffer;
 	if (!GraphicsEngine::GetRHI()->CreateVertexBuffer("Mesh Vertex Buffer", someMdlVertices, vertexBuffer))
@@ -55,6 +55,7 @@ void MeshAsset::AddElement(const std::vector<Vertex>& someMdlVertices, const std
 	mesh.VertexOffset = 0;
 	mesh.PrimitiveTopology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 	mesh.MaterialIndex = aMaterialIndex;
+	mesh.PartID = aPartID;
 	myElements.push_back(mesh);
 }
 

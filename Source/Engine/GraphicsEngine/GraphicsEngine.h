@@ -126,7 +126,7 @@ public:
 
 	uint32_t GetIDFromPoint(const int aMousePosX, const int aMousePosY);
 
-	void ScreenPickingResult(bool& aResultDone, unsigned& inOutID);
+	void ScreenPickingResult(bool& aResultDone, uint32_t& inOutID);
 
 	void ConfigureInputAssembler(unsigned aTopology, const ComPtr<ID3D11Buffer>& aVxBuffer, const ComPtr<ID3D11Buffer>& anIxBuffer, unsigned aVertexStride, const ComPtr<ID3D11InputLayout>& anInputLayout);
 

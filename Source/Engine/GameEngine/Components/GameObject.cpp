@@ -20,6 +20,7 @@ GameObject::GameObject(std::string_view aName, unsigned anID)
 	transformGizmo->SetRenderStage(RenderStage::ShadowMapping, false);
 	transformGizmo->SetRenderStage(RenderStage::Deferred, false);
 	transformGizmo->SetRenderStage(RenderStage::WorldSpaceUI);
+	transformGizmo->SetRenderStage(RenderStage::ObjectIDRendering);
 	transformGizmo->AddMaterial(AssetManager::Get().GetAsset<MaterialAsset>(DEFAULT_TRANSFORM_MATERIAL));
 	transformGizmo->SetVisible(false);
 }
@@ -113,4 +114,11 @@ void GameObject::OnDeselected()
 {
 	OnComponentDeselected.Broadcast();
 	myComponents.at(TRANSFORM_GIZMO_COMPONENT_ID)->SetVisible(false);
+}
+
+void GameObject::OnMove(Gizmo_Axis anAxis)
+{
+	anAxis;
+	int a = 0;
+	a++;
 }

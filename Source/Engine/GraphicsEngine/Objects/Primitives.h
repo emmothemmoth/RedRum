@@ -10,6 +10,7 @@ struct PrimitiveElement
 	std::vector<Vertex> Vertices;
 	std::vector<unsigned> Indices;
 	unsigned MaterialIndex = 0;
+	uint8_t PartID = 0;
 };
 
 struct PrimitiveMesh
@@ -208,6 +209,10 @@ struct TransformGizmoData : PrimitiveMesh
 		BuildAxis(Elements[0], Axis::X);
 		BuildAxis(Elements[1], Axis::Y);
 		BuildAxis(Elements[2], Axis::Z);
+
+		Elements.at(0).PartID = 1;
+		Elements.at(1).PartID = 2;
+		Elements.at(2).PartID = 3;
 	}
 
 private:

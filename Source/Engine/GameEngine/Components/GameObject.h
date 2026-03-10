@@ -5,6 +5,12 @@
 #include "../Events/MulticastDelegate.h"
 
 #include <string_view>
+enum class Gizmo_Axis : uint8_t
+{
+	Gizmo_X,
+	Gizmo_Y,
+	Gizmo_Z
+};
 
 using FOnComponentSelected = MulticastDelegate<>;
 using FOnComponentDeselected = MulticastDelegate<>;
@@ -34,6 +40,8 @@ public:
 
 	void OnSelected();
 	void OnDeselected();
+
+	void OnMove(Gizmo_Axis anAxis);
 public:
 	FOnComponentSelected OnComponentSelected;
 	FOnComponentDeselected OnComponentDeselected;

@@ -700,7 +700,7 @@ uint32_t GraphicsEngine::GetIDFromPoint(const int aMousePosX, const int aMousePo
 	return myScreenPickingResult;
 }
 
-void GraphicsEngine::ScreenPickingResult(bool& aResultDone, unsigned& inOutID)
+void GraphicsEngine::ScreenPickingResult(bool& aResultDone, uint32_t& inOutID)
 {
 	if (myPickingResultDone.load(std::memory_order_acquire))
 	{

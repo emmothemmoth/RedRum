@@ -31,6 +31,7 @@ public:
 		unsigned MaterialIndex = 0;
 		unsigned PrimitiveTopology = 0;
 		std::weak_ptr<MaterialAsset> Material;
+		uint8_t PartID = 0;
 	};
 
 private:
@@ -46,7 +47,7 @@ public:
 	MeshAsset(const MeshAsset& aMesh) = default;
 
 
-	void AddElement(const std::vector<Vertex>& someMdlVertices, const std::vector<UINT>& someMdlIndices, const UINT aMaterialIndex);
+	void AddElement(const std::vector<Vertex>& someMdlVertices, const std::vector<UINT>& someMdlIndices, const UINT aMaterialIndex, uint8_t aPartID = 0);
 
 	bool Load() override;
 

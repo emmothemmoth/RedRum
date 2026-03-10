@@ -91,95 +91,6 @@ void Scene::InitSortingLists()
 	}
 }
 
-//void Scene::AddToScene(const std::filesystem::path& aPath)
-//{
-//	if (!AssetManager::Get().RegisterAndLoadAsset(aPath))
-//	{
-//		return;
-//	}
-//
-//	RegistryID lastID = AssetManager::Get().GetLastRegistered();
-//
-//	switch (lastID.Type)
-//	{
-//	case AssetType::Mesh:
-//		AddMeshToScene(lastID.Name);
-//		break;
-//	case AssetType::Texture:
-//		AddTextureToMesh(aPath);
-//		break;
-//	case AssetType::Animation:
-//		AddAnimationToMesh(lastID.Name);
-//		break;
-//	case AssetType::Material:
-//		AddMaterialToMesh(lastID.Name);
-//		break;
-//	default:
-//		break;
-//	}
-//}
-//
-//
-//void Scene::AddMeshToScene(const std::wstring& aFileName)
-//{
-//	if (mySingleObject->GetComponent<MeshComponent>())
-//	{
-//		mySingleObject->RemoveComponent<MeshComponent>();
-//	}
-//	mySingleObject->AddComponent(std::make_shared<MeshComponent>(*mySingleObject, AssetManager::Get().GetAsset<MeshAsset>(aFileName)));
-//}
-//
-//void Scene::AddAnimationToMesh(const std::wstring& aFileName)
-//{
-//	if (mySingleObject->GetComponent<MeshComponent>().get() == nullptr)
-//	{
-//		LOG(SceneLog, Error, "You first need to add a skeletal mesh!");
-//		return;
-//	}
-//	else
-//	{
-//		if (mySingleObject->GetComponent<MeshComponent>()->GetMesh()->GetSkeleton().bones.size() <= 0)
-//		{
-//			LOG(SceneLog, Error, "Can't add animation to static mesh!");
-//			return;
-//		}
-//	}
-//	if (!mySingleObject->GetComponent<AnimationComponent>())
-//	{
-//		mySingleObject->AddComponent(std::make_shared<AnimationComponent>(*mySingleObject, mySingleObject->GetComponent<MeshComponent>()->GetMesh()->GetSkeleton()));
-//	}
-//	mySingleObject->GetComponent<AnimationComponent>()->AddAndSetAnimation(AssetManager::Get().GetAsset<AnimationAsset>(aFileName));
-//}
-//
-//void Scene::AddMaterialToMesh(const std::wstring& aFileName)
-//{
-//	if (mySingleObject->GetComponent<MeshComponent>().get() == nullptr)
-//	{
-//		LOG(SceneLog, Error, "You first need to add a mesh!");
-//		return;
-//	}
-//	if (mySingleObject->GetComponent<MaterialComponent>())
-//	{
-//		mySingleObject->RemoveComponent<MaterialComponent>();
-//	}
-//	mySingleObject->AddComponent(std::make_shared<MaterialComponent>(*mySingleObject, AssetManager::Get().GetAsset<MaterialAsset>(aFileName)));
-//}
-//
-//void Scene::AddTextureToMesh(const std::wstring& aFileName)
-//{
-//	if (mySingleObject->GetComponent<MeshComponent>().get() == nullptr)
-//	{
-//		LOG(SceneLog, Error, "You first need to add a mesh!");
-//		return;
-//	}
-//	if (mySingleObject->GetComponent<TextureComponent>())
-//	{
-//		mySingleObject->RemoveComponent<TextureComponent>();
-//	}
-//	mySingleObject->AddComponent(std::make_shared<TextureComponent>(*mySingleObject, AssetManager::Get().GetAsset<TextureAsset>(aFileName)));
-//}
-
-
 void Scene::ClearScene()
 {
 	myShouldClear = true;
@@ -431,14 +342,40 @@ void Scene::ResetScene(bool aShouldReload)
 
 void Scene::SelectObject(uint32_t anID)
 {
-	for (auto& gameObject : myCurrentLevel.GameObjects)
+	uint32_t objectID = anID >> 8;
+	uint32_t partID = anID & 0xFF;
+	assert(myIDtoIndex.contains(objectID));
+	auto gameObject = myCurrentLevel.GameObjects.at(myIDtoIndex.at(objectID));
+	switch (partID)
 	{
-		gameObject->OnDeselected();
+	case 0:
+	{
+		for (auto& object : myCurrentLevel.GameObjects)
+		{
+			object->OnDeselected();
+		}
+		assert(myIDtoIndex.contains(objectID));
+		gameObject->OnSelected();
+		break;
+	}
+	case 1:
+	{
+		gameObject->OnMove(Gizmo_Axis::Gizmo_X);
+		break;
+	}
+	case 2:
+	{
+		gameObject->OnMove(Gizmo_Axis::Gizmo_Y);
+		break;
+	}
+	case 3:
+	{
+		gameObject->OnMove(Gizmo_Axis::Gizmo_Z);
+		break;
 	}
 
-	assert(myIDtoIndex.contains(anID));
-	auto gameObject = myCurrentLevel.GameObjects.at(myIDtoIndex.at(anID));
-	gameObject->OnSelected();
+	}
+
 }
 
 

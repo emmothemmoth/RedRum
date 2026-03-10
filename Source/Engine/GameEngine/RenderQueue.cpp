@@ -39,12 +39,6 @@ void RenderQueue::RenderFrame()
 	}
 	myForwardList.Reset();
 
-	if (myObjectIDRenderList.HasCommands())
-	{
-		myObjectIDRenderList.Execute();
-	}
-	myObjectIDRenderList.Reset();
-
 	if (myParticleList.HasCommands())
 	{
 		myParticleList.Execute();
@@ -68,6 +62,12 @@ void RenderQueue::RenderFrame()
 		myWorldSpaceUIList.Execute();
 	}
 	myWorldSpaceUIList.Reset();
+
+	if (myObjectIDRenderList.HasCommands())
+	{
+		myObjectIDRenderList.Execute();
+	}
+	myObjectIDRenderList.Reset();
 
 	if (mySpriteList.HasCommands())
 	{

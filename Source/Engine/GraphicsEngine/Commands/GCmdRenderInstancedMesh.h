@@ -19,6 +19,8 @@ public:
 	void Execute() override;
 	void Destroy() override;
 
+	uint32_t EncodeID(uint8_t aPartID);
+
 private:
 	std::shared_ptr<MeshAsset> myMesh;
 	std::shared_ptr<InstanceData> myInstanceData;
