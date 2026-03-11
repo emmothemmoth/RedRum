@@ -57,8 +57,3 @@ void GCmdRenderInstancedMesh::Destroy()
 	}
 	myMaterialList.clear();
 }
-
-uint32_t GCmdRenderInstancedMesh::EncodeID(uint8_t aPartID)
-{
-	return (myObjectID << 8) | aPartID;
-}

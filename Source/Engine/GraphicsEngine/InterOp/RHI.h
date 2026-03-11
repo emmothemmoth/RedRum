@@ -66,6 +66,7 @@ enum DepthState
 	DS_Default,
 	DS_LessEqual,
 	DS_ReadOnly,
+	DS_LessEqualWrite,
 	DS_COUNT
 };
 

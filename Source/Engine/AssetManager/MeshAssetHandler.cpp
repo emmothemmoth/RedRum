@@ -58,7 +58,7 @@ void MeshAssetHandler::InitTransformGizmo(MeshAsset& inOutAsset)
 	TransformGizmoData transform;
 	for (auto& element : transform.Elements)
 	{
-		inOutAsset.AddElement(element.Vertices, element.Indices, element.MaterialIndex);
+		inOutAsset.AddElement(element.Vertices, element.Indices, element.MaterialIndex, element.PartID);
 	}
 }
 

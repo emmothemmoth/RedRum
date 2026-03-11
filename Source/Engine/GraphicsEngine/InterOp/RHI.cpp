@@ -248,6 +248,20 @@ bool RHI::Initialize(HWND aWindowHandle, bool enableDeviceDebug)
 		return false;
 	}
 
+	// 2. DS_LessEqual: Used for Picking Pass (Write disabled, Less-Equal comparison)
+// This allows the picking pass to pass the test even if the depth is exactly the same
+	D3D11_DEPTH_STENCIL_DESC lessEqualWrite = {};
+	lessEqualWrite.DepthEnable = true;
+	lessEqualWrite.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL; // No need to write for picking
+	lessEqualWrite.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;     // Allows Z == Z
+	lessEqualWrite.StencilEnable = false;
+	result = myDevice->CreateDepthStencilState(&lessEqualWrite, myDepthStates[DS_LessEqualWrite].GetAddressOf());
+	if (FAILED(result))
+	{
+		LOG(RHILog, Error, "Failed to create LessEqual depth stencil state");
+		return false;
+	}
+
 	// 3. DS_ReadOnly: Used for Translucency/Particles (Write disabled, Less comparison)
 	D3D11_DEPTH_STENCIL_DESC readOnlyDepth = {};
 	readOnlyDepth.DepthEnable = true;

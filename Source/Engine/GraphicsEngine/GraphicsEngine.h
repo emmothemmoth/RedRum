@@ -112,7 +112,7 @@ public:
 
 	void EndFrame();
 
-	void RenderMesh(const MeshAsset& aMesh, const std::vector<std::shared_ptr<MaterialAsset>>& someMaterials) const;
+	void RenderMesh(const MeshAsset& aMesh, const std::vector<std::shared_ptr<MaterialAsset>>& someMaterials, uint32_t anObjectID);
 
 	void RenderBillboard(std::shared_ptr<TextureAsset> aTexture);
 
@@ -237,6 +237,8 @@ private:
 	void CreateObjectIDShader();
 
 	void InitPostProcessBuffer();
+
+	uint32_t EncodeID(uint32_t anObjectID, uint8_t aPartID) const;
 
 private:
 	friend class GraphicsCommand;

@@ -57,17 +57,18 @@ void RenderQueue::RenderFrame()
 	}
 	myPostProcessList.Reset();
 
-	if (myWorldSpaceUIList.HasCommands())
-	{
-		myWorldSpaceUIList.Execute();
-	}
-	myWorldSpaceUIList.Reset();
 
 	if (myObjectIDRenderList.HasCommands())
 	{
 		myObjectIDRenderList.Execute();
 	}
 	myObjectIDRenderList.Reset();
+
+	if (myWorldSpaceUIList.HasCommands())
+	{
+		myWorldSpaceUIList.Execute();
+	}
+	myWorldSpaceUIList.Reset();
 
 	if (mySpriteList.HasCommands())
 	{
@@ -108,25 +109,25 @@ void RenderQueue::Reset(bool aClearLists)
 	myForwardList.Enqueue<GCmdSetVertexShader>("Default_VS");
 	myForwardList.Enqueue<GCmdSetPixelShader>("Default_PS");
 
-	myParticleList.Enqueue<GCmdClearTextureResource>(100);
-	myParticleList.Enqueue<GCmdEndEvent>();
-	myParticleList.Enqueue<GCmdBeginEvent>("Particles");
-
 	myCustomList.Enqueue<GCmdEndEvent>();
 	myCustomList.Enqueue<GCmdBeginEvent>("Custom");
 	myCustomList.Enqueue<GCmdChangePipelineState>(static_cast<unsigned>(PipelineStates::CustomRendering));
 	myCustomList.Enqueue<GCmdSetVertexShader>("Default_VS");
 	myCustomList.Enqueue<GCmdSetPixelShader>("Default_PS");
 
+	myParticleList.Enqueue<GCmdClearTextureResource>(100);
+	myParticleList.Enqueue<GCmdEndEvent>();
+	myParticleList.Enqueue<GCmdBeginEvent>("Particles");
+
+	myPostProcessList.Enqueue<GCmdEndEvent>();
+	myPostProcessList.Enqueue<GCmdBeginEvent>("PostProcessing");
+	myPostProcessList.Enqueue<GCmdChangePipelineState>(static_cast<unsigned>(PipelineStates::CustomPostProcess));
+
 	myObjectIDRenderList.Enqueue<GCmdEndEvent>();
 	myObjectIDRenderList.Enqueue<GCmdBeginEvent>("ObjectID");
 	myObjectIDRenderList.Enqueue<GCmdChangePipelineState>(static_cast<unsigned>(PipelineStates::ObjectIDRendering));
 	myObjectIDRenderList.Enqueue<GCmdSetVertexShader>("Default_VS");
 	myObjectIDRenderList.Enqueue<GCmdSetPixelShader>("ObjectID_PS");
-
-	myPostProcessList.Enqueue<GCmdEndEvent>();
-	myPostProcessList.Enqueue<GCmdBeginEvent>("PostProcessing");
-	myPostProcessList.Enqueue<GCmdChangePipelineState>(static_cast<unsigned>(PipelineStates::CustomPostProcess));
 
 	myWorldSpaceUIList.Enqueue<GCmdEndEvent>();
 	myWorldSpaceUIList.Enqueue<GCmdBeginEvent>("WorldspaceUI");

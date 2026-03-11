@@ -460,7 +460,7 @@ void GraphicsEngine::DrawQuad(const CU::Vector2f& aSize)
 }
 
 
-void GraphicsEngine::RenderMesh(const MeshAsset& aMesh, const std::vector<std::shared_ptr<MaterialAsset>>& someMaterials) const
+void GraphicsEngine::RenderMesh(const MeshAsset& aMesh, const std::vector<std::shared_ptr<MaterialAsset>>& someMaterials, uint32_t anObjectID)
 {
 	if (myCurrentPSO->DepthStencil != myDirLightShadowMap)
 	{
@@ -483,9 +483,12 @@ void GraphicsEngine::RenderMesh(const MeshAsset& aMesh, const std::vector<std::s
 			LOG(GELog, Error, "Couldn't set spotlightshadow map on slot {}", 105);
 		}
 	}
+	ObjectIDBufferData IDBuffer;
 
 	for (size_t index = 0; index < aMesh.GetElements().size(); index++)
 	{
+		IDBuffer.ObjectID = EncodeID(anObjectID, aMesh.GetElements().at(index).PartID);
+		UpdateAndSetConstantBuffer(ConstantBufferType::ObjectIDBuffer, IDBuffer);
 		myRHI->SetVertexBuffer(aMesh.GetVertexBuffer(index), myCurrentVertexShader->VertexStride, 0);
 		myRHI->SetIndexBuffer(aMesh.GetIndexBuffer(index));
 		myRHI->SetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -866,6 +869,10 @@ void GraphicsEngine::ChangePipelineState(const unsigned aNewPipelineState)
 		ChangePipelineState(mySpotLightPSO);
 		break;
 	case PipelineStates::ForwardRendering:
+		ChangePipelineState(myForwardPSO);
+		break;
+
+	case PipelineStates::CustomRendering:
 		ChangePipelineState(myForwardPSO);
 		break;
 	case PipelineStates::SpriteRendering:
@@ -1385,7 +1392,7 @@ bool GraphicsEngine::CreateObjectIDPSO()
 	myObjectIDPSO->BlendState = myRHI->GetBlendState("NoBlend");
 
 	myObjectIDPSO->SamplerStates[0] = myRHI->GetSamplerState("DefaultSamplerState");
-	myObjectIDPSO->DepthStencilState = myRHI->GetDepthStencilState(DepthState::DS_LessEqual);
+	myObjectIDPSO->DepthStencilState = myRHI->GetDepthStencilState(DepthState::DS_LessEqualWrite);
 	myObjectIDPSO->RenderTargetCount = 1;
 	myObjectIDPSO->ClearRenderTarget[0] = true;
 	myObjectIDPSO->RenderTarget[0] = myObjectIDTexture;
@@ -2142,4 +2149,9 @@ void GraphicsEngine::InitPostProcessBuffer()
 void GraphicsEngine::EndFrame()
 {
 	myRHI->Present(0);
+}
+
+uint32_t GraphicsEngine::EncodeID(uint32_t anObjectID, uint8_t aPartID) const
+{
+	return (anObjectID << 8) | aPartID;
 }

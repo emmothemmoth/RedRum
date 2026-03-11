@@ -22,7 +22,7 @@ GameObject::GameObject(std::string_view aName, unsigned anID)
 	transformGizmo->SetRenderStage(RenderStage::WorldSpaceUI);
 	transformGizmo->SetRenderStage(RenderStage::ObjectIDRendering);
 	transformGizmo->AddMaterial(AssetManager::Get().GetAsset<MaterialAsset>(DEFAULT_TRANSFORM_MATERIAL));
-	transformGizmo->SetVisible(false);
+	transformGizmo->SetVisible(true);
 }
 
 GameObject::GameObject(unsigned anID)
@@ -121,4 +121,5 @@ void GameObject::OnMove(Gizmo_Axis anAxis)
 	anAxis;
 	int a = 0;
 	a++;
+	//WORKING
 }
