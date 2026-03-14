@@ -6,6 +6,9 @@
 #include "Components\ComponentsInclude.h"
 
 #include "CommonUtilities\InputMapper.h"
+#include "CommonUtilities/Ray.hpp"
+#include "CommonUtilities/Plane.hpp"
+#include "CommonUtilities/Intersection.hpp"
 
 #include "..\AssetManager\AssetManager.h"
 
@@ -70,7 +73,7 @@ void Scene::LoadScene(const std::filesystem::path& aPath, bool aIsNetworkLevel)
 		myCurrentLevel.Camera->AddComponent(std::make_shared<CameraComponent>(*myCurrentLevel.Camera));
 		//myCurrentLevel.Camera->GetComponent<CameraComponent>()->Init(CommonUtilities::Vector3<float>(-40.0f, 1625.0f, -560.0f));
 	}
-	mySelectionHandle = myCurrentLevel.Camera->GetLastAddedComponent<CameraComponent>()->OnObjectSelected.AddRaw(this, &Scene::SelectObject);
+	mySelectionHandle = myCurrentLevel.Camera->GetLastAddedComponent<CameraComponent>()->OnObjectClicked.AddRaw(this, &Scene::ObjectClicked);
 	for (int index = 0; index < myCurrentLevel.GameObjects.size(); ++index)
 	{
 		myIDtoIndex.insert({ myCurrentLevel.GameObjects.at(index)->GetID(), static_cast<unsigned>(index) });
@@ -340,43 +343,106 @@ void Scene::ResetScene(bool aShouldReload)
 	}
 }
 
-void Scene::SelectObject(uint32_t anID)
+void Scene::ObjectClicked(uint32_t anID)
 {
 	uint32_t objectID = anID >> 8;
 	uint32_t partID = anID & 0xFF;
 	assert(myIDtoIndex.contains(objectID));
 	auto gameObject = myCurrentLevel.GameObjects.at(myIDtoIndex.at(objectID));
-	switch (partID)
-	{
-	case 0:
+	Gizmo_Axis axis = static_cast<Gizmo_Axis>(partID);
+	gameObject->IsSelected() ? MoveObject(*gameObject, axis) : SelectObject(*gameObject);
+	myCurrentAxisMovement = axis;
+}
+
+void Scene::SelectObject(GameObject& anObject)
+{
+	bool selectMultiple = CU::Input::GetKeyHeld(CU::Keys::SHIFT);
+	if (!selectMultiple)
 	{
 		for (auto& object : myCurrentLevel.GameObjects)
 		{
 			object->OnDeselected();
 		}
-		assert(myIDtoIndex.contains(objectID));
-		gameObject->OnSelected();
-		break;
 	}
-	case 1:
-	{
-		gameObject->OnMove(Gizmo_Axis::Gizmo_X);
-		break;
-	}
-	case 2:
-	{
-		gameObject->OnMove(Gizmo_Axis::Gizmo_Y);
-		break;
-	}
-	case 3:
-	{
-		gameObject->OnMove(Gizmo_Axis::Gizmo_Z);
-		break;
-	}
+	anObject.OnSelected();
+}
 
+void Scene::MoveObject(GameObject& anObject, Gizmo_Axis anAxis)
+{
+	myIsMovingObject = true;
+	CU::Vector3f axis;
+	switch (anAxis)
+	{
+	case Gizmo_Axis::Gizmo_X:
+		axis = { anObject.GetTransform().GetRow(1).x, anObject.GetTransform().GetRow(1).y, anObject.GetTransform().GetRow(1).z };
+		break;
+	case Gizmo_Axis::Gizmo_Y:
+		axis = { anObject.GetTransform().GetRow(2).x, anObject.GetTransform().GetRow(2).y, anObject.GetTransform().GetRow(2).z };
+		break;
+	case Gizmo_Axis::Gizmo_Z:
+		axis = { anObject.GetTransform().GetRow(3).x, anObject.GetTransform().GetRow(3).y, anObject.GetTransform().GetRow(3).z };
+		break;
+	default:
+		return;
 	}
+	axis.Normalize();
+	CU::Vector3f newIntersection = GetIntersection(anObject, axis);
+	if (myCurrentAxisMovement != anAxis)
+	{
+		myPreviousIntersection = newIntersection;
+		return;
+	}
+	CU::Vector3f delta = newIntersection - myPreviousIntersection;
+	float movement = delta.Dot(axis);
+	anObject.SetPosition(anObject.GetPosition() + axis * movement);
+	myPreviousIntersection = newIntersection;
 
 }
+
+CU::Vector3f Scene::GetIntersection(GameObject& anObject, const CU::Vector3f& anAxis)
+{
+	CU::Vector3f origin = anObject.GetPosition();
+
+	POINT mousePos = CU::Input::GetMousePosition();
+	CU::Vector2f viewportSize = GraphicsEngine::Get().GetViewPortSize();
+	float ndcX = (2.0f * mousePos.x / viewportSize.x) - 1.0f;
+	float ndcY = 1.0f - (2.0f * mousePos.y / viewportSize.y);
+
+	CU::Vector4f nearPoint(ndcX, ndcY, 0.0f, 1.0f);
+	CU::Vector4f farPoint(ndcX, ndcY, 1.0f, 1.0f);
+
+	CU::Matrix4x4f invViewProj = CU::Matrix4x4f::GetFastInverse((myCurrentLevel.Camera->GetComponent<CameraComponent>()->GetViewMatrix()
+		* myCurrentLevel.Camera->GetComponent<CameraComponent>()->GetClipMatrix()));
+
+	CU::Vector4f nearWorld = invViewProj * nearPoint;
+	CU::Vector4f farWorld = invViewProj * farPoint;
+	nearWorld /= nearWorld.w;
+	farWorld /= farWorld.w;
+
+	//Ray
+	CU::Ray<float> ray;
+	CU::Vector3f rayDir = { farWorld.x - nearWorld.x, farWorld.y - nearWorld.y, farWorld.z - nearWorld.z };
+	rayDir.Normalize();
+	CU::Vector3f nearWorld3 = { nearWorld.x, nearWorld.y, nearWorld.z };
+	ray.InitWithOriginAndDirection(nearWorld3, rayDir);
+
+	//Plane
+	CU::Vector3f camFwd = { myCurrentLevel.Camera->GetTransform().GetRow(3).x, myCurrentLevel.Camera->GetTransform().GetRow(3).y, myCurrentLevel.Camera->GetTransform().GetRow(3).z };
+	CU::Vector3f t = anAxis.Cross(camFwd);
+	if (t.LengthSqr() < 0.001f)
+	{
+		CU::Vector3f camRight = { myCurrentLevel.Camera->GetTransform().GetRow(1).x, myCurrentLevel.Camera->GetTransform().GetRow(1).y, myCurrentLevel.Camera->GetTransform().GetRow(1).z };
+		t = anAxis.Cross(camRight);
+	}
+	CU::Vector3f planeNormal = t.Cross(anAxis);
+	planeNormal.Normalize();
+	CU::Plane<float> plane;
+	plane.InitWithPointAndNormal(origin, planeNormal);
+	CU::Vector3f intersection;
+	CU::IntersectionPlaneRay(plane, ray, intersection);
+	return intersection;
+}
+
 
 
 

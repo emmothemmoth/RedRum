@@ -9,6 +9,7 @@
 #include <array>
 
 using FOnObjectClicked = MulticastDelegate<uint32_t>;
+using FOnObjectDragged = MulticastDelegate<uint32_t>;
 struct FrameBufferData;
 
 class CameraComponent : public InputObserver, public Component
@@ -31,7 +32,7 @@ public:
 	void SetSpeed(const float aSpeed);
 
 	void RecieveEvent(const ActionEvent& anEvent);
-	FOnObjectClicked OnObjectSelected;
+	FOnObjectClicked OnObjectClicked;
 
 private:
 	CU::Vector4<float> ToCamera(const CU::Vector4<float>& aWorldPoint);

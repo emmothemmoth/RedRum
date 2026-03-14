@@ -77,7 +77,11 @@ void CommonUtilities::InputMapper::Refresh()
 	}
 	if (CU::Input::GetKeyUp(Keys::MOUSELBUTTON))
 	{
-		TranslateToEvent(GameInput::MouseClick, 1.0f);
+		TranslateToEvent(GameInput::LeftMouseUp, 1.0f);
+	}
+	if (CU::Input::GetKeyHeld(Keys::MOUSELBUTTON))
+	{
+		TranslateToEvent(GameInput::LeftMouseHeld, 1.0f);
 	}
 }
 

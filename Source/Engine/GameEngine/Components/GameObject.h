@@ -7,9 +7,10 @@
 #include <string_view>
 enum class Gizmo_Axis : uint8_t
 {
-	Gizmo_X,
-	Gizmo_Y,
-	Gizmo_Z
+	None = 0,
+	Gizmo_X = 1,
+	Gizmo_Y = 2,
+	Gizmo_Z = 3
 };
 
 using FOnComponentSelected = MulticastDelegate<>;
@@ -37,6 +38,8 @@ public:
 	unsigned GetID() const { return myID; }
 
 	std::string_view GetName() const { return myName; }
+
+	bool IsSelected() const { return myIsSelected; }
 
 	void OnSelected();
 	void OnDeselected();

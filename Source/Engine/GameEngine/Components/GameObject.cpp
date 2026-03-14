@@ -22,7 +22,7 @@ GameObject::GameObject(std::string_view aName, unsigned anID)
 	transformGizmo->SetRenderStage(RenderStage::WorldSpaceUI);
 	transformGizmo->SetRenderStage(RenderStage::ObjectIDRendering);
 	transformGizmo->AddMaterial(AssetManager::Get().GetAsset<MaterialAsset>(DEFAULT_TRANSFORM_MATERIAL));
-	transformGizmo->SetVisible(true);
+	transformGizmo->SetVisible(false);
 }
 
 GameObject::GameObject(unsigned anID)
@@ -108,12 +108,14 @@ void GameObject::OnSelected()
 {
 	OnComponentSelected.Broadcast();
 	myComponents.at(TRANSFORM_GIZMO_COMPONENT_ID)->SetVisible(true);
+	myIsSelected = true;
 }
 
 void GameObject::OnDeselected()
 {
 	OnComponentDeselected.Broadcast();
 	myComponents.at(TRANSFORM_GIZMO_COMPONENT_ID)->SetVisible(false);
+	myIsSelected = false;
 }
 
 void GameObject::OnMove(Gizmo_Axis anAxis)
@@ -121,5 +123,4 @@ void GameObject::OnMove(Gizmo_Axis anAxis)
 	anAxis;
 	int a = 0;
 	a++;
-	//WORKING
 }

@@ -42,12 +42,42 @@ void GUI::Update()
 	ImGui_ImplDX11_NewFrame();
 	ImGui_ImplWin32_NewFrame();
 	ImGui::NewFrame();
+
+	//update editortools and other stuff
+	//fetch info from scene about selected objects
+
+	ImGui::Render();
+	CaptureDrawData(myWriteFrame);
 }
 
-void GUI::Render()
+void GUI::CaptureDrawData(GuiFrameData& outFrame)
 {
-	ImGui::Render();
-	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+	//ImDrawData* src = ImGui::GetDrawData();
+    //if (!src || src->CmdListsCount == 0)
+    //    return;
+	//
+    //outFrame.Clear();
+	//
+    //// Copy draw lists
+    //outFrame.CmdLists.reserve(src->CmdListsCount);
+	//
+    //for (int i = 0; i < src->CmdListsCount; i++)
+    //{
+    //    ImDrawList* cloned = src->CmdLists[i]->CloneOutput();
+    //    outFrame.CmdLists.push_back(cloned);
+    //}
+	//
+    //// Copy draw data struct
+    //outFrame.DrawData = *src;
+	//
+    //// Replace command list pointers with our copies
+    //outFrame.DrawData.CmdLists = outFrame.CmdLists.data();
+    //outFrame.DrawData.CmdListsCount = (int)outFrame.CmdLists.size(); // TODO:
+}
+
+void GUI::Render(const GuiFrameData& aFrame)
+{
+	ImGui_ImplDX11_RenderDrawData((ImDrawData*)&aFrame.DrawData);
 }
 
 

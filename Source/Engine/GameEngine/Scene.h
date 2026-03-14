@@ -64,7 +64,10 @@ private:
 	void UpdateDebugInfo();
 	void ResetScene(bool aShouldReload = true);
 
-	void SelectObject(uint32_t anID);
+	void ObjectClicked(uint32_t anID);
+	void SelectObject(GameObject& anObject);
+	void MoveObject(GameObject& anObject, Gizmo_Axis anAxis);
+	CU::Vector3f GetIntersection(GameObject& anObject, const CU::Vector3f& anAxis);
 
 private:
 
@@ -87,4 +90,8 @@ private:
 	bool myShouldClear = false;
 
 	DelegateHandle mySelectionHandle;
+
+	CU::Vector3f myPreviousIntersection;
+	Gizmo_Axis myCurrentAxisMovement = Gizmo_Axis::None;
+	bool myIsMovingObject = false;
 };

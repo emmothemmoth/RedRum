@@ -45,7 +45,8 @@ CameraComponent::~CameraComponent()
 	MainSingleton::Get().GetInputMapper().UnRegister(ActionEventID::CameraMove_Right, this);
 	MainSingleton::Get().GetInputMapper().UnRegister(ActionEventID::CameraMove_Up, this);
 	MainSingleton::Get().GetInputMapper().UnRegister(ActionEventID::CameraRotation, this);
-	MainSingleton::Get().GetInputMapper().UnRegister(ActionEventID::ScreenPick, this);
+	MainSingleton::Get().GetInputMapper().UnRegister(ActionEventID::SelectObject, this);
+	MainSingleton::Get().GetInputMapper().UnRegister(ActionEventID::MoveObject, this);
 }
 
 
@@ -97,7 +98,8 @@ void CameraComponent::Init(CU::Vector3<float> aPoint, const CU::Vector3f& someRo
 	MainSingleton::Get().GetInputMapper().Register(ActionEventID::CameraMove_Right, this);
 	MainSingleton::Get().GetInputMapper().Register(ActionEventID::CameraMove_Up, this);
 	MainSingleton::Get().GetInputMapper().Register(ActionEventID::CameraRotation, this);
-	MainSingleton::Get().GetInputMapper().Register(ActionEventID::ScreenPick, this);
+	MainSingleton::Get().GetInputMapper().Register(ActionEventID::SelectObject, this);
+	MainSingleton::Get().GetInputMapper().Register(ActionEventID::MoveObject, this);
 }
 
 void CameraComponent::Update(float aDeltaTime)
@@ -247,7 +249,10 @@ void CameraComponent::RecieveEvent(const ActionEvent& anEvent)
 	case ActionEventID::CameraRotation:
 		myIsRotating = true;
 		break;
-	case ActionEventID::ScreenPick:
+	case ActionEventID::SelectObject:
+		myShouldScreenPick = true;
+		break;
+	case ActionEventID::MoveObject:
 		myShouldScreenPick = true;
 		break;
 	default:
@@ -274,7 +279,7 @@ void CameraComponent::PickFromScreen()
 	GraphicsEngine::Get().ScreenPickingResult(resultDone, ID);
 	if (resultDone && ID > 0)
 	{
-		OnObjectSelected.Broadcast(ID);
+		OnObjectClicked.Broadcast(ID);
 		myIsAwaitingPickingResult = false;
 		myShouldScreenPick = false;
 	}

@@ -24,7 +24,8 @@ namespace CommonUtilities
 		{
 			T product = (aPlane.GetPoint0().Dot(aPlane.GetNormal()) - (aRay.GetOrigin().Dot(aPlane.GetNormal())))
 				/ (aRay.GetDirection().Dot(aPlane.GetNormal()));
-			aOutIntersectionPoint = product * aRay.GetDirection();
+			//aOutIntersectionPoint = product * aRay.GetDirection();
+			aOutIntersectionPoint = aRay.GetOrigin() + product * aRay.GetDirection();
 			return true;
 		}
 	}

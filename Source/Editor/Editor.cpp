@@ -73,8 +73,6 @@ void Editor::Run()
 		}
 		MainSingleton::Get().GetRenderer().RenderFrame();
 		GraphicsEngine::Get().ChangeRenderTarget(GraphicsEngine::Get().GetRHI()->GetBackBuffer());
-		myGUI.Update();
-		myGUI.Render();
 		myScene->PresentScene();
 	}
 }
@@ -141,6 +139,7 @@ void Editor::UpdateLoop()
 
 		myScene->UpdateScene(CU::Timer::Get().GetDeltaTime());
 		myScene->RenderScene();
+		myGUI.Update();
 	}
 }
 
@@ -161,7 +160,8 @@ void Editor::MapInputs()
 	MainSingleton::Get().GetInputMapper().BindEvent(GameInput::ExposureDown, ActionEventID::ExposureDown);
 	MainSingleton::Get().GetInputMapper().BindEvent(GameInput::ChangeLuminanceMode, ActionEventID::ChangeLuminanceMode);
 	MainSingleton::Get().GetInputMapper().BindEvent(GameInput::Toggle_SSAO, ActionEventID::Toggle_SSAO);
-	MainSingleton::Get().GetInputMapper().BindEvent(GameInput::MouseClick, ActionEventID::ScreenPick);
+	MainSingleton::Get().GetInputMapper().BindEvent(GameInput::LeftMouseUp, ActionEventID::SelectObject);
+	MainSingleton::Get().GetInputMapper().BindEvent(GameInput::LeftMouseHeld, ActionEventID::MoveObject);
 }
 
 
