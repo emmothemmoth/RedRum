@@ -11,5 +11,6 @@ enum class RenderStage
 	PostProcess = 6,
 	WorldSpaceUI = 7,
 	Sprite = 8,
-	Count = 9
+	UI = 9,
+	Count = 10
 };

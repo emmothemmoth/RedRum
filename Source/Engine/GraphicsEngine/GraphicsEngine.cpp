@@ -267,7 +267,12 @@ bool GraphicsEngine::Initialize(bool enableDeviceDebug)
 		}
 		if (!CreateWorldspaceUIPSO())
 		{
-			LOG(GELog, Error, "Failed to create Debug PSO");
+			LOG(GELog, Error, "Failed to create WorldspaceUI PSO");
+			return false;
+		}
+		if (!CreateUIPSO())
+		{
+			LOG(GELog, Error, "Failed to create UI PSO");
 			return false;
 		}
 		if (!CreateDefaultMaterials())
@@ -908,6 +913,9 @@ void GraphicsEngine::ChangePipelineState(const unsigned aNewPipelineState)
 	case PipelineStates::WorldspaceUI:
 		ChangePipelineState(myWorldspaceUIPSO);
 		break;
+	case PipelineStates::UI:
+		ChangePipelineState(myUIPSO);
+		break;
 	default:
 		break;
 	}
@@ -1417,6 +1425,25 @@ bool GraphicsEngine::CreateWorldspaceUIPSO()
 
 	myWorldspaceUIPSO->DepthStencil = nullptr;
 	myWorldspaceUIPSO->ClearDepthStencil = false;
+	return true;
+}
+
+bool GraphicsEngine::CreateUIPSO()
+{
+	myUIPSO = std::make_shared<PipelineStateObject>();
+	myUIPSO->RenderTargetCount = 1;
+	myUIPSO->Type = PSOType::UI;
+
+	myUIPSO->DepthStencilState = myRHI->GetDepthStencilState(DepthState::DS_ReadOnly);
+	myUIPSO->BlendState = myRHI->GetBlendState("ForwardBlendState");
+	myUIPSO->SamplerStates[0] = myRHI->GetSamplerState("DefaultSamplerState");
+
+
+	myUIPSO->RenderTarget[0] = myRHI->GetBackBuffer();
+	myUIPSO->ClearRenderTarget[0] = false;
+
+	myUIPSO->DepthStencil = nullptr;
+	myUIPSO->ClearDepthStencil = false;
 	return true;
 }
 

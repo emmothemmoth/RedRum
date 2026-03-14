@@ -33,7 +33,8 @@ enum class PSOType
 	SSAO,
 	Custom,
 	ObjectID,
-	WorldSpaceUI
+	WorldSpaceUI,
+	UI
 };
 
 struct PipelineStateObject

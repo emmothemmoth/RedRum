@@ -20,14 +20,16 @@ struct ID3D11DeviceContext;
 struct GuiFrameData
 {
     ImDrawData DrawData{};
-    std::vector<ImDrawList*> CmdLists;
+    std::vector<ImDrawList*> ClonedLists;
 
-    void Clear()
+    // The destructor automatically handles cleanup when the Render thread is done!
+    ~GuiFrameData()
     {
-        for (ImDrawList* list : CmdLists)
-            delete list;
-
-        CmdLists.clear();
+        for (ImDrawList* list : ClonedLists)
+        {
+            IM_DELETE(list);
+        }
+        ClonedLists.clear();
     }
 };
 
@@ -48,5 +50,4 @@ public:
 
 private:
 	CU::Vector2f myResolution;
-    GuiFrameData myWriteFrame;
 };

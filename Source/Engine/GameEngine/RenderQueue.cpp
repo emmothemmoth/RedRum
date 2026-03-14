@@ -75,6 +75,12 @@ void RenderQueue::RenderFrame()
 		mySpriteList.Execute();
 	}
 	mySpriteList.Reset();
+
+	if (myUIList.HasCommands())
+	{
+		myUIList.Execute();
+	}
+	myUIList.Reset();
 }
 
 void RenderQueue::Reset(bool aClearLists)
@@ -90,6 +96,7 @@ void RenderQueue::Reset(bool aClearLists)
 		myWorldSpaceUIList.Reset();
 		myPostProcessList.Reset();
 		mySpriteList.Reset();
+		myUIList.Reset();
 	}
 	myShadowList.Enqueue<GCmdEndEvent>();
 	myShadowList.Enqueue<GCmdBeginEvent>("Dirlight Shadow Mapping");
@@ -136,10 +143,15 @@ void RenderQueue::Reset(bool aClearLists)
 	myWorldSpaceUIList.Enqueue<GCmdSetPixelShader>("WorldspaceUI_PS");
 
 	mySpriteList.Enqueue<GCmdEndEvent>();
-	mySpriteList.Enqueue<GCmdBeginEvent>("UI");
+	mySpriteList.Enqueue<GCmdBeginEvent>("Sprites");
 	mySpriteList.Enqueue<GCmdChangePipelineState>(static_cast<unsigned>(PipelineStates::SpriteRendering));
 	mySpriteList.Enqueue<GCmdSetVertexShader>("UI_VS");
 	mySpriteList.Enqueue<GCmdSetPixelShader>("UI_PS");
+
+	myUIList.Enqueue<GCmdEndEvent>();
+	myUIList.Enqueue<GCmdBeginEvent>("UI");
+	myUIList.Enqueue<GCmdChangePipelineState>(static_cast<unsigned>(PipelineStates::UI));
+
 }
 
 void RenderQueue::PrintDebugInfo()
@@ -152,4 +164,5 @@ void RenderQueue::PrintDebugInfo()
 	std::cout << "Post process commands size: " << myPostProcessList.GetSize() << std::endl;
 	std::cout << "WorldspaceUI commands size: " << myWorldSpaceUIList.GetSize() << std::endl;
 	std::cout << "Sprite commands size: " << mySpriteList.GetSize() << std::endl;
+	std::cout << "UI commands size: " << myUIList.GetSize() << std::endl;
 }

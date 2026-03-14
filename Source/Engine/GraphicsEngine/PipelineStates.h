@@ -22,5 +22,6 @@ enum class PipelineStates
 	SSAO,
 	SpriteRendering,
 	ObjectIDRendering,
-	WorldspaceUI
+	WorldspaceUI,
+	UI
 };
