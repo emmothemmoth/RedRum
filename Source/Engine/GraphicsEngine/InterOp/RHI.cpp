@@ -149,8 +149,6 @@ bool RHI::Initialize(HWND aWindowHandle, bool enableDeviceDebug)
 	result = myDevice->CreateRenderTargetView(tempViewportTex.Get(), nullptr, myViewportBackBuffer->myRTV.GetAddressOf());
 	result = myDevice->CreateShaderResourceView(tempViewportTex.Get(), nullptr, myViewportBackBuffer->mySRV.GetAddressOf());
 
-	SetObjectName(myViewportBackBuffer->myTexture, "ViewportBackBuffer_T2D");
-
 	myViewportBackBuffer->myViewPort = { 0.0f, 0.0f, static_cast<float>(viewportWidth), static_cast<float>(viewportHeight), 0.0f, 1.0f };
 
 	// Viewport Depth Buffer (Matches the Viewport Size)
@@ -171,16 +169,12 @@ bool RHI::Initialize(HWND aWindowHandle, bool enableDeviceDebug)
 	result = myDevice->CreateTexture2D(&desc, nullptr, depthTexture.GetAddressOf());
 	if (FAILED(result)) { LOG(RHILog, Error, "Failed to create depth buffer"); return false; }
 
-	SetObjectName(depthTexture, "DepthBuffer_T2D");
-
 	D3D11_DEPTH_STENCIL_VIEW_DESC dsvDesc = {};
 	dsvDesc.Format = DXGI_FORMAT_D32_FLOAT;
 	dsvDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
 
 	result = myDevice->CreateDepthStencilView(depthTexture.Get(), &dsvDesc, myDepthBuffer->myDSV.GetAddressOf());
 	if (FAILED(result)) { LOG(RHILog, Error, "Failed to create depth stencil view"); return false; }
-
-	SetObjectName(myDepthBuffer->myDSV, "DepthBuffer_DSV");
 
 	myDepthBuffer->myViewPort = myViewportBackBuffer->myViewPort; // 1600x900 viewport setup!
 
@@ -246,6 +240,10 @@ bool RHI::Initialize(HWND aWindowHandle, bool enableDeviceDebug)
 	myContext->QueryInterface(IID_PPV_ARGS(&myAnnotationObject));
 	SetObjectName(myContext, "Device Context");
 	SetObjectName(myBackBuffer->myRTV, "Backbuffer RTV");
+	SetObjectName(myDepthBuffer->myDSV, "DepthBuffer_DSV");
+	SetObjectName(myViewportBackBuffer->myRTV, "ViewportBackbuffer RTV");
+	SetObjectName(depthTexture, "DepthBuffer_T2D");
+	SetObjectName(myViewportBackBuffer->myTexture, "ViewportBackBuffer_T2D");
 
 	LOG(RHILog, Log, "RHI Initialized.");
 	return true;
@@ -1303,16 +1301,17 @@ void RHI::DrawQuad(const CU::Vector2f& aSize)
 	SetVertexBuffer(nullptr, 0, 0);
 	SetIndexBuffer(nullptr);
 	SetInputLayout(nullptr);
-
-	//This is a bug with resizable viewport
-	//D3D11_VIEWPORT viewport = {};
-	//viewport.TopLeftX = 0;
-	//viewport.TopLeftY = 0;
-	//viewport.Width = aSize.x > 0 ? aSize.x : myViewportBackBuffer->GetSize().x;
-	//viewport.Height = aSize.y > 0 ? aSize.y : myViewportBackBuffer->GetSize().y;
-	//viewport.MinDepth = 0;
-	//viewport.MaxDepth = 1;
-	//myContext->RSSetViewports(1, &viewport);
+	if (aSize.x > 0.0f && aSize.y > 0.0f)
+	{
+		D3D11_VIEWPORT viewport = {};
+		viewport.TopLeftX = 0;
+		viewport.TopLeftY = 0;
+		viewport.Width = aSize.x;
+		viewport.Height = aSize.y;
+		viewport.MinDepth = 0.0f;
+		viewport.MaxDepth = 1.0f;
+		myContext->RSSetViewports(1, &viewport);
+	}
 
 	Draw(4);
 }
@@ -1774,11 +1773,10 @@ void RHI::ResizeViewport(unsigned int aWidth, unsigned int aHeight)
 	result = myDevice->CreateDepthStencilView(tempDepthTex.Get(), &dsvDesc, myDepthBuffer->myDSV.ReleaseAndGetAddressOf());
 	if (FAILED(result)) { LOG(RHILog, Error, "Resize: Failed to create DSV!"); return; }
 
-	// CRITICAL: Update the depth buffer's viewport definition!
 	myDepthBuffer->myViewPort = myViewportBackBuffer->myViewPort;
 	myDepthBuffer->SetSize({ static_cast<float>(aWidth), static_cast<float>(aHeight) });
+	myContext->QueryInterface(IID_PPV_ARGS(&myAnnotationObject));
+	SetObjectName(myViewportBackBuffer->myTexture, "ViewportBackBuffer_T2D");
+	SetObjectName(myViewportBackBuffer->myRTV, "ViewportBackBuffer_RTV");
 
-	// ----------------------------------------------------------------
-	// 3. (RECREATE GBUFFER HERE USING aWidth and aHeight)
-	// ----------------------------------------------------------------
 }

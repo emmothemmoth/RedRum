@@ -71,7 +71,7 @@ void GCmdBloom::Execute()
 
 	ge.ChangeRenderTarget(GraphicsEngine::Get().GetLuminanceBuffer());
 	ge.SetTextureResource((PIPELINE_STAGE_PIXEL_SHADER), 20, *GraphicsEngine::Get().GetHalfSizeBuffer());
-	ge.DrawQuad();
+	ge.DrawQuad(GraphicsEngine::Get().GetLuminanceBuffer()->GetSize());
 	ge.ClearTextureResourceSlot((PIPELINE_STAGE_PIXEL_SHADER), 20);
 
 	ge.SetMarker("Blending");
