@@ -143,6 +143,7 @@ public:
 
 	void ClearRenderTargets(const int& aNumViews = 1) const;
 	void ClearBackBuffer() const;
+	void ClearViewportBackBuffer() const;
 
 	bool CreateTexture(std::string aName, unsigned aWidth, unsigned aHeight, RHITextureFormat aFormat,
 		TextureAsset* outTexture, bool aStaging, bool aShaderResource, bool aRenderTarget, bool aCpuAccessRead, bool aCpuAccessWrite) const;
@@ -189,8 +190,11 @@ public:
 
 	uint32_t ReadID(const int aPosX, const int aPosY, TextureAsset* anRTVTexture, TextureAsset* aStagingTexture);
 
+	void ResizeViewport(const unsigned aWidth, const unsigned aHeight);
+
 	FORCEINLINE std::shared_ptr<TextureAsset> GetBackBuffer() const { return myBackBuffer; }
 	FORCEINLINE std::shared_ptr<TextureAsset> GetDepthBuffer() const { return myDepthBuffer; }
+	FORCEINLINE std::shared_ptr<TextureAsset> GetViewportBackBuffer() const { return myViewportBackBuffer; }
 
 	CU::Vector2f GetViewPortSize() const;
 
@@ -206,6 +210,8 @@ private:
 	ComPtr<ID3D11DeviceContext> myContext;
 	std::shared_ptr<TextureAsset> myBackBuffer;
 	std::shared_ptr<TextureAsset> myDepthBuffer;
+	std::shared_ptr<TextureAsset> myViewportBackBuffer;
+	std::shared_ptr<TextureAsset> myViewportDepthBuffer;
 	ComPtr<IDXGISwapChain> mySwapChain;
 	ComPtr<ID3DUserDefinedAnnotation> myAnnotationObject;
 	DeviceSize myDeviceSize;
@@ -213,6 +219,12 @@ private:
 	std::array<ComPtr<ID3D11DepthStencilState>, DS_COUNT> myDepthStates;
 	std::unordered_map<std::string, Microsoft::WRL::ComPtr<ID3D11SamplerState>> mySamplerStates;
 	std::unordered_map<std::string, Microsoft::WRL::ComPtr<ID3D11BlendState>> myBlendStates;
+
+	ComPtr<ID3D11Resource> myStaleViewportTex;
+	ComPtr<ID3D11RenderTargetView> myStaleViewportRTV;
+	ComPtr<ID3D11ShaderResourceView> myStaleViewportSRV;
+
+	ComPtr<ID3D11DepthStencilView> myStaleDepthDSV;
 };
 
 template <typename VertexType>

@@ -140,10 +140,12 @@ public:
 	void SetShadowMap(ShadowMaps aShadowMap, unsigned anIndex = 0);
 	void SetVertexBuffer(Microsoft::WRL::ComPtr<ID3D11Buffer> aVertexBuffer);
 	void SetIndexBuffer(Microsoft::WRL::ComPtr<ID3D11Buffer> anIndexBuffer);
+	void SetLogicalRenderSize(const CU::Vector2f aSize) { myLogicalRenderSize = aSize; }
 	void ChangePipelineState(const unsigned aNewPipelineState);
 	void ChangeRenderTarget(const std::shared_ptr<TextureAsset>& aRenderTarget) const;
 
 	void ClearBackBuffer() const;
+	void ClearViewportBackBuffer() const;
 	void ClearRenderTarget();
 	void ClearRenderTarget(const std::shared_ptr<TextureAsset>& aRenderTarget) const;
 
@@ -153,6 +155,8 @@ public:
 
 	void CreateIndexBuffer(std::string_view aName, const std::vector<unsigned>& aIndexList,
 		Microsoft::WRL::ComPtr<ID3D11Buffer>& aOutIxBuffer);
+
+	void ResizeViewport(const unsigned aWidth, const unsigned aHeight);
 
 	const std::vector<std::shared_ptr<MaterialAsset>>& GetDefaultMaterials()const;
 
@@ -185,6 +189,7 @@ public:
 	std::shared_ptr<TextureAsset> GetSSAOBuffer() { return mySSAOBuffer; }
 	std::shared_ptr<TextureAsset> GetBlueNoiseTexture() { return myBluenoiseTexture; }
 	std::shared_ptr<TextureAsset> GetBackBuffer() { return myRHI->GetBackBuffer(); }
+	std::shared_ptr<TextureAsset> GetViewportBackBuffer() { return myRHI->GetViewportBackBuffer(); }
 
 	HWND GetWindowHandle() const;
 	SIZE GetWindowSize() const;
@@ -222,6 +227,7 @@ private:
 	bool CreateAdditiveBlendState();
 	void CreateIntermediateBuffers();
 	void CreateObjectIDBuffer();
+	void CreateScreenPickingTexture();
 
 	bool CreateDefaultMaterials();
 
@@ -240,6 +246,8 @@ private:
 	void InitPostProcessBuffer();
 
 	uint32_t EncodeID(uint32_t anObjectID, uint8_t aPartID) const;
+
+	void ResizeGBufferAndIntermediateBuffers();
 
 private:
 	friend class GraphicsCommand;
@@ -283,7 +291,7 @@ private:
 	std::vector<std::shared_ptr<MaterialAsset>> myDefaultMaterials;
 
 	std::shared_ptr<TextureAsset> myLUTTexture;
-	std::shared_ptr<TextureAsset> myLuminanceBuffer;;
+	std::shared_ptr<TextureAsset> myLuminanceBuffer;
 	std::shared_ptr<TextureAsset> myHalfScreenBuffer;
 	std::shared_ptr<TextureAsset> myHalfScreenBufferB;
 	std::shared_ptr<TextureAsset> myQuarterScreenBuffer;
@@ -318,6 +326,10 @@ private:
 	unsigned myScreenPickingResult = 0;
 	ComPtr<ID3D11Buffer> myBillboardIndexBuffer;
 	ComPtr<ID3D11Buffer> myBillboardVertexBuffer;
+
+	std::vector<ComPtr<IUnknown>> myStaleCOMObjects;
+
+	CU::Vector2f myLogicalRenderSize = { 1600.0f, 900.0f };
 
 };
 

@@ -4,7 +4,7 @@
 class GCmdBeginEvent : public GraphicsCommandBase
 {
 public:
-	explicit GCmdBeginEvent(std::string_view aName) { myName = aName; }
+	explicit GCmdBeginEvent(std::string_view aName);
 	~GCmdBeginEvent() override = default;
 	void Execute() override;
 	void Destroy() override;

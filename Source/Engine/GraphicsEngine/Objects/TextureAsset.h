@@ -67,7 +67,7 @@ public:
 
 
 	CU::Vector2<unsigned> GetTextureSize() const;
-	const void SetSize(CU::Vector2f aSize) { myViewPort.Width = aSize.x, myViewPort.Height = aSize.y; }
+	void SetSize(CU::Vector2f aSize);
 
 	void SetName(const std::string& aName);
 

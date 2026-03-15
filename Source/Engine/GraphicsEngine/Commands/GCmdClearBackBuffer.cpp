@@ -3,13 +3,21 @@
 
 #include "GraphicsEngine.h"
 
-GCmdClearBackBuffer::GCmdClearBackBuffer()
+GCmdClearBackBuffer::GCmdClearBackBuffer(bool aClearActualBackbuffer)
 {
+	myShouldClearActualBackbuffer = aClearActualBackbuffer;
 }
 
 void GCmdClearBackBuffer::Execute()
 {
-	GraphicsEngine::Get().ClearBackBuffer();
+	if (myShouldClearActualBackbuffer)
+	{
+		GraphicsEngine::Get().ClearBackBuffer();
+	}
+	else
+	{
+		GraphicsEngine::Get().ClearViewportBackBuffer();
+	}
 }
 
 void GCmdClearBackBuffer::Destroy()

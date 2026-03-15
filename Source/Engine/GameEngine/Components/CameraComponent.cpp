@@ -134,7 +134,7 @@ void CameraComponent::Render()
 	myFrameBuffer->CameraUp = myViewTransform.GetRow(2);
 	myFrameBuffer->Projection = GetClipMatrix();
 	myFrameBuffer->View = GetViewInverse();
-	myFrameBuffer->Resolution = GraphicsEngine::Get().GetViewPortSize();
+	myFrameBuffer->Resolution = GraphicsEngine::Get().GetRenderSize();
 	MainSingleton::Get().GetRenderer().Enqueue<GCmdSetFrameBuffer>(RenderStage::Deferred, myFrameBuffer);
 
 	if (myShouldScreenPick)
@@ -164,6 +164,11 @@ void CameraComponent::Move(const CU::Vector4<float>& aDirection, const float& aD
 	myPosition += (myDirection * mySpeed * aDeltaTime) * myViewTransform;
 }
 
+void CameraComponent::SetResolution(const CU::Vector2f& aResolution)
+{
+	myResolution = aResolution;
+	UpdateProjection();
+}
 
 CU::Vector4<float> CameraComponent::WorldToClip(const CU::Vector4<float>& aPoint)
 {
@@ -270,6 +275,33 @@ CU::Vector4<float> CameraComponent::ToCamera(const CU::Vector4<float>& aWorldPoi
 CU::Vector4<float> CameraComponent::ToClip(const CU::Vector4<float>& aCameraPoint)
 {
 	return aCameraPoint * myClipMatrix;
+}
+
+void CameraComponent::UpdateProjection()
+{
+	// Prevent division by zero if the viewport is completely hidden/minimized
+	if (myResolution.y <= 0.0001f) return;
+
+	float scaleX = 1 / static_cast<float>(tan(myHorizontalFov * 0.5f));
+	float scaleY = (myResolution.x / myResolution.y) * scaleX;
+	float planesDiv = myFarPlaneZ / (myFarPlaneZ - myNearPlaneZ);
+
+	myClipMatrix(1, 1) = scaleX;
+	myClipMatrix(1, 2) = 0;
+	myClipMatrix(1, 3) = 0;
+	myClipMatrix(1, 4) = 0;
+	myClipMatrix(2, 1) = 0;
+	myClipMatrix(2, 2) = scaleY;
+	myClipMatrix(2, 3) = 0;
+	myClipMatrix(2, 4) = 0;
+	myClipMatrix(3, 1) = 0;
+	myClipMatrix(3, 2) = 0;
+	myClipMatrix(3, 3) = planesDiv;
+	myClipMatrix(3, 4) = 1.0f;
+	myClipMatrix(4, 1) = 0;
+	myClipMatrix(4, 2) = 0;
+	myClipMatrix(4, 3) = (-1 * planesDiv) * myNearPlaneZ;
+	myClipMatrix(4, 4) = 0.0f;
 }
 
 void CameraComponent::PickFromScreen()

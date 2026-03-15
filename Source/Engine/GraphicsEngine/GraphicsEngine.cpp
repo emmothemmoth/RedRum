@@ -133,6 +133,7 @@ bool GraphicsEngine::Initialize(bool enableDeviceDebug)
 		myShaderMap;
 		CreateIntermediateBuffers();
 		CreateObjectIDBuffer();
+		CreateScreenPickingTexture();
 
 		if (!CreateForwardPSO())
 		{
@@ -930,6 +931,10 @@ void GraphicsEngine::ClearBackBuffer() const
 {
 	myRHI->ClearBackBuffer();
 }
+void GraphicsEngine::ClearViewportBackBuffer() const
+{
+	myRHI->ClearViewportBackBuffer();
+}
 
 void GraphicsEngine::ClearRenderTarget()
 {
@@ -958,6 +963,12 @@ void GraphicsEngine::CreateIndexBuffer(std::string_view aName, const std::vector
 	myRHI->CreateIndexBuffer(aName, aIndexList, aOutIxBuffer);
 }
 
+void GraphicsEngine::ResizeViewport(const unsigned aWidth, const unsigned aHeight)
+{
+	myRHI->ResizeViewport(aWidth, aHeight);
+	ResizeGBufferAndIntermediateBuffers();
+}
+
 const std::vector<std::shared_ptr<MaterialAsset>>& GraphicsEngine::GetDefaultMaterials() const
 {
 	return myDefaultMaterials;
@@ -975,7 +986,7 @@ SIZE GraphicsEngine::GetWindowSize() const
 
 CU::Vector2f GraphicsEngine::GetRenderSize() const
 {
-	return myRHI->GetBackBuffer()->GetSize();
+	return myLogicalRenderSize;
 }
 
 bool GraphicsEngine::CreateForwardPSO()
@@ -1179,7 +1190,7 @@ bool GraphicsEngine::CreateSpritePSO()
 	myRHI->CreateBlendState("SpriteBlendState", blendStateDescription);
 	mySpritePSO->BlendState = myRHI->GetBlendState("SpriteBlendState");
 
-	mySpritePSO->RenderTarget[0] = myRHI->GetBackBuffer();
+	mySpritePSO->RenderTarget[0] = myRHI->GetViewportBackBuffer();
 	mySpritePSO->ClearRenderTarget[0] = false;
 
 	mySpritePSO->DepthStencil = nullptr;
@@ -1302,7 +1313,7 @@ bool GraphicsEngine::CreateBloomPSO()
 	myBloomPSO->BlendState = myRHI->GetBlendState("AlphaBlend");
 	myBloomPSO->RenderTargetCount = 1;
 	myBloomPSO->SamplerStates[0] = myRHI->GetSamplerState("DefaultSamplerState");
-	myBloomPSO->RenderTarget[0] = myRHI->GetBackBuffer();
+	myBloomPSO->RenderTarget[0] = myRHI->GetViewportBackBuffer();
 	myBloomPSO->ClearRenderTarget[0] = false;
 	myBloomPSO->DepthStencil = nullptr;
 	myBloomPSO->ClearDepthStencil = false;
@@ -1420,7 +1431,7 @@ bool GraphicsEngine::CreateWorldspaceUIPSO()
 	myWorldspaceUIPSO->SamplerStates[0] = myRHI->GetSamplerState("DefaultSamplerState");
 
 
-	myWorldspaceUIPSO->RenderTarget[0] = myRHI->GetBackBuffer();
+	myWorldspaceUIPSO->RenderTarget[0] = myRHI->GetViewportBackBuffer();
 	myWorldspaceUIPSO->ClearRenderTarget[0] = false;
 
 	myWorldspaceUIPSO->DepthStencil = nullptr;
@@ -1436,11 +1447,10 @@ bool GraphicsEngine::CreateUIPSO()
 
 	myUIPSO->DepthStencilState = myRHI->GetDepthStencilState(DepthState::DS_ReadOnly);
 	myUIPSO->BlendState = myRHI->GetBlendState("ForwardBlendState");
-	myUIPSO->SamplerStates[0] = myRHI->GetSamplerState("DefaultSamplerState");
 
 
 	myUIPSO->RenderTarget[0] = myRHI->GetBackBuffer();
-	myUIPSO->ClearRenderTarget[0] = false;
+	myUIPSO->ClearRenderTarget[0] = true;
 
 	myUIPSO->DepthStencil = nullptr;
 	myUIPSO->ClearDepthStencil = false;
@@ -1532,33 +1542,43 @@ bool GraphicsEngine::CreateLUTTexture()
 
 bool GraphicsEngine::CreateGBuffer()
 {
-	myGBuffer.Albedo = std::make_shared<TextureAsset>();
-	myGBuffer.WorldNormal = std::make_shared<TextureAsset>();
-	myGBuffer.Material = std::make_shared<TextureAsset>();
-	myGBuffer.WorldPosition = std::make_shared<TextureAsset>();
-	myGBuffer.FXTexture = std::make_shared<TextureAsset>();
+	//Store into stale variables here IF gbuffer already exists?
 
-	if (!myRHI->CreateTexture("AlbedoTexture", myRHI->GetDeviceSize().Width, myRHI->GetDeviceSize().Height, RHITextureFormat::R8G8B8A8_UNORM, myGBuffer.Albedo.get(), false, true, true, false, false))
+	if (!myGBuffer.Albedo)        myGBuffer.Albedo = std::make_shared<TextureAsset>();
+	if (!myGBuffer.WorldNormal)   myGBuffer.WorldNormal = std::make_shared<TextureAsset>();
+	if (!myGBuffer.Material)      myGBuffer.Material = std::make_shared<TextureAsset>();
+	if (!myGBuffer.WorldPosition) myGBuffer.WorldPosition = std::make_shared<TextureAsset>();
+	if (!myGBuffer.FXTexture)     myGBuffer.FXTexture = std::make_shared<TextureAsset>();
+	unsigned sizeX = myRHI->GetViewportBackBuffer()->GetTextureSize().x;
+	unsigned sizeY = myRHI->GetViewportBackBuffer()->GetTextureSize().y;
+	CU::Vector2f sizeVec = { static_cast<float>(sizeX), static_cast<float>(sizeY) };
+	myGBuffer.Albedo->SetSize(sizeVec);
+	myGBuffer.WorldNormal->SetSize(sizeVec);
+	myGBuffer.Material->SetSize(sizeVec);
+	myGBuffer.WorldPosition->SetSize(sizeVec);
+	myGBuffer.FXTexture->SetSize(sizeVec);
+
+	if (!myRHI->CreateTexture("AlbedoTexture", sizeX, sizeY, RHITextureFormat::R8G8B8A8_UNORM, myGBuffer.Albedo.get(), false, true, true, false, false))
 	{
 		LOG(GELog, Error, "Couldn't create albedo texture for GBuffer");
 		return false;
 	}
-	if (!myRHI->CreateTexture("WorldNormalTexture", myRHI->GetDeviceSize().Width, myRHI->GetDeviceSize().Height, RHITextureFormat::R16G16B16A16_SNORM, myGBuffer.WorldNormal.get(), false, true, true, false, false))
+	if (!myRHI->CreateTexture("WorldNormalTexture", sizeX, sizeY, RHITextureFormat::R16G16B16A16_SNORM, myGBuffer.WorldNormal.get(), false, true, true, false, false))
 	{
 		LOG(GELog, Error, "Couldn't create material texture for GBuffer");
 		return false;
 	}
-	if (!myRHI->CreateTexture("MaterialTexture", myRHI->GetDeviceSize().Width, myRHI->GetDeviceSize().Height, RHITextureFormat::R8G8B8A8_UNORM, myGBuffer.Material.get(), false, true, true, false, false))
+	if (!myRHI->CreateTexture("MaterialTexture", sizeX, sizeY, RHITextureFormat::R8G8B8A8_UNORM, myGBuffer.Material.get(), false, true, true, false, false))
 	{
 		LOG(GELog, Error, "Couldn't create pixel normal texture for GBuffer");
 		return false;
 	}
-	if (!myRHI->CreateTexture("WorldPositionTexture", myRHI->GetDeviceSize().Width, myRHI->GetDeviceSize().Height, RHITextureFormat::R32G32B32A32_Float, myGBuffer.WorldPosition.get(), false, true, true, false, false))
+	if (!myRHI->CreateTexture("WorldPositionTexture", sizeX, sizeY, RHITextureFormat::R32G32B32A32_Float, myGBuffer.WorldPosition.get(), false, true, true, false, false))
 	{
 		LOG(GELog, Error, "Couldn't create world position texture for GBuffer");
 		return false;
 	}
-	if (!myRHI->CreateTexture("FXTexture", myRHI->GetDeviceSize().Width, myRHI->GetDeviceSize().Height, RHITextureFormat::R8G8B8A8_UNORM, myGBuffer.FXTexture.get(), false, true, true, false, false))
+	if (!myRHI->CreateTexture("FXTexture", sizeX, sizeY, RHITextureFormat::R8G8B8A8_UNORM, myGBuffer.FXTexture.get(), false, true, true, false, false))
 	{
 		LOG(GELog, Error, "Couldn't create fx texture for GBuffer");
 		return false;
@@ -1650,31 +1670,34 @@ bool GraphicsEngine::CreateAdditiveBlendState()
 
 void GraphicsEngine::CreateIntermediateBuffers()
 {
-	SetVertexShader("Quad_VS");
 	CU::Vector2<unsigned> size;
 	size.x = static_cast<unsigned>(myRHI->GetViewPortSize().x);
 	size.y = static_cast<unsigned>(myRHI->GetViewPortSize().y);
 
-	myHDRBuffer = std::make_shared<TextureAsset>();
+	if (!myHDRBuffer) myHDRBuffer = std::make_shared<TextureAsset>();
+	if (!myLDRBuffer) myLDRBuffer = std::make_shared<TextureAsset>();
+	if (!myLuminanceBuffer) myLuminanceBuffer = std::make_shared<TextureAsset>();
+	if (!mySSAOBuffer) mySSAOBuffer = std::make_shared<TextureAsset>();
+	if (!myHalfScreenBuffer) myHalfScreenBuffer = std::make_shared<TextureAsset>();
+	if (!myHalfScreenBufferB) myHalfScreenBufferB = std::make_shared<TextureAsset>();
+	if (!myQuarterScreenBuffer) myQuarterScreenBuffer = std::make_shared<TextureAsset>();
+	if (!myEighthScreenBufferA) myEighthScreenBufferA = std::make_shared<TextureAsset>();
+	if (!myEighthScreenBufferB) myEighthScreenBufferB = std::make_shared<TextureAsset>();
 	myHDRBuffer->SetSize(CU::Vector2f{ static_cast<float>(size.x), static_cast<float>(size.y) });
 	if (!myRHI->CreateTexture("Intermediate HDR Buffer", size.x, size.y, RHITextureFormat::R16G16B16A16_FLOAT, myHDRBuffer.get(), false, true, true, false, false))
 	{
 		LOG(GELog, Error, "Unable to create HDR intermediate buffer");
 	}
-	myLDRBuffer = std::make_shared<TextureAsset>();
 	myLDRBuffer->SetSize(CU::Vector2f{ static_cast<float>(size.x), static_cast<float>(size.y) });
 	if (!myRHI->CreateTexture("Intermediate LDR Buffer", size.x, size.y, RHITextureFormat::R16G16B16A16_FLOAT, myLDRBuffer.get(), false, true, true, false, false))
 	{
 		LOG(GELog, Error, "Unable to create intermediate LDR buffer");
 	}
-	myLuminanceBuffer = std::make_shared<TextureAsset>();
 	myLuminanceBuffer->SetSize(CU::Vector2f{ static_cast<float>(size.x), static_cast<float>(size.y) });
 	if (!myRHI->CreateTexture("Luminance Buffer", size.x, size.y, RHITextureFormat::R16G16B16A16_FLOAT, myLuminanceBuffer.get(), false, true, true, false, false))
 	{
 		LOG(GELog, Error, "Unable to create Luminance buffer");
 	}
-
-	mySSAOBuffer = std::make_shared<TextureAsset>();
 	mySSAOBuffer->SetSize(CU::Vector2f{ static_cast<float>(size.x), static_cast<float>(size.y) });
 	if (!myRHI->CreateTexture("SSAO Buffer", static_cast<unsigned>(size.x), static_cast<unsigned>(size.y), RHITextureFormat::R16G16B16A16_FLOAT, mySSAOBuffer.get(), false, true, true, false, false))
 	{
@@ -1683,13 +1706,11 @@ void GraphicsEngine::CreateIntermediateBuffers()
 
 	size.x = size.x / 2;
 	size.y = size.y / 2;
-	myHalfScreenBuffer = std::make_shared<TextureAsset>();
 	myHalfScreenBuffer->SetSize(CU::Vector2f{ static_cast<float>(size.x), static_cast<float>(size.y) });
 	if (!myRHI->CreateTexture("Half Size Buffer", size.x, (size.y), RHITextureFormat::R8G8B8A8_UNORM, myHalfScreenBuffer.get(), false, true, true, false, false))
 	{
 		LOG(GELog, Error, "Unable to create Half Size Buffer");
 	}
-	myHalfScreenBufferB = std::make_shared<TextureAsset>();
 	myHalfScreenBufferB->SetSize(CU::Vector2f{ static_cast<float>(size.x), static_cast<float>(size.y) });
 	if (!myRHI->CreateTexture("Half Size Buffer B", size.x, (size.y), RHITextureFormat::R8G8B8A8_UNORM, myHalfScreenBufferB.get(), false, true, true, false, false))
 	{
@@ -1698,7 +1719,6 @@ void GraphicsEngine::CreateIntermediateBuffers()
 	size.x = size.x / 2;
 	size.y = size.y / 2;
 
-	myQuarterScreenBuffer = std::make_shared<TextureAsset>();
 	myQuarterScreenBuffer->SetSize(CU::Vector2f{ static_cast<float>(size.x), static_cast<float>(size.y) });
 	if (!myRHI->CreateTexture("Quarter Size Buffer", size.x, size.y, RHITextureFormat::R8G8B8A8_UNORM, myQuarterScreenBuffer.get(), false, true, true, false, false))
 	{
@@ -1707,14 +1727,12 @@ void GraphicsEngine::CreateIntermediateBuffers()
 
 	size.x = size.x / 2;
 	size.y = size.y / 2;
-	myEighthScreenBufferA = std::make_shared<TextureAsset>();
 	myEighthScreenBufferA->SetSize(CU::Vector2f{ static_cast<float>(size.x), static_cast<float>(size.y) });
 	if (!myRHI->CreateTexture("Eight Size Buffer A", size.x, size.y, RHITextureFormat::R8G8B8A8_UNORM, myEighthScreenBufferA.get(), false, true, true, false, false))
 	{
 		LOG(GELog, Error, "Unable to create Eight Size Buffer A");
 	}
 
-	myEighthScreenBufferB = std::make_shared<TextureAsset>();
 	myEighthScreenBufferB->SetSize(CU::Vector2f{ static_cast<float>(size.x), static_cast<float>(size.y) });
 	if (!myRHI->CreateTexture("Eight Size Buffer B", static_cast<unsigned>(size.x), static_cast<unsigned>(size.y), RHITextureFormat::R8G8B8A8_UNORM, myEighthScreenBufferB.get(), false, true, true, false, false))
 	{
@@ -1725,21 +1743,23 @@ void GraphicsEngine::CreateIntermediateBuffers()
 
 void GraphicsEngine::CreateObjectIDBuffer()
 {
-	CU::Vector2f size = myRHI->GetBackBuffer()->GetSize();
-	myObjectIDTexture = std::make_shared<TextureAsset>();
+	CU::Vector2f size = myRHI->GetViewportBackBuffer()->GetSize();
+	if(!myObjectIDTexture) myObjectIDTexture = std::make_shared<TextureAsset>();
 	myObjectIDTexture->SetSize(size);
 	if (!myRHI->CreateTexture("Object ID Buffer", static_cast<unsigned>(size.x), static_cast<unsigned>(size.y), RHITextureFormat::R32_UINT, myObjectIDTexture.get(), false, true, true, false, false))
 	{
 		LOG(GELog, Error, "Unable to create ObjectID buffer");
 	}
+}
+
+void GraphicsEngine::CreateScreenPickingTexture()
+{
 	myScreenPickingTexture = std::make_shared<TextureAsset>();
 	myScreenPickingTexture->SetSize({ 1.0f, 1.0f });
 	if (!myRHI->CreateTexture("ScreenPicking", 1, 1, RHITextureFormat::R32_UINT, myScreenPickingTexture.get(), true, false, false, true, false))
 	{
 		LOG(GELog, Error, "Unable to create Screen picking staging texture");
 	}
-
-
 }
 
 bool GraphicsEngine::CreateDefaultMaterials()
@@ -2181,4 +2201,42 @@ void GraphicsEngine::EndFrame()
 uint32_t GraphicsEngine::EncodeID(uint32_t anObjectID, uint8_t aPartID) const
 {
 	return (anObjectID << 8) | aPartID;
+}
+
+void GraphicsEngine::ResizeGBufferAndIntermediateBuffers()
+{
+	myStaleCOMObjects.clear();
+
+	auto StaleAsset = [&](std::shared_ptr<TextureAsset>& asset)
+		{
+			if (asset && asset->IsValid())
+			{
+				myStaleCOMObjects.push_back(asset->GetResource());
+				myStaleCOMObjects.push_back(asset->GetRTV());
+				myStaleCOMObjects.push_back(asset->GetSRV());
+			}
+		};
+	StaleAsset(myObjectIDTexture);
+
+	// 1. Stash the GBuffer
+	StaleAsset(myGBuffer.Albedo);
+	StaleAsset(myGBuffer.WorldNormal);
+	StaleAsset(myGBuffer.Material);
+	StaleAsset(myGBuffer.WorldPosition);
+	StaleAsset(myGBuffer.FXTexture);
+
+	// 2. Stash the Post Process Buffers
+	StaleAsset(myHDRBuffer);
+	StaleAsset(myLDRBuffer);
+	StaleAsset(myLuminanceBuffer);
+	StaleAsset(mySSAOBuffer);
+	StaleAsset(myHalfScreenBuffer);
+	StaleAsset(myHalfScreenBufferB);
+	StaleAsset(myQuarterScreenBuffer);
+	StaleAsset(myEighthScreenBufferA);
+	StaleAsset(myEighthScreenBufferB);
+
+	CreateGBuffer();
+	CreateIntermediateBuffers();
+	CreateObjectIDBuffer();
 }

@@ -19,7 +19,7 @@ GCmdRenderMesh::GCmdRenderMesh(std::shared_ptr<MeshAsset> aMesh, CU::Matrix4x4f 
 }
 
 void GCmdRenderMesh::Execute()
-{
+ {
 	ObjectBufferData objectBuffer;
 	objectBuffer.Transform = myTransform;
 	objectBuffer.InverseTranspose = CU::Matrix4x4f::Transpose(myTransform.GetInverse());

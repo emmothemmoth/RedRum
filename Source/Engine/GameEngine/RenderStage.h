@@ -2,15 +2,16 @@
 
 enum class RenderStage
 {
-	ShadowMapping = 0,
-	Deferred = 1,
-	Forward = 2,
-	Particles = 3,
-	Custom = 4,
-	ObjectIDRendering = 5,
-	PostProcess = 6,
-	WorldSpaceUI = 7,
-	Sprite = 8,
-	UI = 9,
-	Count = 10
+	PreRendering = 0,
+	ShadowMapping = 1,
+	Deferred = 2,
+	Forward = 3,
+	Particles = 4,
+	Custom = 5,
+	ObjectIDRendering = 6,
+	PostProcess = 7,
+	WorldSpaceUI = 8,
+	Sprite = 9,
+	UI = 10,
+	Count = 11
 };

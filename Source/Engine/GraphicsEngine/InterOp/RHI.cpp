@@ -69,40 +69,29 @@ inline std::wstring string_cast<std::wstring>(const char* someString)
 bool RHI::Initialize(HWND aWindowHandle, bool enableDeviceDebug)
 {
 	myBackBuffer = std::make_shared<TextureAsset>();
+	myViewportBackBuffer = std::make_shared<TextureAsset>();
+	myDepthBuffer = std::make_shared<TextureAsset>();
 
 	HRESULT result = E_FAIL;
 
+	// ---------------------------------------------------------
+	// 1. SWAPCHAIN & OS WINDOW SETUP
+	// ---------------------------------------------------------
 	DXGI_SWAP_CHAIN_DESC swapChainDesc = {};
 	swapChainDesc.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 	swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 	swapChainDesc.OutputWindow = aWindowHandle;
 	swapChainDesc.SampleDesc.Count = 1;
 	swapChainDesc.Windowed = true;
-
-	// More efficient use on Win 8+ but cannot be used on Win 7.
-	// Requires Buffercount to be 2.
 	swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
-	// If we don't set this DX will lock the refresh date to the monitor
-	// refresh rate (even if we don't use V-Sync).
-	// It essentially means that we may restart drawing a frame even if
-	// doing so would result in a half-drawn frame being put on the screen,
-	// i.e. so called screen tearing.
 	swapChainDesc.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING;
 	swapChainDesc.BufferCount = 2;
 
 	result = D3D11CreateDeviceAndSwapChain(
-		nullptr,
-		D3D_DRIVER_TYPE_HARDWARE,
-		nullptr,
+		nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr,
 		enableDeviceDebug ? D3D11_CREATE_DEVICE_DEBUG : 0,
-		nullptr,
-		0,
-		D3D11_SDK_VERSION,
-		&swapChainDesc,
-		&mySwapChain,
-		&myDevice,
-		nullptr,
-		&myContext
+		nullptr, 0, D3D11_SDK_VERSION, &swapChainDesc,
+		&mySwapChain, &myDevice, nullptr, &myContext
 	);
 
 	if (FAILED(result))
@@ -111,58 +100,66 @@ bool RHI::Initialize(HWND aWindowHandle, bool enableDeviceDebug)
 		return false;
 	}
 
-	// Create the BackBuffer object that our Graphics Engine will use.
-	// This is a special case that can't use our own CreateTexture function because
-	// DirectX has already created its own representation via D3D11CreateDeviceAndSwapChain
-	// and we just need a place to contain it for our own purposes.
-	//outBackBuffer = std::make_shared<Texture>();
-	myBackBuffer->myName = "RHI Backbuffer";
-	myBackBuffer->myBindFlags = D3D11_BIND_RENDER_TARGET;
-	myBackBuffer->myUsageFlags = D3D11_USAGE_DEFAULT;
-	myBackBuffer->myAccessFlags = 0;
-
-	// Retrieve back buffer texture that was created when we called CreateDeviceAndSwapChain.
-	result = mySwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), &myBackBuffer->myTexture);
-	if (FAILED(result))
-	{
-		LOG(RHILog, Error, "Failed to retrieve backbuffer resource!");
-		return false;
-	}
-
-	// Create a View for the BackBuffer Texture that allows us to draw on the texture.
-	result = RHI::myDevice->CreateRenderTargetView(myBackBuffer->myTexture.Get(),
-		nullptr, myBackBuffer->myRTV.GetAddressOf());
-	if (FAILED(result))
-	{
-		LOG(RHILog, Error, "Failed to create RTV for backbuffer!");
-		return false;
-	}
-
-	// Retrieve the display area in the Window. This is the area
-	// we can actually do something with, not including the title
-	// bar and border.
+	// Retrieve OS Window Size
 	RECT clientRect;
 	ZeroMemory(&clientRect, sizeof(RECT));
 	GetClientRect(aWindowHandle, &clientRect);
 	const unsigned int windowWidth = clientRect.right - clientRect.left;
 	const unsigned int windowHeight = clientRect.bottom - clientRect.top;
-
 	myDeviceSize = { windowWidth, windowHeight };
 
-	// We also need a viewport that specifies which area of that Texture to draw on.
-	myBackBuffer->myViewPort = { 0.0f, 0.0f,
-		static_cast<float>(windowWidth), static_cast<float>(windowHeight),
-		0.0f, 1.0f };
+	// Setup OS BackBuffer (Used ONLY for final ImGui presentation)
+	myBackBuffer->myName = "RHI Backbuffer";
+	myBackBuffer->myBindFlags = D3D11_BIND_RENDER_TARGET;
+	myBackBuffer->myUsageFlags = D3D11_USAGE_DEFAULT;
+	myBackBuffer->myAccessFlags = 0;
 
-	// Next we need to describes the scene depth. This will allow proper
-	// behavior when our 3D world is projected onto our 2D monitor.
-	myDepthBuffer = std::make_shared<TextureAsset>();
+	result = mySwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), &myBackBuffer->myTexture);
+	if (FAILED(result)) { LOG(RHILog, Error, "Failed to retrieve backbuffer resource!"); return false; }
+
+	result = myDevice->CreateRenderTargetView(myBackBuffer->myTexture.Get(), nullptr, myBackBuffer->myRTV.GetAddressOf());
+	if (FAILED(result)) { LOG(RHILog, Error, "Failed to create RTV for backbuffer!"); return false; }
+
+	myBackBuffer->myViewPort = { 0.0f, 0.0f, static_cast<float>(windowWidth), static_cast<float>(windowHeight), 0.0f, 1.0f };
+
+
+	// ---------------------------------------------------------
+	// 2. SCENE VIEWPORT TARGETS (1600x900)
+	// ---------------------------------------------------------
+	const unsigned int viewportWidth = 1600;
+	const unsigned int viewportHeight = 900;
+
+	// Viewport Render Target (Drawn to by the scene, read by ImGui)
+	D3D11_TEXTURE2D_DESC vpDesc = {};
+	vpDesc.Width = viewportWidth;
+	vpDesc.Height = viewportHeight;
+	vpDesc.MipLevels = 1;
+	vpDesc.ArraySize = 1;
+	vpDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	vpDesc.SampleDesc.Count = 1;
+	vpDesc.Usage = D3D11_USAGE_DEFAULT;
+	vpDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE; // CRITICAL for ImGui::Image
+	vpDesc.CPUAccessFlags = 0;
+	vpDesc.MiscFlags = 0;
+
+	ComPtr<ID3D11Texture2D> tempViewportTex;
+	result = myDevice->CreateTexture2D(&vpDesc, nullptr, tempViewportTex.GetAddressOf());
+	if (FAILED(result)) { LOG(RHILog, Error, "Failed to create Viewport texture!"); return false; }
+	myViewportBackBuffer->myTexture = tempViewportTex;
+	result = myDevice->CreateRenderTargetView(tempViewportTex.Get(), nullptr, myViewportBackBuffer->myRTV.GetAddressOf());
+	result = myDevice->CreateShaderResourceView(tempViewportTex.Get(), nullptr, myViewportBackBuffer->mySRV.GetAddressOf());
+
+	SetObjectName(myViewportBackBuffer->myTexture, "ViewportBackBuffer_T2D");
+
+	myViewportBackBuffer->myViewPort = { 0.0f, 0.0f, static_cast<float>(viewportWidth), static_cast<float>(viewportHeight), 0.0f, 1.0f };
+
+	// Viewport Depth Buffer (Matches the Viewport Size)
 	D3D11_TEXTURE2D_DESC desc = {};
-	desc.Width = static_cast<unsigned int>(windowWidth);
-	desc.Height = static_cast<unsigned int>(windowHeight);
+	desc.Width = viewportWidth;
+	desc.Height = viewportHeight;
 	desc.MipLevels = 1;
 	desc.ArraySize = 1;
-	desc.Format = DXGI_FORMAT::DXGI_FORMAT_R32_TYPELESS;
+	desc.Format = DXGI_FORMAT_R32_TYPELESS;
 	desc.SampleDesc.Count = 1;
 	desc.SampleDesc.Quality = 0;
 	desc.Usage = D3D11_USAGE_DEFAULT;
@@ -171,13 +168,8 @@ bool RHI::Initialize(HWND aWindowHandle, bool enableDeviceDebug)
 	desc.MiscFlags = 0;
 
 	ComPtr<ID3D11Texture2D> depthTexture;
-	// For the Scene Depth we can just use our own function to create a depth texture.
 	result = myDevice->CreateTexture2D(&desc, nullptr, depthTexture.GetAddressOf());
-	if (FAILED(result))
-	{
-		LOG(RHILog, Error, "Faield to create depth buffer");
-		return false;
-	}
+	if (FAILED(result)) { LOG(RHILog, Error, "Failed to create depth buffer"); return false; }
 
 	SetObjectName(depthTexture, "DepthBuffer_T2D");
 
@@ -186,17 +178,18 @@ bool RHI::Initialize(HWND aWindowHandle, bool enableDeviceDebug)
 	dsvDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
 
 	result = myDevice->CreateDepthStencilView(depthTexture.Get(), &dsvDesc, myDepthBuffer->myDSV.GetAddressOf());
-	if (FAILED(result))
-	{
-		LOG(RHILog, Error, "Failed to create depth stencil view");
-		return false;
-	}
+	if (FAILED(result)) { LOG(RHILog, Error, "Failed to create depth stencil view"); return false; }
 
 	SetObjectName(myDepthBuffer->myDSV, "DepthBuffer_DSV");
 
-	// If we got this far we've initialized DirectX! Yay!
+	myDepthBuffer->myViewPort = myViewportBackBuffer->myViewPort; // 1600x900 viewport setup!
 
-	// Now we should create all states we need to keep track of
+
+	// ---------------------------------------------------------
+	// 3. STATES INITIALIZATION
+	// ---------------------------------------------------------
+
+	// Rasterizer States
 	myRasterizerStates[RS_Default] = nullptr;
 
 	D3D11_RASTERIZER_DESC rasterizerDesc = {};
@@ -211,73 +204,49 @@ bool RHI::Initialize(HWND aWindowHandle, bool enableDeviceDebug)
 	rasterizerDesc.MultisampleEnable = false;
 	rasterizerDesc.AntialiasedLineEnable = false;
 	result = myDevice->CreateRasterizerState(&rasterizerDesc, myRasterizerStates[RS_CullNone].GetAddressOf());
-	if (FAILED(result))
-	{
-		LOG(RHILog, Error, "Failed to create default rasterizer state");
-		return false;
-	}
+	if (FAILED(result)) { LOG(RHILog, Error, "Failed to create default rasterizer state"); return false; }
 
 	rasterizerDesc.FillMode = D3D11_FILL_WIREFRAME;
 	rasterizerDesc.CullMode = D3D11_CULL_NONE;
 	myDevice->CreateRasterizerState(&rasterizerDesc, myRasterizerStates[RS_Wireframe].GetAddressOf());
 
-	// 1. DS_Default: Standard Depth Testing (Write enabled, Less comparison)
+	// Depth Stencil States
 	D3D11_DEPTH_STENCIL_DESC defaultDepthDesc = {};
 	defaultDepthDesc.DepthEnable = true;
 	defaultDepthDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
 	defaultDepthDesc.DepthFunc = D3D11_COMPARISON_LESS;
 	defaultDepthDesc.StencilEnable = false;
 	result = myDevice->CreateDepthStencilState(&defaultDepthDesc, myDepthStates[DS_Default].GetAddressOf());
-	if (FAILED(result))
-	{
-		LOG(RHILog, Error, "Failed to create default depth stencil state");
-		return false;
-	}
+	if (FAILED(result)) { LOG(RHILog, Error, "Failed to create default depth stencil state"); return false; }
 
-	// 2. DS_LessEqual: Used for Picking Pass (Write disabled, Less-Equal comparison)
-	// This allows the picking pass to pass the test even if the depth is exactly the same
 	D3D11_DEPTH_STENCIL_DESC lessEqualDesc = {};
 	lessEqualDesc.DepthEnable = true;
-	lessEqualDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO; // No need to write for picking
-	lessEqualDesc.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;     // Allows Z == Z
+	lessEqualDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
+	lessEqualDesc.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
 	lessEqualDesc.StencilEnable = false;
 	result = myDevice->CreateDepthStencilState(&lessEqualDesc, myDepthStates[DS_LessEqual].GetAddressOf());
-	if (FAILED(result))
-	{
-		LOG(RHILog, Error, "Failed to create LessEqual depth stencil state");
-		return false;
-	}
+	if (FAILED(result)) { LOG(RHILog, Error, "Failed to create LessEqual depth stencil state"); return false; }
 
-	// 2. DS_LessEqual: Used for Picking Pass (Write disabled, Less-Equal comparison)
-// This allows the picking pass to pass the test even if the depth is exactly the same
 	D3D11_DEPTH_STENCIL_DESC lessEqualWrite = {};
 	lessEqualWrite.DepthEnable = true;
-	lessEqualWrite.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL; // No need to write for picking
-	lessEqualWrite.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;     // Allows Z == Z
+	lessEqualWrite.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+	lessEqualWrite.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
 	lessEqualWrite.StencilEnable = false;
 	result = myDevice->CreateDepthStencilState(&lessEqualWrite, myDepthStates[DS_LessEqualWrite].GetAddressOf());
-	if (FAILED(result))
-	{
-		LOG(RHILog, Error, "Failed to create LessEqual depth stencil state");
-		return false;
-	}
+	if (FAILED(result)) { LOG(RHILog, Error, "Failed to create LessEqual depth stencil state"); return false; }
 
-	// 3. DS_ReadOnly: Used for Translucency/Particles (Write disabled, Less comparison)
 	D3D11_DEPTH_STENCIL_DESC readOnlyDepth = {};
 	readOnlyDepth.DepthEnable = true;
 	readOnlyDepth.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
 	readOnlyDepth.DepthFunc = D3D11_COMPARISON_LESS;
 	readOnlyDepth.StencilEnable = false;
 	result = myDevice->CreateDepthStencilState(&readOnlyDepth, myDepthStates[DS_ReadOnly].GetAddressOf());
-	if (FAILED(result))
-	{
-		LOG(RHILog, Error, "Failed to create read-only depth stencil state");
-		return false;
-	}
+	if (FAILED(result)) { LOG(RHILog, Error, "Failed to create read-only depth stencil state"); return false; }
 
 	myContext->QueryInterface(IID_PPV_ARGS(&myAnnotationObject));
 	SetObjectName(myContext, "Device Context");
 	SetObjectName(myBackBuffer->myRTV, "Backbuffer RTV");
+
 	LOG(RHILog, Log, "RHI Initialized.");
 	return true;
 }
@@ -303,12 +272,12 @@ const Microsoft::WRL::ComPtr<ID3D11SamplerState>& RHI::GetSamplerState(const std
 
 CU::Vector2f RHI::GetViewPortSize() const
 {
-	return myBackBuffer->GetSize();
+	return myViewportBackBuffer->GetSize();
 }
 
 ViewPort RHI::GetViewPort()
 {
-	return myBackBuffer->myViewPort;
+	return myViewportBackBuffer->myViewPort;
 }
 
 
@@ -1133,6 +1102,12 @@ void RHI::ClearRenderTargets(const int& aNumViews) const
 	myContext->OMSetRenderTargets(aNumViews - 1, nullptr, nullptr);
 }
 
+void RHI::ClearViewportBackBuffer() const
+{
+	FLOAT clearColor[4] = { 0, 0, 0, 0 };
+	myContext->ClearRenderTargetView(myViewportBackBuffer->myRTV.Get(), clearColor);
+}
+
 void RHI::ClearBackBuffer() const
 {
 	FLOAT clearColor[4] = { 0, 0, 0, 0 };
@@ -1323,19 +1298,21 @@ void RHI::SetMarker(std::string_view aMarker)
 
 void RHI::DrawQuad(const CU::Vector2f& aSize)
 {
+	aSize;
 	SetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 	SetVertexBuffer(nullptr, 0, 0);
 	SetIndexBuffer(nullptr);
 	SetInputLayout(nullptr);
 
-	D3D11_VIEWPORT viewport = {};
-	viewport.TopLeftX = 0;
-	viewport.TopLeftY = 0;
-	viewport.Width = aSize.x > 0 ? aSize.x : myBackBuffer->GetSize().x;
-	viewport.Height = aSize.y > 0 ? aSize.y : myBackBuffer->GetSize().y;
-	viewport.MinDepth = 0;
-	viewport.MaxDepth = 1;
-	myContext->RSSetViewports(1, &viewport);
+	//This is a bug with resizable viewport
+	//D3D11_VIEWPORT viewport = {};
+	//viewport.TopLeftX = 0;
+	//viewport.TopLeftY = 0;
+	//viewport.Width = aSize.x > 0 ? aSize.x : myViewportBackBuffer->GetSize().x;
+	//viewport.Height = aSize.y > 0 ? aSize.y : myViewportBackBuffer->GetSize().y;
+	//viewport.MinDepth = 0;
+	//viewport.MaxDepth = 1;
+	//myContext->RSSetViewports(1, &viewport);
 
 	Draw(4);
 }
@@ -1405,8 +1382,19 @@ void RHI::ChangePipeLineState(const PipelineStateObject& aNewPSO, const Pipeline
 		D3D11_VIEWPORT viewport = {};
 		viewport.TopLeftX = 0;
 		viewport.TopLeftY = 0;
-		viewport.Width = myBackBuffer->myViewPort.Width;
-		viewport.Height = myBackBuffer->myViewPort.Height;
+		if (aNewPSO.RenderTarget[i])
+		{
+			// YES: Use its exact size!
+			viewport.Width = aNewPSO.RenderTarget[i]->myViewPort.Width;
+			viewport.Height = aNewPSO.RenderTarget[i]->myViewPort.Height;
+		}
+		else
+		{
+			// NO: It's a dynamic pass. Provide a safe fallback so DX11 doesn't crash.
+			// The Graphics Command MUST override this viewport when it binds its target!
+			viewport.Width = myViewportBackBuffer->myViewPort.Width;
+			viewport.Height = myViewportBackBuffer->myViewPort.Height;
+		}
 		viewport.MinDepth = 0;
 		viewport.MaxDepth = 1;
 		viewports[i] = viewport;
@@ -1459,8 +1447,8 @@ void RHI::ChangePipeLineState(const PipelineStateObject& aNewPSO, const Pipeline
 		}
 		else
 		{
-			viewport.Width = myBackBuffer->myViewPort.Width;
-			viewport.Height = myBackBuffer->myViewPort.Height;
+			viewport.Width = myViewportBackBuffer->myViewPort.Width;
+			viewport.Height = myViewportBackBuffer->myViewPort.Height;
 		}
 
 		myContext->RSSetViewports(1, &viewport);
@@ -1708,4 +1696,89 @@ uint32_t RHI::ReadID(const int aPosX, const int aPosY, TextureAsset* anRTVTextur
 	}
 
 	return id;
+}
+
+void RHI::ResizeViewport(unsigned int aWidth, unsigned int aHeight)
+{
+	// 1. Sanity check: DirectX will fail if we try to create a 0-pixel texture.
+	if (aWidth <= 1 || aHeight <= 1)
+	{
+		return;
+	}
+
+	if (myViewportBackBuffer->myTexture)
+	{
+		myStaleViewportTex = myViewportBackBuffer->myTexture;
+		myStaleViewportRTV = myViewportBackBuffer->myRTV;
+		myStaleViewportSRV = myViewportBackBuffer->mySRV;
+		myStaleDepthDSV = myDepthBuffer->myDSV;
+	}
+
+	HRESULT result;
+
+	// ----------------------------------------------------------------
+	// 1. RECREATE VIEWPORT BACKBUFFER
+	// ----------------------------------------------------------------
+	D3D11_TEXTURE2D_DESC vpDesc = {};
+	vpDesc.Width = aWidth;
+	vpDesc.Height = aHeight;
+	vpDesc.MipLevels = 1;
+	vpDesc.ArraySize = 1;
+	vpDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	vpDesc.SampleDesc.Count = 1;
+	vpDesc.Usage = D3D11_USAGE_DEFAULT;
+	vpDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+
+	ComPtr<ID3D11Texture2D> tempViewportTex;
+	result = myDevice->CreateTexture2D(&vpDesc, nullptr, tempViewportTex.GetAddressOf());
+	if (FAILED(result))
+	{
+		LOG(RHILog, Error, "Resize: Failed to create Texture2D!");
+		return;
+	}
+
+	// Safely apply the new texture
+	myViewportBackBuffer->myTexture = tempViewportTex;
+	myViewportBackBuffer->SetSize({ static_cast<float>(aWidth), static_cast<float>(aHeight) });
+
+	result = myDevice->CreateRenderTargetView(tempViewportTex.Get(), nullptr, myViewportBackBuffer->myRTV.ReleaseAndGetAddressOf());
+	if (FAILED(result)) { LOG(RHILog, Error, "Resize: Failed to create RTV!"); return; }
+
+	result = myDevice->CreateShaderResourceView(tempViewportTex.Get(), nullptr, myViewportBackBuffer->mySRV.ReleaseAndGetAddressOf());
+	if (FAILED(result)) { LOG(RHILog, Error, "Resize: Failed to create SRV!"); return; }
+
+	// CRITICAL: Update the asset's viewport definition!
+	myViewportBackBuffer->myViewPort = { 0.0f, 0.0f, static_cast<float>(aWidth), static_cast<float>(aHeight), 0.0f, 1.0f };
+
+	// ----------------------------------------------------------------
+	// 2. RECREATE DEPTH BUFFER
+	// ----------------------------------------------------------------
+	D3D11_TEXTURE2D_DESC depthDesc = {};
+	depthDesc.Width = aWidth;
+	depthDesc.Height = aHeight;
+	depthDesc.MipLevels = 1;
+	depthDesc.ArraySize = 1;
+	depthDesc.Format = DXGI_FORMAT_R32_TYPELESS;
+	depthDesc.SampleDesc.Count = 1;
+	depthDesc.Usage = D3D11_USAGE_DEFAULT;
+	depthDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_DEPTH_STENCIL;
+
+	ComPtr<ID3D11Texture2D> tempDepthTex;
+	result = myDevice->CreateTexture2D(&depthDesc, nullptr, tempDepthTex.GetAddressOf());
+	if (FAILED(result)) { LOG(RHILog, Error, "Resize: Failed to create Depth Texture!"); return; }
+
+	D3D11_DEPTH_STENCIL_VIEW_DESC dsvDesc = {};
+	dsvDesc.Format = DXGI_FORMAT_D32_FLOAT;
+	dsvDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+
+	result = myDevice->CreateDepthStencilView(tempDepthTex.Get(), &dsvDesc, myDepthBuffer->myDSV.ReleaseAndGetAddressOf());
+	if (FAILED(result)) { LOG(RHILog, Error, "Resize: Failed to create DSV!"); return; }
+
+	// CRITICAL: Update the depth buffer's viewport definition!
+	myDepthBuffer->myViewPort = myViewportBackBuffer->myViewPort;
+	myDepthBuffer->SetSize({ static_cast<float>(aWidth), static_cast<float>(aHeight) });
+
+	// ----------------------------------------------------------------
+	// 3. (RECREATE GBUFFER HERE USING aWidth and aHeight)
+	// ----------------------------------------------------------------
 }

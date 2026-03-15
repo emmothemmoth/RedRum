@@ -23,6 +23,7 @@ public:
 	void Render() override;
 	void UpdateRotation();
 	void Move(const CU::Vector4<float>& aDirection, const float& aDeltaTime);
+	void SetResolution(const CU::Vector2f& aResolution);
 	CU::Vector4<float> WorldToClip(const CU::Vector4<float>& aPoint);
 	CU::Matrix4x4<float> WorldToClip(const CU::Matrix4x4<float>& aTransform);
 	CU::Matrix4x4<float> GetViewInverse();
@@ -37,7 +38,7 @@ public:
 private:
 	CU::Vector4<float> ToCamera(const CU::Vector4<float>& aWorldPoint);
 	CU::Vector4<float> ToClip(const CU::Vector4<float>& aCameraPoint);
-
+	void UpdateProjection();
 	void PickFromScreen();
 
 	std::shared_ptr<FrameBufferData> myFrameBuffer;

@@ -21,6 +21,12 @@ RenderQueue::RenderQueue()
 void RenderQueue::RenderFrame()
 {
 	//PrintDebugInfo();
+	if (myPreList.HasCommands())
+	{
+		myPreList.Execute();
+	}
+	myPreList.Reset();
+
 	if (myShadowList.HasCommands())
 	{
 		myShadowList.Execute();
@@ -87,14 +93,15 @@ void RenderQueue::Reset(bool aClearLists)
 {
 	if (aClearLists)
 	{
+		myPreList.Reset();
 		myShadowList.Reset();
 		myDeferredList.Reset();
 		myForwardList.Reset();
-		myObjectIDRenderList.Reset();
 		myParticleList.Reset();
 		myCustomList.Reset();
-		myWorldSpaceUIList.Reset();
 		myPostProcessList.Reset();
+		myObjectIDRenderList.Reset();
+		myWorldSpaceUIList.Reset();
 		mySpriteList.Reset();
 		myUIList.Reset();
 	}
@@ -156,6 +163,7 @@ void RenderQueue::Reset(bool aClearLists)
 
 void RenderQueue::PrintDebugInfo()
 {
+	std::cout << "Prelist commands size: " << myPreList.GetSize() << std::endl;
 	std::cout << "Shadow commands size: " << myShadowList.GetSize() << std::endl;
 	std::cout << "Deferred commands size: " << myDeferredList.GetSize() << std::endl;
 	std::cout << "Forward commands size: " << myForwardList.GetSize() << std::endl;

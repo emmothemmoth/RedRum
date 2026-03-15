@@ -45,6 +45,16 @@
 	 return size;
  }
 
+void TextureAsset::SetSize(CU::Vector2f aSize)
+ {
+	myViewPort.TopLeftX = 0.0f;
+	myViewPort.TopLeftY = 0.0f;
+	myViewPort.Width = aSize.x;
+	myViewPort.Height = aSize.y;
+	myViewPort.MinDepth = 0.0f;
+	myViewPort.MaxDepth = 1.0f;
+ }
+
  void TextureAsset::SetName(const std::string& aName)
  {
 	 myName = aName;

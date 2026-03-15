@@ -29,7 +29,10 @@ void Editor::Init()
 	SIZE windowSize = GraphicsEngine::Get().GetWindowSize();
 	DragAcceptFiles(GraphicsEngine::Get().GetWindowHandle(), true); //Accept drag&drop to window
 
-	myGUI.Init(GraphicsEngine::Get().GetWindowHandle(), GraphicsEngine::Get().GetRHI()->GetDevice().Get(), GraphicsEngine::Get().GetRHI()->GetContext().Get(), GraphicsEngine::Get().GetRenderSize());
+	auto& engine = GraphicsEngine::Get();
+	myGUI.Init(engine.GetWindowHandle(), engine.GetRHI()->GetDevice().Get(), engine.GetRHI()->GetContext().Get(), engine.GetRenderSize());
+	myGUI.SetRenderTexture(engine.GetViewportBackBuffer());
+	myGUI.OnViewportResize.AddRaw(this, &Editor::ResolutionChanged);
 
 	for (const auto& audioFile : std::filesystem::recursive_directory_iterator(contentDir / "Audio"))
 	{
@@ -72,7 +75,6 @@ void Editor::Run()
 			}
 		}
 		MainSingleton::Get().GetRenderer().RenderFrame();
-		GraphicsEngine::Get().ChangeRenderTarget(GraphicsEngine::Get().GetRHI()->GetBackBuffer());
 		myScene->PresentScene();
 	}
 }
@@ -139,7 +141,15 @@ void Editor::UpdateLoop()
 
 		myScene->UpdateScene(CU::Timer::Get().GetDeltaTime());
 		myScene->RenderScene();
-		myGUI.Update();
+		myGUI.Update(CU::Timer::Get().GetDeltaTime());
+	}
+}
+
+void Editor::ResolutionChanged(CU::Vector2U aResolution)
+{
+	if (myScene->GetCurrentLevel().Camera)
+	{
+		myScene->GetCurrentLevel().Camera->GetComponent<CameraComponent>()->SetResolution({ static_cast<float>(aResolution.x), static_cast<float>(aResolution.y) });
 	}
 }
 

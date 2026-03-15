@@ -25,6 +25,8 @@ public:
 
 	void UpdateLoop();
 
+	void ResolutionChanged(CU::Vector2U aResolution);
+
 private:
 	void MapInputs();
 private:

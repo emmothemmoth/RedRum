@@ -73,7 +73,9 @@ void Scene::LoadScene(const std::filesystem::path& aPath, bool aIsNetworkLevel)
 		myCurrentLevel.Camera->AddComponent(std::make_shared<CameraComponent>(*myCurrentLevel.Camera));
 		//myCurrentLevel.Camera->GetComponent<CameraComponent>()->Init(CommonUtilities::Vector3<float>(-40.0f, 1625.0f, -560.0f));
 	}
-	mySelectionHandle = myCurrentLevel.Camera->GetLastAddedComponent<CameraComponent>()->OnObjectClicked.AddRaw(this, &Scene::ObjectClicked);
+	std::shared_ptr<CameraComponent> cameraComp = myCurrentLevel.Camera->GetLastAddedComponent<CameraComponent>();
+	mySelectionHandle = cameraComp->OnObjectClicked.AddRaw(this, &Scene::ObjectClicked);
+	cameraComp->SetResolution(GraphicsEngine::Get().GetRenderSize());
 	for (int index = 0; index < myCurrentLevel.GameObjects.size(); ++index)
 	{
 		myIDtoIndex.insert({ myCurrentLevel.GameObjects.at(index)->GetID(), static_cast<unsigned>(index) });

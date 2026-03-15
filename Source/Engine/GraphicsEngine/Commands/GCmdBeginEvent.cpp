@@ -3,6 +3,11 @@
 
 #include "GraphicsEngine.h"
 
+GCmdBeginEvent::GCmdBeginEvent(std::string_view aName)
+{
+	myName = aName;
+}
+
 void GCmdBeginEvent::Execute()
 {
 	GraphicsEngine::Get().BeginEvent(myName);

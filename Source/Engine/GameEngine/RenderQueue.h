@@ -16,6 +16,9 @@ public:
 	{
 		switch (myCurrentStage)
 		{
+		case RenderStage::PreRendering:
+			myPreList.Enqueue<CommandClass>(std::forward<Args>(args)...);
+			break;
 		case RenderStage::ShadowMapping:
 			myShadowList.Enqueue<CommandClass>(std::forward<Args>(args)...);
 			break;
@@ -57,6 +60,7 @@ private:
 	void PrintDebugInfo();
 
 private:
+	GraphicsCommandList myPreList;
 	GraphicsCommandList myShadowList;
 	GraphicsCommandList myDeferredList;
 	GraphicsCommandList myForwardList;

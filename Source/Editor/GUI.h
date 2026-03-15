@@ -2,6 +2,7 @@
 
 #include "GuiCmd.h"
 
+#include "../Engine/GameEngine/Events/MulticastDelegate.h"
 #include "../Engine/Utilities/CommonUtilities/Vector2.hpp"
 #include "../Engine/External/DearImGui/imgui.h"
 
@@ -16,6 +17,9 @@
 
 struct ID3D11Device;
 struct ID3D11DeviceContext;
+class TextureAsset;
+
+using FOnViewportResize = MulticastDelegate<CU::Vector2U>;
 
 struct GuiFrameData
 {
@@ -41,13 +45,20 @@ public:
 
 	void Init(HWND aWindowHandle, ID3D11Device* aDX11Device, ID3D11DeviceContext* aDX11Context, const CU::Vector2f& aResolution);
 
-	void Update();
+    void SetRenderTexture(std::shared_ptr<TextureAsset> aTexture) { myViewportTexture = aTexture; }
+
+	void Update(const float aDeltatime);
     void CaptureDrawData(GuiFrameData& outFrame);
 			
 	void Render(const GuiFrameData& aFrame);
 
 	void ShutDown();
 
+    FOnViewportResize OnViewportResize;
 private:
 	CU::Vector2f myResolution;
+    CU::Vector2<unsigned> myCurrentViewportSize = { 1600, 900 };
+    CU::Vector2<unsigned> myPendingViewportSize = { 1600, 781 };
+    float myResizeTimer = 0.0f;
+    std::shared_ptr<TextureAsset> myViewportTexture;
 };

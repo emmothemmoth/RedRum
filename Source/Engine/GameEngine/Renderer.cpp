@@ -92,5 +92,5 @@ void Renderer::RenderFrame()
     myRenderPtr->RenderFrame();
 
     // Reset the render buffer after executing it
-    myRenderPtr->Reset();
+    myRenderPtr->Reset(true);
 }
