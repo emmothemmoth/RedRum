@@ -192,6 +192,8 @@ public:
 
 	void ResizeViewport(const unsigned aWidth, const unsigned aHeight);
 
+	void ReleaseStaleObjects();
+
 	FORCEINLINE std::shared_ptr<TextureAsset> GetBackBuffer() const { return myBackBuffer; }
 	FORCEINLINE std::shared_ptr<TextureAsset> GetDepthBuffer() const { return myDepthBuffer; }
 	FORCEINLINE std::shared_ptr<TextureAsset> GetViewportBackBuffer() const { return myViewportBackBuffer; }

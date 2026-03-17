@@ -139,10 +139,10 @@ void CameraComponent::Render()
 
 	if (myShouldScreenPick)
 	{
-		POINT mousePos = CU::Input::GetMousePosition();
-		MainSingleton::Get().GetRenderer().Enqueue<GCmdScreenPicking>(RenderStage::PostProcess, static_cast<unsigned>(mousePos.x), static_cast<unsigned>(mousePos.y));
-		myShouldScreenPick = false;
-		myIsAwaitingPickingResult = true;
+		//POINT mousePos = CU::Input::GetMousePosition();
+		//MainSingleton::Get().GetRenderer().Enqueue<GCmdScreenPicking>(RenderStage::PostProcess, static_cast<unsigned>(mousePos.x), static_cast<unsigned>(mousePos.y));
+		//myShouldScreenPick = false;
+		//myIsAwaitingPickingResult = true;
 	}
 }
 

@@ -331,6 +331,9 @@ private:
 
 	CU::Vector2f myLogicalRenderSize = { 1600.0f, 900.0f };
 
+	unsigned myFramesSinceResize = 0;
+	bool myHasStaleObjects = false;
+
 };
 
 

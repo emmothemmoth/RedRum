@@ -86,6 +86,10 @@ void GUI::Update(const float aDeltatime)
 				{
 					GraphicsEngine::Get().ResizeViewport(newSize.x, newSize.y);
 				});
+			ImGui::End();
+			ImGui::PopStyleVar();
+			ImGui::EndFrame();
+			return;
 		}
 	}
 

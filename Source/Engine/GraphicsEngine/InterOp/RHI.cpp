@@ -1712,7 +1712,7 @@ void RHI::ResizeViewport(unsigned int aWidth, unsigned int aHeight)
 		myStaleViewportSRV = myViewportBackBuffer->mySRV;
 		myStaleDepthDSV = myDepthBuffer->myDSV;
 	}
-
+	myContext->Flush();
 	HRESULT result;
 
 	// ----------------------------------------------------------------
@@ -1728,6 +1728,10 @@ void RHI::ResizeViewport(unsigned int aWidth, unsigned int aHeight)
 	vpDesc.Usage = D3D11_USAGE_DEFAULT;
 	vpDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
 
+	myViewportBackBuffer->myRTV.Reset();
+	myViewportBackBuffer->mySRV.Reset();
+	myViewportBackBuffer->myTexture.Reset();
+
 	ComPtr<ID3D11Texture2D> tempViewportTex;
 	result = myDevice->CreateTexture2D(&vpDesc, nullptr, tempViewportTex.GetAddressOf());
 	if (FAILED(result))
@@ -1740,10 +1744,10 @@ void RHI::ResizeViewport(unsigned int aWidth, unsigned int aHeight)
 	myViewportBackBuffer->myTexture = tempViewportTex;
 	myViewportBackBuffer->SetSize({ static_cast<float>(aWidth), static_cast<float>(aHeight) });
 
-	result = myDevice->CreateRenderTargetView(tempViewportTex.Get(), nullptr, myViewportBackBuffer->myRTV.ReleaseAndGetAddressOf());
+	result = myDevice->CreateRenderTargetView(tempViewportTex.Get(), nullptr, myViewportBackBuffer->myRTV.GetAddressOf());
 	if (FAILED(result)) { LOG(RHILog, Error, "Resize: Failed to create RTV!"); return; }
 
-	result = myDevice->CreateShaderResourceView(tempViewportTex.Get(), nullptr, myViewportBackBuffer->mySRV.ReleaseAndGetAddressOf());
+	result = myDevice->CreateShaderResourceView(tempViewportTex.Get(), nullptr, myViewportBackBuffer->mySRV.GetAddressOf());
 	if (FAILED(result)) { LOG(RHILog, Error, "Resize: Failed to create SRV!"); return; }
 
 	// CRITICAL: Update the asset's viewport definition!
@@ -1770,7 +1774,7 @@ void RHI::ResizeViewport(unsigned int aWidth, unsigned int aHeight)
 	dsvDesc.Format = DXGI_FORMAT_D32_FLOAT;
 	dsvDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
 
-	result = myDevice->CreateDepthStencilView(tempDepthTex.Get(), &dsvDesc, myDepthBuffer->myDSV.ReleaseAndGetAddressOf());
+	result = myDevice->CreateDepthStencilView(tempDepthTex.Get(), &dsvDesc, myDepthBuffer->myDSV.GetAddressOf());
 	if (FAILED(result)) { LOG(RHILog, Error, "Resize: Failed to create DSV!"); return; }
 
 	myDepthBuffer->myViewPort = myViewportBackBuffer->myViewPort;

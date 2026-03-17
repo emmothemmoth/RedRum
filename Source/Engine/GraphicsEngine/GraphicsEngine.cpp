@@ -969,6 +969,14 @@ void GraphicsEngine::ResizeViewport(const unsigned aWidth, const unsigned aHeigh
 	ResizeGBufferAndIntermediateBuffers();
 }
 
+void RHI::ReleaseStaleObjects()
+{
+	myStaleViewportRTV.Reset();
+	myStaleViewportSRV.Reset();
+	myStaleViewportTex.Reset();
+	myStaleDepthDSV.Reset();
+}
+
 const std::vector<std::shared_ptr<MaterialAsset>>& GraphicsEngine::GetDefaultMaterials() const
 {
 	return myDefaultMaterials;
@@ -2195,6 +2203,21 @@ void GraphicsEngine::InitPostProcessBuffer()
 
 void GraphicsEngine::EndFrame()
 {
+	if (myHasStaleObjects)
+	{
+		++myFramesSinceResize;
+		if (myFramesSinceResize >= 100)
+		{
+			myRHI->ReleaseStaleObjects();
+			for (auto& staleObject : myStaleCOMObjects)
+			{
+				staleObject.Reset();
+			}
+			myStaleCOMObjects.clear();
+			myFramesSinceResize = 0;
+			myHasStaleObjects = false;
+		}
+	}
 	myRHI->Present(0);
 }
 
@@ -2205,8 +2228,7 @@ uint32_t GraphicsEngine::EncodeID(uint32_t anObjectID, uint8_t aPartID) const
 
 void GraphicsEngine::ResizeGBufferAndIntermediateBuffers()
 {
-	myStaleCOMObjects.clear();
-
+	myHasStaleObjects = true;
 	auto StaleAsset = [&](std::shared_ptr<TextureAsset>& asset)
 		{
 			if (asset && asset->IsValid())
