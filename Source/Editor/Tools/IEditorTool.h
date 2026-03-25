@@ -20,5 +20,5 @@ protected:
 protected:
 	std::shared_ptr<Scene> myScene;
 	static 	std::vector<uint32_t> mySelectedObjects;
-	static uint8_t mySelectedPartID;
+	static uint32_t mySelectedPartID;
 };

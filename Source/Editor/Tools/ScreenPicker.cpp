@@ -6,6 +6,7 @@
 
 void ScreenPicker::Update(const InputState& anInputState, const float aDeltaTime)
 {
+	aDeltaTime;
 	if (anInputState.MousePressed)
 	{
 		PerformAction(anInputState);

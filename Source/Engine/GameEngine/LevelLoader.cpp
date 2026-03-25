@@ -147,8 +147,15 @@ bool LevelLoader::LoadLevelFromJSON(const std::filesystem::path& aLevelPath, Lev
                     gameObject->GetComponent<CameraComponent>()->Init(gameObject->GetPosition(), {rotationX, rotationY, rotationZ});
                     break;
                 case ComponentType::AudioSource:
-                    gameObject->AddComponent(std::make_shared<AudioSourceComponent>(*gameObject));
-                    gameObject->SetIcon(ComponentType::AudioSource);
+                    {
+                        gameObject->AddComponent(std::make_shared<AudioSourceComponent>(*gameObject));
+                        if (component.contains("File"))
+                        {
+                            std::string audioFile = component.at("File");
+                            gameObject->GetComponent<AudioSourceComponent>()->Init(audioFile);
+                        }
+                        gameObject->SetIcon(ComponentType::AudioSource);
+                    }
                     break;
                 default:
                     break;

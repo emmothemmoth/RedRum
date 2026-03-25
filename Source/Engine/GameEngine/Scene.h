@@ -55,7 +55,7 @@ public:
 
 	std::vector<std::shared_ptr<GameObject>>& GetGameObjects() { return myCurrentLevel.GameObjects; }
 
-	std::shared_ptr<GameObject>& GetObjectByID(unsigned char anID);
+	std::shared_ptr<GameObject>& GetObjectByID(uint32_t anID);
 
 	std::shared_ptr<GameObject> GetActiveCamera() const { return myActiveCamera; };
 
@@ -82,7 +82,7 @@ private:
 
 	LevelLoader myLevelLoader;
 	Level myCurrentLevel;
-	std::unordered_map<unsigned, unsigned> myIDtoIndex;
+	std::unordered_map<uint32_t, uint32_t> myIDtoIndex;
 
 	std::string myCurrentScene;
 	bool myShouldClear = false;

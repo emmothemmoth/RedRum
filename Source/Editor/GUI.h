@@ -60,6 +60,11 @@ public:
 
     FOnViewportResize OnViewportResize;
 private:
+    void DisplayViewport(const float aDeltaTime);
+    void DisplayInspector();
+    void DisplayContentBrowser();
+
+private:
     EditorInterface myInterface;
 	CU::Vector2f myResolution;
     CU::Vector2<unsigned> myCurrentViewportSize = { 1600, 900 };

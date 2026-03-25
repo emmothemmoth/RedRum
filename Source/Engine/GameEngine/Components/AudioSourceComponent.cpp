@@ -33,19 +33,11 @@ void AudioSourceComponent::Init(const std::filesystem::path& aSourceFile)
 void AudioSourceComponent::Update(const float aDeltaTime)
 {
 	aDeltaTime;
-	if (CU::Input::GetKeyUp(CU::Keys::SPACE))
-	{
-		Play();
-	}
-	if (CU::Input::GetKeyUp(CU::Keys::RETURN))
-	{
-		Stop();
-	}
 }
 
 void AudioSourceComponent::Render()
 {
-	//Draw icon
+
 }
 
 void AudioSourceComponent::Play()

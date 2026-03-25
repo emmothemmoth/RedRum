@@ -21,6 +21,7 @@
 #include <algorithm>
 #include <MainSingleton.h>
 #include "../Engine/GraphicsEngine/GraphicsEngine.h"
+#include <Components/AudioSourceComponent.h>
 
 
 
@@ -52,73 +53,11 @@ void GUI::Update(const float aDeltatime)
 
 	ImGui::DockSpaceOverViewport();
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{ 0, 0 });
-	ImGui::Begin("Viewport", nullptr,
-		ImGuiWindowFlags_NoMove |
-		ImGuiWindowFlags_NoCollapse);
-	myViewportHovered = ImGui::IsWindowHovered();
-	myViewportFocused = ImGui::IsWindowFocused();
-	if (myViewportHovered && myViewportFocused)
-	{
-		ImVec2 mousePos = ImGui::GetMousePos();
-		ImVec2 windowPos = ImGui::GetWindowPos();
-		ImVec2 cursorStart = ImGui::GetCursorScreenPos();
-		ImVec2 contentPos = {
-			mousePos.x - cursorStart.x,
-			mousePos.y - cursorStart.y
-		};
-		CU::Vector2U cursor = { static_cast<unsigned>(contentPos.x), static_cast<unsigned>(contentPos.y) };
-		myInterface.InterfaceUpdate(cursor, aDeltatime);
-	}
-	ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
-	unsigned int panelWidth = static_cast<unsigned int>(viewportPanelSize.x);
-	unsigned int panelHeight = static_cast<unsigned int>(viewportPanelSize.y);
-	// 1. Detect if the window size changed
-	if (panelWidth != myPendingViewportSize.x || panelHeight != myPendingViewportSize.y)
-	{
-		myPendingViewportSize = { panelWidth, panelHeight };
-		myResizeTimer = 0.15f; // Wait 150ms after they stop dragging
-	}
+	DisplayViewport(aDeltatime);
+	DisplayInspector();
+	DisplayContentBrowser();
 
-	// 2. Tick down the timer (Assume you have DeltaTime available)
-	if (myResizeTimer > 0.0f)
-	{
-		myResizeTimer -= aDeltatime; // Replace with your actual DeltaTime
-		if (myResizeTimer <= 0.0f)
-		{
-			// 1. Tell the Update Thread systems (Camera, Logic) to update their math immediately
-			OnViewportResize.Broadcast(myPendingViewportSize);
-			myCurrentViewportSize = myPendingViewportSize;
-
-			// 2. Capture the size safely by value for the lambda
-			CU::Vector2<unsigned int> newSize = myPendingViewportSize;
-
-			GraphicsEngine::Get().SetLogicalRenderSize({ static_cast<float>(newSize.x), static_cast<float>(newSize.y) });
-
-			// 3. Enqueue the actual DirectX reallocation to the RENDER THREAD.
-			// CRITICAL: Put this in a RenderStage that happens BEFORE your geometry pass!
-			// (e.g., RenderStage::PreRender, RenderStage::Init, or your equivalent)
-			MainSingleton::Get().GetRenderer().Enqueue<GCmdCustom>(RenderStage::PreRendering, [newSize]()
-				{
-					GraphicsEngine::Get().ResizeViewport(newSize.x, newSize.y);
-				});
-			ImGui::End();
-			ImGui::PopStyleVar();
-			ImGui::EndFrame();
-			return;
-		}
-	}
-
-
-	if (myViewportTexture)
-	{
-		// Display the texture! 
-		// Cast the DX11 Shader Resource View directly to ImTextureID
-		ImGui::Image((ImTextureID)myViewportTexture->GetSRV().Get(), viewportPanelSize);
-	}
-	
-	ImGui::End();
-	ImGui::PopStyleVar(); 
-
+	ImGui::EndFrame();
 	//update editortools and other stuff
 	//fetch info from scene about selected objects
 
@@ -177,6 +116,125 @@ void GUI::ShutDown()
 	ImGui_ImplDX11_Shutdown();
 	ImGui_ImplWin32_Shutdown();
 	ImGui::DestroyContext();
+}
+
+void GUI::DisplayViewport(const float aDeltaTime)
+{
+	ImGui::Begin("Viewport", nullptr,
+		ImGuiWindowFlags_NoMove |
+		ImGuiWindowFlags_NoCollapse);
+	myViewportHovered = ImGui::IsWindowHovered();
+	myViewportFocused = ImGui::IsWindowFocused();
+	if (myViewportHovered && myViewportFocused)
+	{
+		ImVec2 mousePos = ImGui::GetMousePos();
+		ImVec2 windowPos = ImGui::GetWindowPos();
+		ImVec2 cursorStart = ImGui::GetCursorScreenPos();
+		ImVec2 contentPos = {
+			mousePos.x - cursorStart.x,
+			mousePos.y - cursorStart.y
+		};
+		CU::Vector2U cursor = { static_cast<unsigned>(contentPos.x), static_cast<unsigned>(contentPos.y) };
+		myInterface.InterfaceUpdate(cursor, aDeltaTime);
+	}
+	ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
+	unsigned int panelWidth = static_cast<unsigned int>(viewportPanelSize.x);
+	unsigned int panelHeight = static_cast<unsigned int>(viewportPanelSize.y);
+	// 1. Detect if the window size changed
+	if (panelWidth != myPendingViewportSize.x || panelHeight != myPendingViewportSize.y)
+	{
+		myPendingViewportSize = { panelWidth, panelHeight };
+		myResizeTimer = 0.15f; // Wait 150ms after they stop dragging
+	}
+
+	// 2. Tick down the timer (Assume you have DeltaTime available)
+	if (myResizeTimer > 0.0f)
+	{
+		myResizeTimer -= aDeltaTime; // Replace with your actual DeltaTime
+		if (myResizeTimer <= 0.0f)
+		{
+			// 1. Tell the Update Thread systems (Camera, Logic) to update their math immediately
+			OnViewportResize.Broadcast(myPendingViewportSize);
+			myCurrentViewportSize = myPendingViewportSize;
+
+			// 2. Capture the size safely by value for the lambda
+			CU::Vector2<unsigned int> newSize = myPendingViewportSize;
+
+			GraphicsEngine::Get().SetLogicalRenderSize({ static_cast<float>(newSize.x), static_cast<float>(newSize.y) });
+
+			// 3. Enqueue the actual DirectX reallocation to the RENDER THREAD.
+			// CRITICAL: Put this in a RenderStage that happens BEFORE your geometry pass!
+			// (e.g., RenderStage::PreRender, RenderStage::Init, or your equivalent)
+			MainSingleton::Get().GetRenderer().Enqueue<GCmdCustom>(RenderStage::PreRendering, [newSize]()
+				{
+					GraphicsEngine::Get().ResizeViewport(newSize.x, newSize.y);
+				});
+			ImGui::End();
+			ImGui::PopStyleVar();
+			return;
+		}
+	}
+
+
+	if (myViewportTexture)
+	{
+		// Display the texture! 
+		// Cast the DX11 Shader Resource View directly to ImTextureID
+		ImGui::Image((ImTextureID)myViewportTexture->GetSRV().Get(), viewportPanelSize);
+	}
+
+	ImGui::End();
+	ImGui::PopStyleVar();
+}
+
+void GUI::DisplayInspector()
+{
+	ImGui::Begin("Inspector");
+	auto& selection = myInterface.GetSelectedObjects();
+	if (selection.size() > 1)
+	{
+		ImGui::Text("%d selected objects", static_cast<int>(selection.size()));
+	}
+	else if(selection.size() == 1)
+	{
+		const std::shared_ptr<Scene>& scene = myInterface.GetActiveScene();
+		if (scene)
+		{
+			std::shared_ptr<GameObject> object = scene->GetObjectByID(selection.back());
+			if (std::shared_ptr<MeshComponent> mesh = object->GetLastAddedComponent<MeshComponent>())
+			{
+				ImGui::Separator();
+				ImGui::Text("Mesh: %s", mesh->GetMesh()->GetPath().string().c_str());
+				ImGui::BulletText("Material Settings");
+			}
+			if (std::shared_ptr<AudioSourceComponent> audioSource = object->GetComponent<AudioSourceComponent>())
+			{
+				ImGui::Separator();
+				ImGui::Text("Audio Source: %s", audioSource->GetAudioSourceName().string().c_str());
+				ImGui::BulletText("Settings");
+				ImGui::DragFloat("Volume", &audioSource->GetSettings().Volume, 0.5f, 0.0f, 6.0f);
+				if (audioSource->IsPlayable())
+				{
+					if (ImGui::Button("Play"))
+					{
+						audioSource->Play();
+					}
+					if (ImGui::Button("Stop"))
+					{
+						audioSource->Stop();
+					}
+				}
+			}
+		}
+	}
+	ImGui::End();
+}
+
+void GUI::DisplayContentBrowser()
+{
+	ImGui::Begin("File browser");
+	// draw the browser
+	ImGui::End();
 }
 
 

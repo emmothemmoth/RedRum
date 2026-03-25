@@ -24,6 +24,11 @@ void EditorInterface::InterfaceUpdate(const CU::Vector2U& aCursorPos, const floa
 	ToolUpdate(aDeltaTime);
 }
 
+const std::vector<uint32_t>& EditorInterface::GetSelectedObjects()const
+{
+	return myAvailableTools.at(static_cast<size_t>(myActiveTool))->GetSelectedObjects();
+}
+
 void EditorInterface::UpdateInputState(const CU::Vector2U& aCursorPos)
 {
 	myInputState.MousePos = aCursorPos;

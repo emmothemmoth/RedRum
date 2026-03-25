@@ -56,6 +56,7 @@ public:
 	unsigned GetPrimitiveTopology() const;
 
 	std::wstring GetName() const;
+	const std::filesystem::path& GetPath() const { return myPath; }
 
 	SkeletonAsset GetSkeleton() const;
 

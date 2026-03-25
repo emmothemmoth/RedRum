@@ -234,7 +234,7 @@ Level& Scene::GetCurrentLevel()
 	return myCurrentLevel;
 }
 
-std::shared_ptr<GameObject>& Scene::GetObjectByID(unsigned char anID)
+std::shared_ptr<GameObject>& Scene::GetObjectByID(uint32_t anID)
 {
 	assert(myIDtoIndex.contains(anID) && "Trying to get object by ID but object is not in the scene!");
 	return myCurrentLevel.GameObjects[myIDtoIndex.at(anID)];
