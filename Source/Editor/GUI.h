@@ -1,9 +1,9 @@
 #pragma once
 
 #include "GuiCmd.h"
+#include "EditorInterface/EditorInterface.h"
 
 #include "../Engine/GameEngine/Events/MulticastDelegate.h"
-#include "../Engine/Utilities/CommonUtilities/Vector2.hpp"
 #include "../Engine/External/DearImGui/imgui.h"
 
 #include "Windows.h"
@@ -54,11 +54,18 @@ public:
 
 	void ShutDown();
 
+    bool IsViewportActive() const { return myViewportHovered && myViewportFocused; }
+
+    EditorInterface& GetInterface() { return myInterface; }
+
     FOnViewportResize OnViewportResize;
 private:
+    EditorInterface myInterface;
 	CU::Vector2f myResolution;
     CU::Vector2<unsigned> myCurrentViewportSize = { 1600, 900 };
     CU::Vector2<unsigned> myPendingViewportSize = { 1600, 781 };
     float myResizeTimer = 0.0f;
     std::shared_ptr<TextureAsset> myViewportTexture;
+    bool myViewportHovered = false;
+    bool myViewportFocused = false;
 };

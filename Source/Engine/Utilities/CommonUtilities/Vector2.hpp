@@ -191,5 +191,6 @@ namespace CommonUtilities
 		}
 		typedef Vector2<float> Vector2f;
 		typedef Vector2<unsigned> Vector2U;
+		typedef Vector2<int> Vector2I;
 }
 namespace CU = CommonUtilities;

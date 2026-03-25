@@ -89,6 +89,7 @@ bool Editor::LoadScene(const std::filesystem::path& aLevel)
 	myLoadingDone.store(false, std::memory_order::release);
 	myScene->LoadScene(aLevel.empty() ? "Content\\Levels\\AssetGym.json" : aLevel.string());
 	myLoadingDone.store(true, std::memory_order_release);
+	myGUI.GetInterface().Init(myScene);
 	return true;
 }
 

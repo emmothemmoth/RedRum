@@ -39,7 +39,6 @@ private:
 	CU::Vector4<float> ToCamera(const CU::Vector4<float>& aWorldPoint);
 	CU::Vector4<float> ToClip(const CU::Vector4<float>& aCameraPoint);
 	void UpdateProjection();
-	void PickFromScreen();
 
 	std::shared_ptr<FrameBufferData> myFrameBuffer;
 
@@ -58,9 +57,6 @@ private:
 	float myNearPlaneZ;
 	float myFarPlaneZ;
 	bool myIsRotating;
-
-	bool myShouldScreenPick = false;
-	bool myIsAwaitingPickingResult = false;
 };
 
 

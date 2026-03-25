@@ -57,6 +57,8 @@ public:
 
 	std::shared_ptr<GameObject>& GetObjectByID(unsigned char anID);
 
+	std::shared_ptr<GameObject> GetActiveCamera() const { return myActiveCamera; };
+
 private:
 	void SortObjects();
 	void InitSceneLights();
@@ -64,17 +66,13 @@ private:
 	void UpdateDebugInfo();
 	void ResetScene(bool aShouldReload = true);
 
-	void ObjectClicked(uint32_t anID);
-	void SelectObject(GameObject& anObject);
-	void MoveObject(GameObject& anObject, Gizmo_Axis anAxis);
-	CU::Vector3f GetIntersection(GameObject& anObject, const CU::Vector3f& anAxis);
-
 private:
 
 	WorldBounds myWorldBounds;
 
 	std::vector<SortingInfo> mySortingList;
-
+	 
+	std::shared_ptr<GameObject> myActiveCamera;
 	std::shared_ptr<GameObject> myDirLight;
 	std::vector < std::shared_ptr<GameObject>> myPointLights;
 	std::vector < std::shared_ptr<GameObject>> mySpotLights;
@@ -88,10 +86,4 @@ private:
 
 	std::string myCurrentScene;
 	bool myShouldClear = false;
-
-	DelegateHandle mySelectionHandle;
-
-	CU::Vector3f myPreviousIntersection;
-	Gizmo_Axis myCurrentAxisMovement = Gizmo_Axis::None;
-	bool myIsMovingObject = false;
 };

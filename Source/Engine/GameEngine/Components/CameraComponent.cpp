@@ -104,10 +104,6 @@ void CameraComponent::Init(CU::Vector3<float> aPoint, const CU::Vector3f& someRo
 
 void CameraComponent::Update(float aDeltaTime)
 {
-	if (myIsAwaitingPickingResult)
-	{
-		PickFromScreen();
-	}
 	Move(myDirection, aDeltaTime);
 
 	if (myIsRotating)
@@ -136,14 +132,6 @@ void CameraComponent::Render()
 	myFrameBuffer->View = GetViewInverse();
 	myFrameBuffer->Resolution = GraphicsEngine::Get().GetRenderSize();
 	MainSingleton::Get().GetRenderer().Enqueue<GCmdSetFrameBuffer>(RenderStage::Deferred, myFrameBuffer);
-
-	if (myShouldScreenPick)
-	{
-		//POINT mousePos = CU::Input::GetMousePosition();
-		//MainSingleton::Get().GetRenderer().Enqueue<GCmdScreenPicking>(RenderStage::PostProcess, static_cast<unsigned>(mousePos.x), static_cast<unsigned>(mousePos.y));
-		//myShouldScreenPick = false;
-		//myIsAwaitingPickingResult = true;
-	}
 }
 
 void CameraComponent::UpdateRotation()
@@ -254,12 +242,6 @@ void CameraComponent::RecieveEvent(const ActionEvent& anEvent)
 	case ActionEventID::CameraRotation:
 		myIsRotating = true;
 		break;
-	case ActionEventID::SelectObject:
-		myShouldScreenPick = true;
-		break;
-	case ActionEventID::MoveObject:
-		myShouldScreenPick = true;
-		break;
 	default:
 		break;
 	}
@@ -302,19 +284,6 @@ void CameraComponent::UpdateProjection()
 	myClipMatrix(4, 2) = 0;
 	myClipMatrix(4, 3) = (-1 * planesDiv) * myNearPlaneZ;
 	myClipMatrix(4, 4) = 0.0f;
-}
-
-void CameraComponent::PickFromScreen()
-{
-	bool resultDone = false;
-	unsigned ID = 0;
-	GraphicsEngine::Get().ScreenPickingResult(resultDone, ID);
-	if (resultDone && ID > 0)
-	{
-		OnObjectClicked.Broadcast(ID);
-		myIsAwaitingPickingResult = false;
-		myShouldScreenPick = false;
-	}
 }
 
 

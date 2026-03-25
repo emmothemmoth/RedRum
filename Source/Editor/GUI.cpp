@@ -51,9 +51,24 @@ void GUI::Update(const float aDeltatime)
 	ImGui::NewFrame();
 
 	ImGui::DockSpaceOverViewport();
-	//ImGui::SetNextWindowSize(ImVec2(1600, 800), ImGuiCond_FirstUseEver);
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{ 0, 0 });
-	ImGui::Begin("Scene Viewport");
+	ImGui::Begin("Viewport", nullptr,
+		ImGuiWindowFlags_NoMove |
+		ImGuiWindowFlags_NoCollapse);
+	myViewportHovered = ImGui::IsWindowHovered();
+	myViewportFocused = ImGui::IsWindowFocused();
+	if (myViewportHovered && myViewportFocused)
+	{
+		ImVec2 mousePos = ImGui::GetMousePos();
+		ImVec2 windowPos = ImGui::GetWindowPos();
+		ImVec2 cursorStart = ImGui::GetCursorScreenPos();
+		ImVec2 contentPos = {
+			mousePos.x - cursorStart.x,
+			mousePos.y - cursorStart.y
+		};
+		CU::Vector2U cursor = { static_cast<unsigned>(contentPos.x), static_cast<unsigned>(contentPos.y) };
+		myInterface.InterfaceUpdate(cursor, aDeltatime);
+	}
 	ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
 	unsigned int panelWidth = static_cast<unsigned int>(viewportPanelSize.x);
 	unsigned int panelHeight = static_cast<unsigned int>(viewportPanelSize.y);
