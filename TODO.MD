@@ -4,7 +4,7 @@
 * Screen picking \*
 * Debug rendering \*
 * Icons \*
-* Editor commands, moving stuff in scene
+* Editor commands, moving stuff in scene \*
 * Drag \& Drop audio files and meshes into scene
 * Listener Component, Audio Source Component
 * Serialization
