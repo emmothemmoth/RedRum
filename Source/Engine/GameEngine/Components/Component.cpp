@@ -9,11 +9,12 @@ Component::Component(GameObject& aParent) : myParent(aParent)
 	myRenderStages.insert({ RenderStage::ShadowMapping, false });
 	myRenderStages.insert({ RenderStage::Deferred, true });
 	myRenderStages.insert({ RenderStage::Forward, false });
-	myRenderStages.insert({ RenderStage::ObjectIDRendering, false });
 	myRenderStages.insert({ RenderStage::Particles, false });
 	myRenderStages.insert({ RenderStage::Custom, false });
 	myRenderStages.insert({ RenderStage::WorldSpaceUI, false });
 	myRenderStages.insert({ RenderStage::PostProcess, false });
+	myRenderStages.insert({ RenderStage::ObjectIDRendering, false });
+	myRenderStages.insert({ RenderStage::ObjectPartIDRendering, false });
 	myRenderStages.insert({ RenderStage::Sprite, false });
 }
 

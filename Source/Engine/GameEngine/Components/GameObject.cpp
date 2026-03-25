@@ -20,7 +20,7 @@ GameObject::GameObject(std::string_view aName, unsigned anID)
 	transformGizmo->SetRenderStage(RenderStage::ShadowMapping, false);
 	transformGizmo->SetRenderStage(RenderStage::Deferred, false);
 	transformGizmo->SetRenderStage(RenderStage::WorldSpaceUI);
-	transformGizmo->SetRenderStage(RenderStage::ObjectIDRendering);
+	transformGizmo->SetRenderStage(RenderStage::ObjectPartIDRendering);
 	transformGizmo->AddMaterial(AssetManager::Get().GetAsset<MaterialAsset>(DEFAULT_TRANSFORM_MATERIAL));
 	transformGizmo->SetVisible(false);
 }

@@ -9,9 +9,10 @@ enum class RenderStage
 	Particles = 4,
 	Custom = 5,
 	ObjectIDRendering = 6,
-	PostProcess = 7,
-	WorldSpaceUI = 8,
-	Sprite = 9,
-	UI = 10,
+	ObjectPartIDRendering = 7,
+	PostProcess = 8,
+	WorldSpaceUI = 9,
+	Sprite = 10,
+	UI = 11,
 	Count = 11
 };

@@ -46,6 +46,9 @@ public:
 		case RenderStage::ObjectIDRendering:
 			myObjectIDRenderList.Enqueue<CommandClass>(std::forward<Args>(args)...);
 			break;
+		case RenderStage::ObjectPartIDRendering:
+			myObjectPartIDRenderList.Enqueue<CommandClass>(std::forward<Args>(args)...);
+			break;
 		case RenderStage::UI:
 			myUIList.Enqueue<CommandClass>(std::forward<Args>(args)...);
 			break;
@@ -70,6 +73,7 @@ private:
 	GraphicsCommandList myPostProcessList;
 	GraphicsCommandList mySpriteList;
 	GraphicsCommandList myObjectIDRenderList;
+	GraphicsCommandList myObjectPartIDRenderList;
 	GraphicsCommandList myUIList;
 
 	RenderStage myCurrentStage = RenderStage::ShadowMapping;

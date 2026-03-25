@@ -12,6 +12,7 @@
 
 #include <iostream>
 #include "../GraphicsEngine/Commands/GCmdClearTextureResource.h"
+#include "../GraphicsEngine/Commands/GCmdClearDepthStencil.h"
 
 RenderQueue::RenderQueue()
 {
@@ -70,6 +71,12 @@ void RenderQueue::RenderFrame()
 	}
 	myObjectIDRenderList.Reset();
 
+	if (myObjectPartIDRenderList.HasCommands())
+	{
+		myObjectPartIDRenderList.Execute();
+	}
+	myObjectPartIDRenderList.Reset();
+
 	if (myWorldSpaceUIList.HasCommands())
 	{
 		myWorldSpaceUIList.Execute();
@@ -101,6 +108,7 @@ void RenderQueue::Reset(bool aClearLists)
 		myCustomList.Reset();
 		myPostProcessList.Reset();
 		myObjectIDRenderList.Reset();
+		myObjectPartIDRenderList.Reset();
 		myWorldSpaceUIList.Reset();
 		mySpriteList.Reset();
 		myUIList.Reset();
@@ -143,6 +151,10 @@ void RenderQueue::Reset(bool aClearLists)
 	myObjectIDRenderList.Enqueue<GCmdSetVertexShader>("Default_VS");
 	myObjectIDRenderList.Enqueue<GCmdSetPixelShader>("ObjectID_PS");
 
+	myObjectPartIDRenderList.Enqueue<GCmdEndEvent>();
+	myObjectPartIDRenderList.Enqueue<GCmdBeginEvent>("Part ID");
+	myObjectPartIDRenderList.Enqueue<GCmdClearDepthStencil>();
+
 	myWorldSpaceUIList.Enqueue<GCmdEndEvent>();
 	myWorldSpaceUIList.Enqueue<GCmdBeginEvent>("WorldspaceUI");
 	myWorldSpaceUIList.Enqueue<GCmdChangePipelineState>(static_cast<unsigned>(PipelineStates::WorldspaceUI));
@@ -171,6 +183,8 @@ void RenderQueue::PrintDebugInfo()
 	std::cout << "Custom commands size: " << myCustomList.GetSize() << std::endl;
 	std::cout << "Post process commands size: " << myPostProcessList.GetSize() << std::endl;
 	std::cout << "WorldspaceUI commands size: " << myWorldSpaceUIList.GetSize() << std::endl;
+	std::cout << "ObjectID commands size: " << myObjectIDRenderList.GetSize() << std::endl;
+	std::cout << "Part ID commands size: " << myObjectPartIDRenderList.GetSize() << std::endl;
 	std::cout << "Sprite commands size: " << mySpriteList.GetSize() << std::endl;
 	std::cout << "UI commands size: " << myUIList.GetSize() << std::endl;
 }

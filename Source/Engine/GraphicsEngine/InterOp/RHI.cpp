@@ -177,6 +177,7 @@ bool RHI::Initialize(HWND aWindowHandle, bool enableDeviceDebug)
 	if (FAILED(result)) { LOG(RHILog, Error, "Failed to create depth stencil view"); return false; }
 
 	myDepthBuffer->myViewPort = myViewportBackBuffer->myViewPort; // 1600x900 viewport setup!
+	myDepthBuffer->myBindFlags = desc.BindFlags;
 
 
 	// ---------------------------------------------------------
@@ -1779,6 +1780,7 @@ void RHI::ResizeViewport(unsigned int aWidth, unsigned int aHeight)
 
 	myDepthBuffer->myViewPort = myViewportBackBuffer->myViewPort;
 	myDepthBuffer->SetSize({ static_cast<float>(aWidth), static_cast<float>(aHeight) });
+	myDepthBuffer->myBindFlags = depthDesc.BindFlags;
 	myContext->QueryInterface(IID_PPV_ARGS(&myAnnotationObject));
 	SetObjectName(myViewportBackBuffer->myTexture, "ViewportBackBuffer_T2D");
 	SetObjectName(myViewportBackBuffer->myRTV, "ViewportBackBuffer_RTV");

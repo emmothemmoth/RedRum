@@ -145,6 +145,7 @@ public:
 	void ChangeRenderTarget(const std::shared_ptr<TextureAsset>& aRenderTarget) const;
 
 	void ClearBackBuffer() const;
+	void ClearDepthBuffer() const;
 	void ClearViewportBackBuffer() const;
 	void ClearRenderTarget();
 	void ClearRenderTarget(const std::shared_ptr<TextureAsset>& aRenderTarget) const;

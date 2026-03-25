@@ -931,6 +931,10 @@ void GraphicsEngine::ClearBackBuffer() const
 {
 	myRHI->ClearBackBuffer();
 }
+void GraphicsEngine::ClearDepthBuffer() const
+{
+	myRHI->ClearDepthStencil(myRHI->GetDepthBuffer().get());
+}
 void GraphicsEngine::ClearViewportBackBuffer() const
 {
 	myRHI->ClearViewportBackBuffer();
