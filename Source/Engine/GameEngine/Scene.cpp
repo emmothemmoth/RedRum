@@ -65,7 +65,7 @@ void Scene::LoadScene(const std::filesystem::path& aPath, bool aIsNetworkLevel)
 	InitSceneLights();
 	if (!aIsNetworkLevel)
 	{
-		myLevelLoader.LoadLevelFromJSON(aPath, myCurrentLevel);
+		myLevelLoader.LoadLevelFromJSON(aPath, myCurrentLevel, myIDCounter);
 	}
 	else
 	{
@@ -82,6 +82,33 @@ void Scene::LoadScene(const std::filesystem::path& aPath, bool aIsNetworkLevel)
 
 	InitSortingLists();
 	myCurrentScene = aPath.string();
+}
+
+void Scene::AddObject(std::shared_ptr<GameObject> anObject)
+{
+	assert(anObject.get());
+	anObject->SetID(myIDCounter);
+	myIDtoIndex.insert({ myIDCounter++, static_cast<uint32_t>(myCurrentLevel.GameObjects.size()) });
+	myCurrentLevel.GameObjects.push_back(anObject);
+	InitSortingLists();
+}
+
+void Scene::RemoveObject(const uint32_t anID)
+{
+	assert(myIDtoIndex.contains(anID));
+	myIDtoIndex.clear();
+	std::vector<std::shared_ptr<GameObject>> objectList(myCurrentLevel.GameObjects.size() - 1);
+	for (auto& gameObject : myCurrentLevel.GameObjects)
+	{
+		if (gameObject->GetID() != anID)
+		{
+			myIDtoIndex.insert({ gameObject->GetID(), static_cast<uint32_t>(objectList.size()) });
+			objectList.emplace_back(gameObject);
+		}
+	}
+	myCurrentLevel.GameObjects.clear();
+	myCurrentLevel.GameObjects = objectList;
+	InitSortingLists();
 }
 
 void Scene::InitSortingLists()

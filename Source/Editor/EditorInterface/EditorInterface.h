@@ -25,6 +25,8 @@ public:
 
 	const std::vector<uint32_t>& GetSelectedObjects() const;
 	std::shared_ptr<Scene> GetActiveScene() const { return myActiveScene; }
+
+	void OnExternalFileDropped(const std::filesystem::path& aFilePath);
 private:
 
 	void UpdateInputState(const CU::Vector2U& aCursorPos);

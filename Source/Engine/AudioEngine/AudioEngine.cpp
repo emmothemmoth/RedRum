@@ -200,8 +200,33 @@ void AudioEngine::InitListener(const CommonUtilities::Matrix4x4f& aMatrix)
 
 std::optional<AudioHandle> AudioEngine::RegisterSoundSource(const std::filesystem::path& aFilePath)
 {
+    std::filesystem::path absoluteContentRoot = std::filesystem::weakly_canonical(myImpl->ContentPath);
+    std::filesystem::path fullPath;
+
+    if (aFilePath.is_absolute())
+    {
+        fullPath = std::filesystem::weakly_canonical(aFilePath);
+    }
+    else
+    {
+        std::string cleanPathStr = aFilePath.string();
+        while (!cleanPathStr.empty() && (cleanPathStr.front() == '/' || cleanPathStr.front() == '\\'))
+        {
+            cleanPathStr.erase(0, 1);
+        }
+        std::filesystem::path cleanRelativePath(cleanPathStr);
+
+        // Now operator/ will safely append "Audio/..." to "Content/"
+        fullPath = std::filesystem::weakly_canonical(absoluteContentRoot / cleanRelativePath);
+    }
+
+    // Generate a path relative to your content root.
+    std::filesystem::path relativeKey = std::filesystem::relative(fullPath, absoluteContentRoot);
+
+
     // 1. Load the file (Heavy Work - Main Thread)
-    juce::File file(myImpl->ContentPath.string() + aFilePath.string());
+    // ALWAYS pass the absolute 'fullPath' to JUCE so the OS can actually find it on disk.
+    juce::File file(fullPath.wstring().c_str());
     std::unique_ptr<juce::AudioFormatReader> reader(myImpl->FormatManager.createReaderFor(file));
 
     if (reader == nullptr) return std::nullopt;
@@ -222,7 +247,9 @@ std::optional<AudioHandle> AudioEngine::RegisterSoundSource(const std::filesyste
     newSource->IsPlaying = false;
 
     // 3. Keep the data alive in our "Library"
-    myImpl->LoadedFiles[aFilePath.string()] = newFile;
+    // Use the relativeKey so your engine's asset tracking remains 100% consistent, 
+    // even if the user dragged in an absolute file path!
+    myImpl->LoadedFiles[relativeKey.string()] = newFile;
 
     // 4. Send the command to the Audio Thread
     AudioCommand cmd;

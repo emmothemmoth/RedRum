@@ -54,14 +54,11 @@ bool AssetManager::Init(const std::filesystem::path& aContentRootPath)
 
 bool AssetManager::RegisterAsset(const std::filesystem::path& aPath)
 {
+	if (HandleAudioFile(aPath)) return true;
 	if (!aPath.has_extension() || !exists(aPath))
 	{
 		LOG(AMLog, Error, "The asset doesn't exist!");
 		return false;
-	}
-	if (aPath.filename().extension() == ".wav")
-	{
-		return true;
 	}
 	if (aPath.filename().stem().string().ends_with("cubemap") || aPath.filename().stem().string().ends_with("Cubemap"))
 	{
@@ -78,6 +75,7 @@ bool AssetManager::RegisterAsset(const std::filesystem::path& aPath)
 
 bool AssetManager::RegisterAssetFromRelative(const std::filesystem::path& aPath)
 {
+	if (HandleAudioFile(aPath)) return true;
 	const std::string extension = aPath.extension().string();
 	std::filesystem::path fileName = aPath.stem();
 
@@ -160,6 +158,7 @@ bool AssetManager::RegisterAssetFromRelative(const std::filesystem::path& aPath)
 
 bool AssetManager::RegisterAndLoadAsset(const std::filesystem::path& aPath)
 {
+	if (HandleAudioFile(aPath)) return true;
 	if (!RegisterAsset(aPath))
 	{
 		return false;
@@ -430,5 +429,21 @@ bool AssetManager::LoadAllAssets()
 void AssetManager::SetLastRegistered(RegistryID anId)
 {
 	myLastRegisteredKey = anId;
+}
+
+bool AssetManager::HandleAudioFile(const std::filesystem::path& aPath)
+{
+	std::string extension = aPath.extension().string();
+	if (extension.ends_with("wav") || extension.ends_with("aiff") || extension.ends_with("mp3") || extension.ends_with("ogg"))
+	{
+		std::wstring fileName = aPath.filename().wstring();
+		AssetInfo info;
+		info.Path = aPath;
+		myAssetMap.insert({ fileName, info });
+		myLastRegisteredKey.Name = fileName;
+		myLastRegisteredKey.Type = AssetType::Audio;
+		return true;
+	}
+	return false;
 }
 

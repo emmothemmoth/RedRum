@@ -29,11 +29,27 @@ GameObject::GameObject(unsigned anID)
 {
 	myID = anID;
 	myName = "Unnamed";
+	AddComponent(std::make_shared<MeshComponent>(*this, AssetManager::Get().GetAsset<MeshAsset>(DEFAULT_TRANSFORM_MESH), false));
+	auto transformGizmo = GetLastAddedComponent<MeshComponent>();
+	transformGizmo->SetRenderStage(RenderStage::ShadowMapping, false);
+	transformGizmo->SetRenderStage(RenderStage::Deferred, false);
+	transformGizmo->SetRenderStage(RenderStage::WorldSpaceUI);
+	transformGizmo->SetRenderStage(RenderStage::ObjectPartIDRendering);
+	transformGizmo->AddMaterial(AssetManager::Get().GetAsset<MaterialAsset>(DEFAULT_TRANSFORM_MATERIAL));
+	transformGizmo->SetVisible(false);
 }
 
 GameObject::GameObject(std::string_view aName)
 {
 	myName = aName;
+	AddComponent(std::make_shared<MeshComponent>(*this, AssetManager::Get().GetAsset<MeshAsset>(DEFAULT_TRANSFORM_MESH), false));
+	auto transformGizmo = GetLastAddedComponent<MeshComponent>();
+	transformGizmo->SetRenderStage(RenderStage::ShadowMapping, false);
+	transformGizmo->SetRenderStage(RenderStage::Deferred, false);
+	transformGizmo->SetRenderStage(RenderStage::WorldSpaceUI);
+	transformGizmo->SetRenderStage(RenderStage::ObjectPartIDRendering);
+	transformGizmo->AddMaterial(AssetManager::Get().GetAsset<MaterialAsset>(DEFAULT_TRANSFORM_MATERIAL));
+	transformGizmo->SetVisible(false);
 }
 
 GameObject::GameObject() = default;

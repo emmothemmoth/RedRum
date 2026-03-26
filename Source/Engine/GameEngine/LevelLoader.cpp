@@ -13,7 +13,7 @@
 
 #include <fstream>
 
-bool LevelLoader::LoadLevelFromJSON(const std::filesystem::path& aLevelPath, Level& inOutLevel)
+bool LevelLoader::LoadLevelFromJSON(const std::filesystem::path& aLevelPath, Level& inOutLevel, uint32_t& outIDCount)
 {
     nlohmann::json jsonReader;
     std::fstream file(aLevelPath);
@@ -24,7 +24,7 @@ bool LevelLoader::LoadLevelFromJSON(const std::filesystem::path& aLevelPath, Lev
     file >> jsonReader;
     assert(jsonReader.contains("Entities") && "Level without entities detected!");
 
-    unsigned gameObjectIDCounter = 0;
+    uint32_t gameObjectIDCounter = 0;
     for (auto& entity : jsonReader["Entities"])
     {
         std::shared_ptr<GameObject> gameObject;
@@ -180,5 +180,6 @@ bool LevelLoader::LoadLevelFromJSON(const std::filesystem::path& aLevelPath, Lev
             }
         }
     }
+    outIDCount = gameObjectIDCounter;
     return true;
 }

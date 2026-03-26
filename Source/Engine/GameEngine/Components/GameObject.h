@@ -34,7 +34,7 @@ public:
 	void RotateAroundZ(float anAngle);
 	void SetIcon(ComponentType aComponentType, const CU::Vector4f& anOffset = {0.0f, 0.0f, 0.0f, 0.0f});
 
-	unsigned SetID(const unsigned anID) { myID = anID; }
+	void SetID(const unsigned anID) { myID = anID; }
 	unsigned GetID() const { return myID; }
 
 	std::string_view GetName() const { return myName; }

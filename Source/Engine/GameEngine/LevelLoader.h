@@ -9,7 +9,7 @@ public:
 	LevelLoader() = default;
 	~LevelLoader() = default;
 
-	bool LoadLevelFromJSON(const std::filesystem::path& aLevelPath, Level& inOutLevel);
+	bool LoadLevelFromJSON(const std::filesystem::path& aLevelPath, Level& inOutLevel, uint32_t& outIDCount);
 
 private:
 	

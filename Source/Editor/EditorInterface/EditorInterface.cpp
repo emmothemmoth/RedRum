@@ -1,6 +1,12 @@
 #include "EditorInterface.h"
 #include "../Tools/ToolsInclude.h"
+
+#include "../AssetManager/AssetManager.h"
+
+#include "Components/ComponentsInclude.h"
 #include "Scene.h"
+
+#include "../GraphicsEngine/Objects/MeshAsset.h"
 
 #include "CommonUtilities/Input.h"
 
@@ -27,6 +33,33 @@ void EditorInterface::InterfaceUpdate(const CU::Vector2U& aCursorPos, const floa
 const std::vector<uint32_t>& EditorInterface::GetSelectedObjects()const
 {
 	return myAvailableTools.at(static_cast<size_t>(myActiveTool))->GetSelectedObjects();
+}
+
+void EditorInterface::OnExternalFileDropped(const std::filesystem::path& aFilePath)
+{
+	auto& assetManager = AssetManager::Get();
+	if (assetManager.RegisterAndLoadAsset(aFilePath))
+	{
+		std::shared_ptr<GameObject> newObject;
+		RegistryID objectType = assetManager.GetLastRegistered();
+		switch (objectType.Type)
+		{
+		case AssetType::Audio:
+		{
+			std::string name = "AudioSource_" + aFilePath.filename().string();
+			newObject = std::make_shared<GameObject>(name);
+			newObject->AddComponent(std::make_shared<MeshComponent>(*newObject, assetManager.GetAsset<MeshAsset>("SphereMesh")));
+			newObject->AddComponent(std::make_shared<AudioSourceComponent>(*newObject));
+			newObject->GetComponent<AudioSourceComponent>()->Init(aFilePath);
+			newObject->SetIcon(ComponentType::AudioSource);
+			newObject->SetPosition({ 0.0f, 100.0f, 0.0f });
+			break;
+		}
+		default:
+			break;
+		}
+		myActiveScene->AddObject(newObject);
+	}
 }
 
 void EditorInterface::UpdateInputState(const CU::Vector2U& aCursorPos)

@@ -6,7 +6,7 @@
 
 
 class Scene;
-
+using FOnExternalFileDropped = MulticastDelegate<const std::filesystem::path&>;
 class Editor
 {
 public:
@@ -29,6 +29,13 @@ public:
 
 private:
 	void MapInputs();
+	void RegisterCallbacks();
+
+public:
+#pragma region Delegates
+	FOnExternalFileDropped OnExternalFileDropped;
+
+#pragma endregion Delegates
 private:
 	GUI myGUI;
 	std::shared_ptr<Scene> myScene;

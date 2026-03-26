@@ -14,7 +14,8 @@ enum class AssetType
 	Mesh,
 	Texture,
 	Animation,
-	Material
+	Material,
+	Audio
 };
 
 struct RegistryID
@@ -39,7 +40,6 @@ public:
 	bool RegisterAsset(const std::filesystem::path& aPath);
 	bool RegisterAssetFromRelative(const std::filesystem::path& aPath);
 
-
 	bool RegisterAndLoadAsset(const std::filesystem::path& aPath);
 	bool RegisterAndLoadPrimitive(const std::filesystem::path& aName);
 
@@ -51,6 +51,8 @@ public:
 	bool LoadAllAssets();
 
 	void SetLastRegistered(RegistryID anId);
+
+	bool HandleAudioFile(const std::filesystem::path& aPath);
 
 
 	template <class T>

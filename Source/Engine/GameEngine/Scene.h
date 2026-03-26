@@ -37,6 +37,10 @@ public:
 
 	void LoadScene(const std::filesystem::path& aPath, bool aIsNetworkLevel = false);
 
+	void AddObject(std::shared_ptr<GameObject> anObject);
+
+	void RemoveObject(const uint32_t anID);
+
 	void InitSortingLists();
 
 	void ClearScene();
@@ -83,7 +87,7 @@ private:
 	LevelLoader myLevelLoader;
 	Level myCurrentLevel;
 	std::unordered_map<uint32_t, uint32_t> myIDtoIndex;
-
+	uint32_t myIDCounter = 0;
 	std::string myCurrentScene;
 	bool myShouldClear = false;
 };

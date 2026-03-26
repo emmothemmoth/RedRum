@@ -41,6 +41,7 @@ void Editor::Init()
 		}
 	}
 	MapInputs();
+	RegisterCallbacks();
 	myLoadingDone = true;
 }
 
@@ -62,6 +63,7 @@ void Editor::Run()
 				HDROP dropHandle = (HDROP)msg.wParam;
 				DragQueryFileW(dropHandle, 0, filePath, MAX_PATH);
 				std::filesystem::path path = filePath;
+				OnExternalFileDropped.Broadcast(path);
 
 			}
 
@@ -173,6 +175,11 @@ void Editor::MapInputs()
 	MainSingleton::Get().GetInputMapper().BindEvent(GameInput::Toggle_SSAO, ActionEventID::Toggle_SSAO);
 	MainSingleton::Get().GetInputMapper().BindEvent(GameInput::LeftMouseUp, ActionEventID::SelectObject);
 	MainSingleton::Get().GetInputMapper().BindEvent(GameInput::LeftMouseHeld, ActionEventID::MoveObject);
+}
+
+void Editor::RegisterCallbacks()
+{
+	OnExternalFileDropped.AddRaw(&myGUI.GetInterface(), &EditorInterface::OnExternalFileDropped);
 }
 
 
