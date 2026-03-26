@@ -5,7 +5,9 @@
 * Debug rendering \*
 * Icons \*
 * Editor commands, moving stuff in scene \*
+* Content Browser
 * Drag \& Drop audio files and meshes into scene
+* Multiple cameras
 * Listener Component, Audio Source Component
 * Serialization
 * Ray casted audio with compute shaders + line trace debug drawing
