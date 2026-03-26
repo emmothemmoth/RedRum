@@ -60,17 +60,24 @@ public:
 
     FOnViewportResize OnViewportResize;
 private:
+    void InitIcons();
     void DisplayViewport(const float aDeltaTime);
     void DisplayInspector();
     void DisplayContentBrowser();
 
 private:
+    std::shared_ptr<TextureAsset> myViewportTexture;
+    std::shared_ptr<TextureAsset> myFolderIcon;
+    std::shared_ptr<TextureAsset> myMeshIcon;
+    std::shared_ptr<TextureAsset> myAudioIcon;
+    std::shared_ptr<TextureAsset> myFileIcon;
     EditorInterface myInterface;
+    std::filesystem::path myCurrentDirectory;
+    std::filesystem::path myContentRoot;
 	CU::Vector2f myResolution;
     CU::Vector2<unsigned> myCurrentViewportSize = { 1600, 900 };
     CU::Vector2<unsigned> myPendingViewportSize = { 1600, 781 };
     float myResizeTimer = 0.0f;
-    std::shared_ptr<TextureAsset> myViewportTexture;
     bool myViewportHovered = false;
     bool myViewportFocused = false;
 };

@@ -19,9 +19,13 @@
 #include <tchar.h>
 #include <string>
 #include <algorithm>
-#include <MainSingleton.h>
 #include "../Engine/GraphicsEngine/GraphicsEngine.h"
-#include <Components/AudioSourceComponent.h>
+
+#include "../Engine/AssetManager/AssetManager.h"
+
+#include "MainSingleton.h"
+#include "Components/AudioSourceComponent.h"
+#include "Components/AudioListenerComponent.h"
 
 
 
@@ -43,6 +47,11 @@ void GUI::Init(HWND aWindowHandle, ID3D11Device* aDX11Device, ID3D11DeviceContex
 	unsigned char* pixels;
 	int width, height;
 	io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);
+
+	myContentRoot = AssetManager::Get().GetContentRootDirectory();
+	myCurrentDirectory = myContentRoot;
+
+	InitIcons();
 }
 
 
@@ -118,6 +127,14 @@ void GUI::ShutDown()
 	ImGui::DestroyContext();
 }
 
+void GUI::InitIcons()
+{
+	myFolderIcon = AssetManager::Get().GetAsset<TextureAsset>("T_FolderIcon_C");
+	myMeshIcon = AssetManager::Get().GetAsset<TextureAsset>("T_MeshIcon_C");
+	myAudioIcon = AssetManager::Get().GetAsset<TextureAsset>("T_AudioIcon_C");
+	myFileIcon = AssetManager::Get().GetAsset<TextureAsset>("T_FileIcon_C");
+}
+
 void GUI::DisplayViewport(const float aDeltaTime)
 {
 	ImGui::Begin("Viewport", nullptr,
@@ -140,31 +157,25 @@ void GUI::DisplayViewport(const float aDeltaTime)
 	ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
 	unsigned int panelWidth = static_cast<unsigned int>(viewportPanelSize.x);
 	unsigned int panelHeight = static_cast<unsigned int>(viewportPanelSize.y);
-	// 1. Detect if the window size changed
+
 	if (panelWidth != myPendingViewportSize.x || panelHeight != myPendingViewportSize.y)
 	{
 		myPendingViewportSize = { panelWidth, panelHeight };
-		myResizeTimer = 0.15f; // Wait 150ms after they stop dragging
+		myResizeTimer = 0.15f;
 	}
 
-	// 2. Tick down the timer (Assume you have DeltaTime available)
 	if (myResizeTimer > 0.0f)
 	{
-		myResizeTimer -= aDeltaTime; // Replace with your actual DeltaTime
+		myResizeTimer -= aDeltaTime;
 		if (myResizeTimer <= 0.0f)
 		{
-			// 1. Tell the Update Thread systems (Camera, Logic) to update their math immediately
 			OnViewportResize.Broadcast(myPendingViewportSize);
 			myCurrentViewportSize = myPendingViewportSize;
 
-			// 2. Capture the size safely by value for the lambda
 			CU::Vector2<unsigned int> newSize = myPendingViewportSize;
 
 			GraphicsEngine::Get().SetLogicalRenderSize({ static_cast<float>(newSize.x), static_cast<float>(newSize.y) });
 
-			// 3. Enqueue the actual DirectX reallocation to the RENDER THREAD.
-			// CRITICAL: Put this in a RenderStage that happens BEFORE your geometry pass!
-			// (e.g., RenderStage::PreRender, RenderStage::Init, or your equivalent)
 			MainSingleton::Get().GetRenderer().Enqueue<GCmdCustom>(RenderStage::PreRendering, [newSize]()
 				{
 					GraphicsEngine::Get().ResizeViewport(newSize.x, newSize.y);
@@ -178,8 +189,6 @@ void GUI::DisplayViewport(const float aDeltaTime)
 
 	if (myViewportTexture)
 	{
-		// Display the texture! 
-		// Cast the DX11 Shader Resource View directly to ImTextureID
 		ImGui::Image((ImTextureID)myViewportTexture->GetSRV().Get(), viewportPanelSize);
 	}
 
@@ -233,7 +242,72 @@ void GUI::DisplayInspector()
 void GUI::DisplayContentBrowser()
 {
 	ImGui::Begin("File browser");
-	// draw the browser
+	if (myCurrentDirectory != myContentRoot)
+	{
+		if (ImGui::Button("<- Back"))
+		{
+			myCurrentDirectory = myCurrentDirectory.parent_path();
+		}
+	}
+	float padding = 16.0f;
+	float thumbnailSize = 64.0f;
+	float cellSize = thumbnailSize + padding;
+
+	float panelWidth = ImGui::GetContentRegionAvail().x;
+	int columnCount = static_cast<int>(panelWidth / cellSize);
+	if (columnCount < 1) columnCount = 1;
+
+
+	if (ImGui::BeginTable("ContentBrowserTable", columnCount))
+	{
+		ImTextureID iconID;
+		for (auto& directoryEntry : std::filesystem::directory_iterator(myCurrentDirectory))
+		{
+			const auto& path = directoryEntry.path();
+			std::string filenameString = path.filename().string();
+			std::string extension = path.extension().string();
+
+			ImGui::TableNextColumn();
+
+			if (directoryEntry.is_directory())
+			{
+				iconID = (ImTextureID)myFolderIcon->GetSRV().Get();
+			}
+			else
+			{
+				if (extension.starts_with(".wav") || extension.starts_with(".aiff"))
+				{
+					iconID = (ImTextureID)myAudioIcon->GetSRV().Get();
+				}
+				else if (extension.starts_with(".fbx") || extension.starts_with(".FBX"))
+				{
+					iconID = (ImTextureID)myMeshIcon->GetSRV().Get();
+				}
+				else
+				{
+					iconID = (ImTextureID)myFileIcon->GetSRV().Get();
+				}
+			}
+			ImGui::PushID(filenameString.c_str());
+			if (ImGui::ImageButton(filenameString.c_str(), iconID, { thumbnailSize, thumbnailSize }))
+			{
+				if (directoryEntry.is_directory())
+				{
+					myCurrentDirectory /= path.filename();
+				}
+				else
+				{
+					// Maybe select the asset to show in a properties panel?
+				}
+			}
+			ImGui::PopID();
+
+			ImGui::TextWrapped("%s", filenameString.c_str());
+		}
+
+		ImGui::EndTable();
+	}
+	ImGui::Separator();
 	ImGui::End();
 }
 
