@@ -6,10 +6,9 @@
 * Icons \*
 * Editor commands, moving stuff in scene \*
 * Content Browser \*
-* Drag \& Drop audio files and meshes into scene (from file explorer and file browser)
-- Connect Assetmanager to audioEngine for loading audio files?
-* Multiple cameras
-* Listener Component, Audio Source Component
+* Drag \& Drop audio files and meshes into scene (from file explorer and file browser) \*
+* Multiple cameras \*
+* Listener Component, Audio Source Component \*
 * Serialization
 * Ray casted audio with compute shaders + line trace debug drawing
 * Global Play, pause, stop buttons
