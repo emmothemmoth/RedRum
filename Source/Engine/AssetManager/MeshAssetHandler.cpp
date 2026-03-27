@@ -25,6 +25,15 @@ void MeshAssetHandler::InitCube(MeshAsset& inOutAsset)
 	}
 }
 
+void MeshAssetHandler::InitWall(MeshAsset& inOutAsset)
+{
+	WallData wall;
+	for (auto& element : wall.Elements)
+	{
+		inOutAsset.AddElement(element.Vertices, element.Indices, element.MaterialIndex);
+	}
+}
+
 void MeshAssetHandler::InitSphere(MeshAsset& inOutAsset)
 {
 	SphereData sphere;
@@ -68,6 +77,11 @@ bool MeshAssetHandler::LoadMeshFromFBX(const std::filesystem::path& aPath, MeshA
 	if (aPath == L"CubeMesh")
 	{
 		InitCube(inOutAsset);
+		return true;
+	}
+	else if (aPath == L"WallMesh")
+	{
+		InitWall(inOutAsset);
 		return true;
 	}
 	else if (aPath == L"GroundMesh")

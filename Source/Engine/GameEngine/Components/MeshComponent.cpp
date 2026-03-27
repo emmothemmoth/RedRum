@@ -41,6 +41,17 @@ void MeshComponent::Update(const float aDeltaTime)
 void MeshComponent::Render()
 {
 	if (!myIsVisible) return;
+	CU::Matrix4x4f renderMatrix = myParent.GetTransform();
+	if (myIgnoreParentScale)
+	{
+		renderMatrix = CU::Matrix4x4<float>::CreateRotationAroundZ(myParent.GetRotation().z * (3.14f / 180.0f));
+		renderMatrix = CU::Matrix4x4<float>::CreateRotationAroundY(myParent.GetRotation().y * (3.14f / 180.0f)) * renderMatrix;
+		renderMatrix = CU::Matrix4x4<float>::CreateRotationAroundX(myParent.GetRotation().x * (3.14f / 180.0f)) * renderMatrix;
+
+		renderMatrix(4, 1) = myParent.GetPosition().x;
+		renderMatrix(4, 2) = myParent.GetPosition().y;
+		renderMatrix(4, 3) = myParent.GetPosition().z;
+	}
 	if (myMaterials.empty())
 	{
 		myMaterials = GraphicsEngine::Get().GetDefaultMaterials();
@@ -51,12 +62,12 @@ void MeshComponent::Render()
 		{
 			if(this->GetParent().GetComponent<AnimationComponent>().get() != nullptr)
 			{
-				MainSingleton::Get().GetRenderer().Enqueue<GCmdRenderSkeletalMesh>(renderStage, myMesh, myParent.GetTransform(),
+				MainSingleton::Get().GetRenderer().Enqueue<GCmdRenderSkeletalMesh>(renderStage, myMesh, renderMatrix,
 					this->GetParent().GetComponent<AnimationComponent>()->GetBoneTransforms(), myMaterials, myParent.GetID());
 			}
 			else
 			{
-				MainSingleton::Get().GetRenderer().Enqueue<GCmdRenderMesh>(renderStage, myMesh, myParent.GetTransform(), myMaterials, myParent.GetID());
+				MainSingleton::Get().GetRenderer().Enqueue<GCmdRenderMesh>(renderStage, myMesh, renderMatrix, myMaterials, myParent.GetID());
 			}
 		}
 	}

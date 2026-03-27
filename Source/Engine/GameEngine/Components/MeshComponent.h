@@ -21,7 +21,10 @@ public:
 	void AddMaterial(std::shared_ptr<MaterialAsset> aMaterial);
 	const std::vector <std::shared_ptr<MaterialAsset>>& GetMaterials() const { return myMaterials; }
 
+	void SetIgnoreScale(bool aShouldIgnoreScale) { myIgnoreParentScale = aShouldIgnoreScale; }
+
 private:
 	std::shared_ptr<MeshAsset> myMesh;
 	std::vector<std::shared_ptr<MaterialAsset>> myMaterials;
+	bool myIgnoreParentScale = false;
 };

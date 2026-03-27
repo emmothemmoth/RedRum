@@ -70,6 +70,70 @@ struct CubeData : PrimitiveMesh
 	}
 };
 
+struct WallData : PrimitiveMesh
+{
+	// Defaults: Length(X) = 500cm, Height(Y) = 240cm, Thickness(Z) = 30cm
+	WallData(float length = 500.0f, float height = 240.0f, float thickness = 30.0f)
+	{
+		Elements.resize(1);
+		auto& e = Elements[0];
+
+		// Calculate half-extents to center the wall at (0,0,0) for the Transform Gizmo
+		float hx = length * 0.5f;
+		float hy = height * 0.5f;
+		float hz = thickness * 0.5f;
+
+		e.Vertices =
+		{
+			// Right Face (+X)
+			{ Vector3f(hx, hy, hz), {1,0}, {1,0,0}, {0,0,1} },
+			{ Vector3f(hx, hy, -hz), {0,0}, {1,0,0}, {0,0,1} },
+			{ Vector3f(hx, -hy, hz), {1,1}, {1,0,0}, {0,0,1} },
+			{ Vector3f(hx, -hy, -hz), {0,1}, {1,0,0}, {0,0,1} },
+
+			// Top Face (+Y)
+			{ Vector3f(-hx, hy, hz), {0,0}, {0,1,0}, {1,0,0} },
+			{ Vector3f(-hx, hy, -hz), {0,1}, {0,1,0}, {1,0,0} },
+			{ Vector3f(hx, hy, hz), {1,0}, {0,1,0}, {1,0,0} },
+			{ Vector3f(hx, hy, -hz), {1,1}, {0,1,0}, {1,0,0} },
+
+			// Bottom Face (-Y)
+			{ Vector3f(-hx, -hy, hz), {0,1}, {0,-1,0}, {1,0,0} },
+			{ Vector3f(-hx, -hy, -hz), {0,0}, {0,-1,0}, {1,0,0} },
+			{ Vector3f(hx, -hy, hz), {1,1}, {0,-1,0}, {1,0,0} },
+			{ Vector3f(hx, -hy, -hz), {1,0}, {0,-1,0}, {1,0,0} },
+
+			// Front Face (-Z)
+			{ Vector3f(-hx, hy, -hz), {0,0}, {0,0,-1}, {1,0,0} },
+			{ Vector3f(-hx, -hy, -hz), {0,1}, {0,0,-1}, {1,0,0} },
+			{ Vector3f(hx, hy, -hz), {1,0}, {0,0,-1}, {1,0,0} },
+			{ Vector3f(hx, -hy, -hz), {1,1}, {0,0,-1}, {1,0,0} },
+
+			// Back Face (+Z)
+			{ Vector3f(-hx, hy, hz), {1,0}, {0,0,1}, {-1,0,0} },
+			{ Vector3f(-hx, -hy, hz), {1,1}, {0,0,1}, {-1,0,0} },
+			{ Vector3f(hx, hy, hz), {0,0}, {0,0,1}, {-1,0,0} },
+			{ Vector3f(hx, -hy, hz), {0,1}, {0,0,1}, {-1,0,0} },
+
+			// Left Face (-X)
+			{ Vector3f(-hx, hy, hz), {0,0}, {-1,0,0}, {0,0,-1} },
+			{ Vector3f(-hx, -hy, hz), {0,1}, {-1,0,0}, {0,0,-1} },
+			{ Vector3f(-hx, hy, -hz), {1,0}, {-1,0,0}, {0,0,-1} },
+			{ Vector3f(-hx, -hy, -hz), {1,1}, {-1,0,0}, {0,0,-1} }
+		};
+
+		e.Indices =
+		{
+			0,2,1,1,2,3,
+			16,17,19,19,18,16,
+			22,23,20,20,23,21,
+			14,15,12,12,15,13,
+			6,7,4,4,7,5,
+			11,10,9,9,10,8
+		};
+	}
+};
+
 struct GroundData : PrimitiveMesh
 {
 	GroundData()

@@ -10,6 +10,7 @@ public:
 
 	void InitGround(MeshAsset& inOutAsset);
 	void InitCube(MeshAsset& inOutAsset);
+	void InitWall(MeshAsset& inOutAsset);
 	void InitSphere(MeshAsset& inOutAsset);
 	void InitHorizontalPlane(MeshAsset& inOutAsset);
 	void InitVerticalPlane(MeshAsset& inOutAsset);

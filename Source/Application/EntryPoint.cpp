@@ -119,7 +119,7 @@ int GuardedMain()
 
     Editor editor;
     editor.Init();
-    editor.LoadScene("Content\\Levels\\AssetGym.json");
+    editor.LoadScene("Content\\Levels\\EmptyCubeLevel.json");
 
     GraphicsEngine::Get().HideSplashScreen();
 

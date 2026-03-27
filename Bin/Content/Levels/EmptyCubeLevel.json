@@ -2,26 +2,43 @@
   "Entities": [
     {
       "Name": "Camera",
-      "ID": 0,
-      "ParentID": -1,
-      "RenderPass": "None",
       "Transform": {
-        "Position": [ -40, 5825, -570 ],
-        "RotationDegrees": [-31.7, 0, 0 ],
+        "Position": [ 0, 100, -1000 ],
+        "RotationDegrees": [ 0, 0, 0 ],
         "scale": [ 1, 1, 1 ]
       },
       "Components": [
         {
           "TypeName": "CameraComponent",
-          "ComponentID": 6
+          "ComponentTypeID": 5
+        }
+      ]
+    },
+    {
+      "Name": "Listener",
+      "Transform": {
+        "Position": [ 0, 0, -800 ],
+        "RotationDegrees": [ 0, 0, 0 ],
+        "scale": [ 1, 1, 1 ]
+      },
+      "Components": [
+        {
+          "TypeName": "CameraComponent",
+          "ComponentTypeID": 5
+        },
+        {
+          "TypeName": "MeshComponent",
+          "ComponentTypeID": 0,
+          "Mesh": "SM_MannequinFemale"
+        },
+        {
+          "TypeName": "ListenerComponent",
+          "ComponentTypeID": 8
         }
       ]
     },
     {
       "Name": "Ground",
-      "ID": 1,
-      "ParentID": -1,
-      "RenderPass": "Deferred",
       "Transform": {
         "Position": [ 0, 0, 0 ],
         "RotationDegrees": [ 0, 0, 0 ],
@@ -30,28 +47,36 @@
       "Components": [
         {
           "TypeName": "MeshComponent",
-          "ComponentID": 0,
-          "Mesh": "GroundMesh"
-        },
-        {
-          "TypeName": "MaterialComponent",
-          "ComponentID": 2,
+          "ComponentTypeID": 0,
+          "Mesh": "GroundMesh",
           "Material": "M_GroundMaterial"
         }
       ]
     },
     {
-      "Name": "WorldBounds",
-      "ID": 2,
+      "Name": "Speaker",
       "Transform": {
-        "Position": [ 0, 0, 0 ],
-        "RotationDegrees": [ 0, 0, 0 ],
+        "Position": [ 0.0, 0.0, 0.0 ],
+        "RotationDegrees": [ 0, 180, 0 ],
         "scale": [ 1, 1, 1 ]
       },
-      "HalfSize": 2000,
       "Components": [
+        {
+          "TypeName": "MeshComponent",
+          "ComponentTypeID": 0,
+          "Mesh": "SM_Speaker"
+        },
+        {
+          "TypeName": "ControllerComponent",
+          "ComponentTypeID": 3,
+          "ControllerType": "USER"
+        },
+        {
+          "TypeName": "AudioSourceComponent",
+          "ComponentTypeID": 7,
+          "File": "\\Audio\\example_music.wav"
+        }
       ]
     }
-
   ]
 }

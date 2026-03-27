@@ -1,11 +1,11 @@
 #pragma once
 #include "Component.h"
 
-class AudioListenerComponent : public Component
+class ListenerComponent : public Component
 {
 public:
-	AudioListenerComponent(GameObject& aParent);
-	~AudioListenerComponent();
+	ListenerComponent(GameObject& aParent);
+	~ListenerComponent();
 
 	void StartPreview();
 	void StopPreview();

@@ -273,7 +273,15 @@ bool AssetManager::RegisterPrimitiveAssets()
 	cubeInfo.Path = "CubeMesh";
 	cubeInfo.Asset = cube;
 	myAssetMap.insert({ L"CubeMesh", cubeInfo });
-	myLastRegisteredKey.Name = groundInfo.Path;
+	myLastRegisteredKey.Name = cubeInfo.Path;
+	myLastRegisteredKey.Type = AssetType::Mesh;
+
+	std::shared_ptr<MeshAsset> wall = std::make_shared<MeshAsset>(L"WallMesh");
+	AssetInfo wallInfo;
+	wallInfo.Path = "WallMesh";
+	wallInfo.Asset = wall;
+	myAssetMap.insert({ L"WallMesh", wallInfo });
+	myLastRegisteredKey.Name = wallInfo.Path;
 	myLastRegisteredKey.Type = AssetType::Mesh;
 
 	std::shared_ptr<MeshAsset> sphere = std::make_shared<MeshAsset>(L"SphereMesh");

@@ -2,6 +2,7 @@
 
 #include "InputState.h"
 #include "../Tools/IEditorTool.h"
+#include "BuiltInTypes.h"
 
 #include <memory>
 #include <array>
@@ -27,7 +28,11 @@ public:
 	std::shared_ptr<Scene> GetActiveScene() const { return myActiveScene; }
 
 	void OnExternalFileDropped(const std::filesystem::path& aFilePath);
+
+	void OnInternalFileDropped(BuiltInType aType);
 private:
+	void AddFileObject(const std::filesystem::path& aFilePath);
+	void AddBuiltInObject(BuiltInType aType);
 
 	void UpdateInputState(const CU::Vector2U& aCursorPos);
 

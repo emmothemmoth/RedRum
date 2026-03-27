@@ -62,6 +62,8 @@ public:
 	std::shared_ptr<GameObject>& GetObjectByID(uint32_t anID);
 
 	std::shared_ptr<GameObject> GetActiveCamera() const { return myActiveCamera; };
+	void ChangeCamera(std::shared_ptr<GameObject> aCameraObject);
+	void ResetCamera();
 
 private:
 	void SortObjects();

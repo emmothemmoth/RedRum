@@ -59,7 +59,7 @@ namespace CommonUtilities
 
 		Matrix4x4<T>& operator=(const Matrix4x4<T>& aMatrix) = default;
 
-		Vector4<T> GetRow(const unsigned aRowIndex)
+		Vector4<T> GetRow(const unsigned aRowIndex) const
 		{
 			assert(aRowIndex > 0 && aRowIndex < 5);
 			Vector4<T> row;
@@ -70,7 +70,7 @@ namespace CommonUtilities
 			return row;
 		}
 
-		Vector3<T> GetTranslation()
+		Vector3<T> GetTranslation() const
 		{
 			Vector3<T> translation;
 			translation.x = myMatrix[3][0];

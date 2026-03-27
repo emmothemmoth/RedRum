@@ -23,6 +23,7 @@ GameObject::GameObject(std::string_view aName, unsigned anID)
 	transformGizmo->SetRenderStage(RenderStage::ObjectPartIDRendering);
 	transformGizmo->AddMaterial(AssetManager::Get().GetAsset<MaterialAsset>(DEFAULT_TRANSFORM_MATERIAL));
 	transformGizmo->SetVisible(false);
+	transformGizmo->SetIgnoreScale(true);
 }
 
 GameObject::GameObject(unsigned anID)
@@ -37,6 +38,7 @@ GameObject::GameObject(unsigned anID)
 	transformGizmo->SetRenderStage(RenderStage::ObjectPartIDRendering);
 	transformGizmo->AddMaterial(AssetManager::Get().GetAsset<MaterialAsset>(DEFAULT_TRANSFORM_MATERIAL));
 	transformGizmo->SetVisible(false);
+	transformGizmo->SetIgnoreScale(true);
 }
 
 GameObject::GameObject(std::string_view aName)
@@ -50,6 +52,7 @@ GameObject::GameObject(std::string_view aName)
 	transformGizmo->SetRenderStage(RenderStage::ObjectPartIDRendering);
 	transformGizmo->AddMaterial(AssetManager::Get().GetAsset<MaterialAsset>(DEFAULT_TRANSFORM_MATERIAL));
 	transformGizmo->SetVisible(false);
+	transformGizmo->SetIgnoreScale(true);
 }
 
 GameObject::GameObject() = default;
@@ -69,32 +72,28 @@ void GameObject::Render()
 
 void GameObject::SetPosition(float anX, float aY, float aZ)
 {
-	myTransform(4, 1) = anX;
-	myTransform(4, 2) = aY;
-	myTransform(4, 3) = aZ;
+	myPosition = { anX, aY, aZ };
+	myIsDirty = true;
 }
 
 void GameObject::SetPosition(const CU::Vector3f& aPosition)
 {
-	myTransform(4, 1) = aPosition.x;
-	myTransform(4, 2) = aPosition.y;
-	myTransform(4, 3) = aPosition.z;
+	myPosition = aPosition;
+	myIsDirty = true;
 }
 
-void GameObject::RotateAroundY(float anAngle)
+void GameObject::SetRotation(const CU::Vector3f& aRotation)
 {
-	myTransform = CommonUtilities::Matrix4x4<float>::CreateRotationAroundY(anAngle * (3.14f / 180.0f)) * myTransform;
+	myRotation = aRotation;
+	myIsDirty = true;
 }
 
-void GameObject::RotateAroundX(float anAngle)
+void GameObject::SetScale(const CU::Vector3f& aScale)
 {
-	myTransform = CommonUtilities::Matrix4x4<float>::CreateRotationAroundX(anAngle * (3.14f / 180.0f)) * myTransform;
+	myScale = aScale;
+	myIsDirty = true;
 }
 
-void GameObject::RotateAroundZ(float anAngle)
-{
-	myTransform = CommonUtilities::Matrix4x4<float>::CreateRotationAroundZ(anAngle * (3.14f / 180.0f)) * myTransform;
-}
 
 void GameObject::SetIcon(ComponentType aComponentType, const CU::Vector4f& anOffset)
 {
@@ -105,20 +104,68 @@ void GameObject::SetIcon(ComponentType aComponentType, const CU::Vector4f& anOff
 		icon = GetLastAddedComponent<BillboardComponent>();
 	}
 	icon->SetOffset(anOffset);
-	 switch (aComponentType)
-	 {
-	 case ComponentType::AudioSource:
-		 icon->SetTexture(AssetManager::Get().GetAsset<TextureAsset>("T_SourceIcon_C"));
-		 icon->SetVisible(true);
-		 return;
-	 case ComponentType::Mesh:
-	 case ComponentType::MeshInstance:
-		 icon->SetTexture(AssetManager::Get().GetAsset<TextureAsset>("T_ObjectIcon_C"));
-		 icon->SetVisible(true);
-		 return;
-	 }
+	switch (aComponentType)
+	{
+	case ComponentType::AudioSource:
+		icon->SetTexture(AssetManager::Get().GetAsset<TextureAsset>("T_SourceIcon_C"));
+		icon->SetVisible(true);
+		return;
+	case ComponentType::Listener:
+		icon->SetTexture(AssetManager::Get().GetAsset<TextureAsset>("T_ListenerIcon_C"));
+		icon->SetVisible(true);
+		return;
+	case ComponentType::Mesh:
+	case ComponentType::MeshInstance:
+		icon->SetTexture(AssetManager::Get().GetAsset<TextureAsset>("T_ObjectIcon_C"));
+		icon->SetVisible(true);
+		return;
+	}
 }
 
+void GameObject::AddPosition(Gizmo_Axis anAxis, float aDelta)
+{
+	switch (anAxis)
+	{
+	case Gizmo_Axis::Gizmo_X: myPosition.x += aDelta; break;
+	case Gizmo_Axis::Gizmo_Y: myPosition.y += aDelta; break;
+	case Gizmo_Axis::Gizmo_Z: myPosition.z += aDelta; break;
+	default: return;
+	}
+
+	myIsDirty = true;
+}
+
+void GameObject::AddRotation(Gizmo_Axis anAxis, float aDelta)
+{
+	switch (anAxis)
+	{
+	case Gizmo_Axis::Gizmo_X: myRotation.x += aDelta; break;
+	case Gizmo_Axis::Gizmo_Y: myRotation.y += aDelta; break;
+	case Gizmo_Axis::Gizmo_Z: myRotation.z += aDelta; break;
+	default: return;
+	}
+
+	myIsDirty = true;
+}
+
+void GameObject::AddScale(Gizmo_Axis anAxis, float aDelta)
+{
+	switch (anAxis)
+	{
+	case Gizmo_Axis::Gizmo_X: myScale.x += aDelta; break;
+	case Gizmo_Axis::Gizmo_Y: myScale.y += aDelta; break;
+	case Gizmo_Axis::Gizmo_Z: myScale.z += aDelta; break;
+	default: return;
+	}
+
+	myIsDirty = true;
+}
+
+const CU::Matrix4x4f& GameObject::GetTransform()
+{
+	UpdateTransform();
+	return myTransform;
+}
 
 void GameObject::OnSelected()
 {
@@ -139,4 +186,31 @@ void GameObject::OnMove(Gizmo_Axis anAxis)
 	anAxis;
 	int a = 0;
 	a++;
+}
+
+void GameObject::UpdateTransform()
+{
+	if (!myIsDirty) return;
+
+	// 1. Scale
+	CU::Matrix4x4<float> scaleMat;
+	scaleMat(1, 1) = myScale.x;
+	scaleMat(2, 2) = myScale.y;
+	scaleMat(3, 3) = myScale.z;
+
+	// 2. Rotation (Using your existing Euler logic)
+	CU::Matrix4x4<float> rotMat;
+	rotMat = CU::Matrix4x4<float>::CreateRotationAroundZ(myRotation.z * (3.14f / 180.0f)) * rotMat;
+	rotMat = CU::Matrix4x4<float>::CreateRotationAroundY(myRotation.y * (3.14f / 180.0f)) * rotMat;
+	rotMat = CU::Matrix4x4<float>::CreateRotationAroundX(myRotation.x * (3.14f / 180.0f)) * rotMat;
+
+	// 3. Translation
+	CU::Matrix4x4<float> transMat;
+	transMat(4, 1) = myPosition.x;
+	transMat(4, 2) = myPosition.y;
+	transMat(4, 3) = myPosition.z;
+
+	// Combine them: S * R * T
+	myTransform = scaleMat * rotMat * transMat;
+	myIsDirty = false;
 }

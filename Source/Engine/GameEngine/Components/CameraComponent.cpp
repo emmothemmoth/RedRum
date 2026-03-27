@@ -64,15 +64,6 @@ void CameraComponent::Init(CU::Vector3<float> aPoint, const CU::Vector3f& someRo
 	float scaleX = 1 / static_cast<float>(tan(myHorizontalFov * 0.5f));
 	float scaleY = (myResolution.x / myResolution.y) * scaleX;
 	float planesDiv = myFarPlaneZ / (myFarPlaneZ - myNearPlaneZ);
-	myRotationMatrix = Matrix4x4<float>::CreateRotationAroundY(myRotationY * static_cast<float>((M_PI) / 180.0f));
-	myRotationMatrix = myRotationMatrix * Matrix4x4<float>::CreateRotationAroundX(myRotationX * static_cast<float>((M_PI) / 180.0f));
-	myViewTransform = {};
-	myViewTransform = myRotationMatrix;
-	myViewTransform(4, 1) = myPosition.x;
-	myViewTransform(4, 2) = myPosition.y;
-	myViewTransform(4, 3) = myPosition.z;
-	myViewTransform(4, 4) = 0;
-	UpdateRotation();
 
 	myClipMatrix(1, 1) = scaleX;
 	myClipMatrix(1, 2) = 0;
@@ -104,52 +95,45 @@ void CameraComponent::Init(CU::Vector3<float> aPoint, const CU::Vector3f& someRo
 
 void CameraComponent::Update(float aDeltaTime)
 {
+	if (!myIsEnabled) return;
+	myPosition = { myParent.GetPosition().x, myParent.GetPosition().y, myParent.GetPosition().z, 1.0f };
 	Move(myDirection, aDeltaTime);
+	myRotationX = myParent.GetRotation().x;
+	myRotationY = myParent.GetRotation().y;
 
 	if (myIsRotating)
 	{
 		POINT mouseDelta = Input::GetMousePositionDelta();
-		myRotationY += mouseDelta.x * aDeltaTime;
-		myRotationX += mouseDelta.y * aDeltaTime;
-		UpdateRotation();
+		myParent.AddRotation(Gizmo_Axis::Gizmo_Y, mouseDelta.x * aDeltaTime * myRotationSpeed);
+		myParent.AddRotation(Gizmo_Axis::Gizmo_X, mouseDelta.y * aDeltaTime* myRotationSpeed);
 		myIsRotating = false;
+		if (mouseDelta.x > 0)
+		{
+			int a = 0;
+			a++;
+		}
 	}
-
-
-	myViewTransform(4, 1) = myPosition.x;
-	myViewTransform(4, 2) = myPosition.y;
-	myViewTransform(4, 3) = myPosition.z;
 	GetParent().SetPosition({ myPosition.x, myPosition.y, myPosition.z });
 	myDirection = Vector4<float>(0, 0, 0, 0);
 }
 
 void CameraComponent::Render()
 {
+	if (!myIsVisible) return;
 	myFrameBuffer->CameraPosition = myPosition;
-	myFrameBuffer->CameraRight = myViewTransform.GetRow(1);
-	myFrameBuffer->CameraUp = myViewTransform.GetRow(2);
+	myFrameBuffer->CameraRight = myParent.GetTransform().GetRow(1);
+	myFrameBuffer->CameraUp = myParent.GetTransform().GetRow(2);
 	myFrameBuffer->Projection = GetClipMatrix();
 	myFrameBuffer->View = GetViewInverse();
 	myFrameBuffer->Resolution = GraphicsEngine::Get().GetRenderSize();
 	MainSingleton::Get().GetRenderer().Enqueue<GCmdSetFrameBuffer>(RenderStage::Deferred, myFrameBuffer);
 }
 
-void CameraComponent::UpdateRotation()
-{
-	CU::Vector4<float> position;
-	position.x = myViewTransform(4, 1);
-	position.y = myViewTransform(4, 2);
-	position.z = myViewTransform(4, 3);
-	myViewTransform = CU::Matrix4x4<float>::CreateRotationAroundX(myRotationX * myRotationSpeed * static_cast<float> (M_PI / 180.0f)) * CU::Matrix4x4<float>::CreateRotationAroundY(myRotationY * myRotationSpeed * static_cast<float> (M_PI / 180.0f));
-	myViewTransform(4, 1) = position.x;
-	myViewTransform(4, 2) = position.y;
-	myViewTransform(4, 3) = position.z;
-}
 
 void CameraComponent::Move(const CU::Vector4<float>& aDirection, const float& aDeltaTime)
 {
 	UNREFERENCED_PARAMETER(aDirection);
-	myPosition += (myDirection * mySpeed * aDeltaTime) * myViewTransform;
+	myPosition += (myDirection * mySpeed * aDeltaTime) * myParent.GetTransform();
 }
 
 void CameraComponent::SetResolution(const CU::Vector2f& aResolution)
@@ -158,47 +142,14 @@ void CameraComponent::SetResolution(const CU::Vector2f& aResolution)
 	UpdateProjection();
 }
 
-CU::Vector4<float> CameraComponent::WorldToClip(const CU::Vector4<float>& aPoint)
-{
-	Vector4<float> cameraPoint = ToCamera(aPoint);
-
-	Vector4<float> clipPoint = ToClip(cameraPoint);
-
-	clipPoint.x = clipPoint.x / clipPoint.w;
-	clipPoint.y = clipPoint.y / clipPoint.w;
-	clipPoint.z = clipPoint.z / clipPoint.w;
-
-	if (clipPoint.w == 0)
-	{
-		clipPoint.w += 0.0001f;
-	}
-	return clipPoint;
-}
-
-CU::Matrix4x4<float> CameraComponent::WorldToClip(const CU::Matrix4x4<float>& aTransform)
-{
-	CU::Vector4<float> point;
-	point.x = aTransform(4, 1);
-	point.y = aTransform(4, 2);
-	point.z = aTransform(4, 3);
-	CU::Vector4<float> cameraPoint = ToCamera(point);
-
-	CU::Vector4<float> clipPoint = ToClip(cameraPoint);
-	CU::Matrix4x4<float> transform;
-	transform(4, 1) = clipPoint.x;
-	transform(4, 2) = clipPoint.y;
-	transform(4, 3) = clipPoint.z;
-	return transform;
-}
-
 CU::Matrix4x4<float> CameraComponent::GetViewInverse()
 {
-	return CU::Matrix4x4<float>::GetFastInverse(myViewTransform);
+	return CU::Matrix4x4<float>::GetFastInverse(myParent.GetTransform());
 }
 
 CU::Matrix4x4<float> CameraComponent::GetViewMatrix()
 {
-	return myViewTransform;
+	return myParent.GetTransform();;
 }
 
 CU::Matrix4x4<float> CameraComponent::GetClipMatrix()
@@ -206,19 +157,14 @@ CU::Matrix4x4<float> CameraComponent::GetClipMatrix()
 	return myClipMatrix;
 }
 
-CU::Vector4<float> CameraComponent::GetPosition()
-{
-	return CU::Vector4<float>(myViewTransform(4, 1), myViewTransform(4, 2), myViewTransform(4, 3), myViewTransform(4,4));
-}
-
 void CameraComponent::SetSpeed(const float aSpeed)
 {
 	mySpeed = aSpeed;
 }
 
-
 void CameraComponent::RecieveEvent(const ActionEvent& anEvent)
 {
+	if (!myIsEnabled) return;
 	switch (anEvent.Id)
 	{
 	case ActionEventID::CameraMove_Left:
@@ -246,19 +192,6 @@ void CameraComponent::RecieveEvent(const ActionEvent& anEvent)
 		break;
 	}
 }
-
-
-CU::Vector4<float> CameraComponent::ToCamera(const CU::Vector4<float>& aWorldPoint)
-{
-	CU::Matrix4x4<float> transformInverse = Matrix4x4<float>::GetFastInverse(myViewTransform);
-	return aWorldPoint * transformInverse;
-}
-
-CU::Vector4<float> CameraComponent::ToClip(const CU::Vector4<float>& aCameraPoint)
-{
-	return aCameraPoint * myClipMatrix;
-}
-
 void CameraComponent::UpdateProjection()
 {
 	// Prevent division by zero if the viewport is completely hidden/minimized

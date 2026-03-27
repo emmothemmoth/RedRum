@@ -64,8 +64,14 @@ private:
     void DisplayViewport(const float aDeltaTime);
     void DisplayInspector();
     void DisplayContentBrowser();
+    void DisplayBuiltInTypes();
+
+    std::string BuiltInTypeToString(BuiltInType aType);
+
+    bool DrawVec3Control(const std::string& aLabel, CU::Vector3f& someValues, float aResetValue = 0.0f);
 
 private:
+    std::array <std::shared_ptr<TextureAsset>, 2> myBuiltInTypes;
     std::shared_ptr<TextureAsset> myViewportTexture;
     std::shared_ptr<TextureAsset> myFolderIcon;
     std::shared_ptr<TextureAsset> myMeshIcon;

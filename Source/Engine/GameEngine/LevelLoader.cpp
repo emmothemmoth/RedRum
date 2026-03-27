@@ -29,6 +29,7 @@ bool LevelLoader::LoadLevelFromJSON(const std::filesystem::path& aLevelPath, Lev
     {
         std::shared_ptr<GameObject> gameObject;
         std::string name = entity.at("Name");
+        bool isListener = false;
         float rotationX, rotationY, rotationZ;
         if (name.starts_with("Camera"))
         {
@@ -40,6 +41,7 @@ bool LevelLoader::LoadLevelFromJSON(const std::filesystem::path& aLevelPath, Lev
             inOutLevel.GameObjects.emplace_back(std::make_shared<GameObject>(name, gameObjectIDCounter++));
             gameObject = inOutLevel.GameObjects.back();
         }
+        isListener = name.starts_with("Listener");
    
         {
             nlohmann::json transform = entity.at("Transform");
@@ -47,9 +49,8 @@ bool LevelLoader::LoadLevelFromJSON(const std::filesystem::path& aLevelPath, Lev
             rotationX = transform.at("RotationDegrees")[0];
             rotationY = transform.at("RotationDegrees")[1];
             rotationZ = transform.at("RotationDegrees")[2];
-            gameObject->RotateAroundX(rotationX);
-            gameObject->RotateAroundY(rotationY);
-            gameObject->RotateAroundX(rotationZ);
+            gameObject->SetRotation({ rotationX, rotationY, rotationZ });
+            gameObject->SetScale({ transform.at("scale")[0], transform.at("scale")[1], transform.at("scale")[2] });
         }
         {
             for (auto& component : entity.at("Components"))
@@ -145,6 +146,11 @@ bool LevelLoader::LoadLevelFromJSON(const std::filesystem::path& aLevelPath, Lev
                 case ComponentType::Camera:
                     gameObject->AddComponent(std::make_shared<CameraComponent>(*gameObject));
                     gameObject->GetComponent<CameraComponent>()->Init(gameObject->GetPosition(), {rotationX, rotationY, rotationZ});
+                    if (isListener)
+                    {
+                        gameObject->GetComponent<CameraComponent>()->SetVisible(false);
+                        gameObject->GetComponent<CameraComponent>()->SetEnabled(false);
+                    }
                     break;
                 case ComponentType::AudioSource:
                     {
@@ -154,9 +160,15 @@ bool LevelLoader::LoadLevelFromJSON(const std::filesystem::path& aLevelPath, Lev
                             std::string audioFile = component.at("File");
                             gameObject->GetComponent<AudioSourceComponent>()->Init(audioFile);
                         }
-                        gameObject->SetIcon(ComponentType::AudioSource);
+                        gameObject->SetIcon(ComponentType::AudioSource, {0.0f, 60.0f, 0.0f, 0.0f});
                     }
                     break;
+                case ComponentType::Listener:
+                {
+                    gameObject->AddComponent(std::make_shared<ListenerComponent>(*gameObject));
+                    gameObject->SetIcon(ComponentType::Listener, { 0.0f, 125.0f, 0.0f, 0.0f });
+                }
+                break;
                 default:
                     break;
                 }

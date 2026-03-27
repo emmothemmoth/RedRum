@@ -10,6 +10,7 @@ enum class ComponentType
 	Camera,
 	ShadowCamera,
 	AudioSource,
+	Listener,
 	DirectionalLight,
 	PointLight,
 	SpotLight,

@@ -15,7 +15,7 @@ public:
 
 	void SetID(const unsigned anID) { myID = anID; }
 	void SetVisible(const bool aIsVisible) { myIsVisible = aIsVisible; }
-	void SetEnabled(const bool aIsEnabled) { myIsVisible = aIsEnabled; }
+	void SetEnabled(const bool aIsEnabled) { myIsEnabled = aIsEnabled; }
 
 	GameObject& GetParent() { return myParent; }
 	ComponentType GetComponentType() { return myComponentType; }

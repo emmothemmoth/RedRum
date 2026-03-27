@@ -9,6 +9,7 @@
 #include "../GraphicsEngine/Objects/MeshAsset.h"
 
 #include "CommonUtilities/Input.h"
+#include "CommonUtilities/RandomWrapper.h"
 
 #include <cassert>
 
@@ -37,6 +38,18 @@ const std::vector<uint32_t>& EditorInterface::GetSelectedObjects()const
 
 void EditorInterface::OnExternalFileDropped(const std::filesystem::path& aFilePath)
 {
+	AddFileObject(aFilePath);
+}
+
+void EditorInterface::OnInternalFileDropped(BuiltInType aType)
+{
+	assert(aType != BuiltInType::Count);
+	AddBuiltInObject(aType);
+
+}
+
+void EditorInterface::AddFileObject(const std::filesystem::path& aFilePath)
+{
 	auto& assetManager = AssetManager::Get();
 	if (assetManager.RegisterAndLoadAsset(aFilePath))
 	{
@@ -48,11 +61,20 @@ void EditorInterface::OnExternalFileDropped(const std::filesystem::path& aFilePa
 		{
 			std::string name = "AudioSource_" + aFilePath.filename().string();
 			newObject = std::make_shared<GameObject>(name);
-			newObject->AddComponent(std::make_shared<MeshComponent>(*newObject, assetManager.GetAsset<MeshAsset>("SphereMesh")));
+			newObject->AddComponent(std::make_shared<MeshComponent>(*newObject, assetManager.GetAsset<MeshAsset>("SM_Speaker")));
 			newObject->AddComponent(std::make_shared<AudioSourceComponent>(*newObject));
 			newObject->GetComponent<AudioSourceComponent>()->Init(aFilePath);
-			newObject->SetIcon(ComponentType::AudioSource);
-			newObject->SetPosition({ 0.0f, 100.0f, 0.0f });
+			newObject->SetIcon(ComponentType::AudioSource, {0.0f, 75.0f, 0.0f, 0.0f});
+			newObject->SetPosition({ 0.0f, 0.0f, 0.0f });
+			break;
+		}
+		case AssetType::Mesh:
+		{
+			std::string name = "Mesh_" + aFilePath.filename().string();
+			newObject = std::make_shared<GameObject>(name);
+			newObject->AddComponent(std::make_shared<MeshComponent>(*newObject, assetManager.GetAsset<MeshAsset>(objectType.Name)));
+			newObject->SetIcon(ComponentType::Mesh);
+			newObject->SetPosition({ 0.0f, 0.0f, 0.0f });
 			break;
 		}
 		default:
@@ -60,6 +82,41 @@ void EditorInterface::OnExternalFileDropped(const std::filesystem::path& aFilePa
 		}
 		myActiveScene->AddObject(newObject);
 	}
+}
+
+void EditorInterface::AddBuiltInObject(BuiltInType aType)
+{
+	CU::RandomWrapper random;
+	std::shared_ptr<GameObject> newObject;
+	auto& assetManager = AssetManager::Get();
+
+	switch (aType)
+	{
+	case BuiltInType::Wall:
+	{
+		newObject = std::make_shared<GameObject>("Wall");
+		newObject->AddComponent(std::make_shared<MeshComponent>(*newObject, assetManager.GetAsset<MeshAsset>("WallMesh")));
+		newObject->SetIcon(ComponentType::Mesh);
+		break;
+	}
+	case BuiltInType::Mannequin:
+	{
+		int randomIndex = random.GetRandomInt(0, 1);
+		newObject = std::make_shared<GameObject>(randomIndex == 0 ? "Mannequin_Male" : "Mannequin_Female");
+
+		std::string meshName = (randomIndex == 0) ? "SM_MannequinMale" : "SM_MannequinFemale";
+		newObject->AddComponent(std::make_shared<MeshComponent>(*newObject, assetManager.GetAsset<MeshAsset>(meshName)));
+		newObject->SetIcon(ComponentType::Mesh);
+		break;
+	}
+	default:
+		return;
+	}
+
+	// Make sure they start at the origin (or at the mouse cursor's 3D projection if you have that math!)
+	newObject->SetPosition({ 0.0f, 0.0f, 0.0f });
+
+	myActiveScene->AddObject(newObject);
 }
 
 void EditorInterface::UpdateInputState(const CU::Vector2U& aCursorPos)

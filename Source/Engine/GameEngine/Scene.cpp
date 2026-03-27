@@ -267,6 +267,26 @@ std::shared_ptr<GameObject>& Scene::GetObjectByID(uint32_t anID)
 	return myCurrentLevel.GameObjects[myIDtoIndex.at(anID)];
 }
 
+void Scene::ChangeCamera(std::shared_ptr<GameObject> aCameraObject)
+{
+	assert(aCameraObject.get());
+	assert(aCameraObject->GetComponent<CameraComponent>().get());
+	myActiveCamera->GetComponent<CameraComponent>()->SetEnabled(false);
+	myActiveCamera->GetComponent<CameraComponent>()->SetVisible(false);
+	myActiveCamera = aCameraObject;
+	myActiveCamera->GetComponent<CameraComponent>()->SetEnabled(true);
+	myActiveCamera->GetComponent<CameraComponent>()->SetVisible(true);
+}
+
+void Scene::ResetCamera()
+{
+	myActiveCamera->GetComponent<CameraComponent>()->SetEnabled(false);
+	myActiveCamera->GetComponent<CameraComponent>()->SetVisible(false);
+	myActiveCamera = myCurrentLevel.Camera;
+	myActiveCamera->GetComponent<CameraComponent>()->SetEnabled(true);
+	myActiveCamera->GetComponent<CameraComponent>()->SetVisible(true);
+}
+
 void Scene::SortObjects()
 {
 	for (auto& deferredObject : mySortingList)
@@ -314,6 +334,7 @@ void Scene::InitSceneLights()
 	myPointLights[0]->AddComponent(std::make_shared<ShadowCameraComponent>(*myPointLights[0]));
 	myPointLights[0]->GetComponent<ShadowCameraComponent>()->Init(pointViewInv, pointProj, pointPos);
 	myLightBuffer->PointLightCount++;
+	myLightBuffer->PointLights[0].Active = false;
 	
 	
 	CU::Vector3f spotPos = CU::Vector3<float>( 600.0f, 400.0f, 0.0f );
@@ -334,6 +355,7 @@ void Scene::InitSceneLights()
 	mySpotLights[0]->AddComponent(std::make_shared<ShadowCameraComponent>(*mySpotLights[0]));
 	mySpotLights[0]->GetComponent<ShadowCameraComponent>()->Init(spotViewInv, spotProj, spotPos);
 	myLightBuffer->SpotLightCount++;
+	myLightBuffer->SpotLights[0].Active = false;
 }
 
 void Scene::UpdateLights()
