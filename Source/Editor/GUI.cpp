@@ -24,6 +24,7 @@
 #include "MainSingleton.h"
 #include "Components/AudioSourceComponent.h"
 #include "Components/ListenerComponent.h"
+#include "Components/BoxComponent.h"
 
 
 
@@ -273,6 +274,10 @@ void GUI::DisplayInspector()
 						{
 							mesh->SetVisible(true);
 						}
+						if (std::shared_ptr<BoxComponent> box = object->GetLastAddedComponent<BoxComponent>())
+						{
+							box->SetVisible(true);
+						}
 						scene->ResetCamera();
 					}
 				}
@@ -283,6 +288,10 @@ void GUI::DisplayInspector()
 					if (std::shared_ptr<MeshComponent> mesh = object->GetLastAddedComponent<MeshComponent>())
 					{
 						mesh->SetVisible(false);
+					}
+					if (std::shared_ptr<BoxComponent> box = object->GetLastAddedComponent<BoxComponent>())
+					{
+						box->SetVisible(false);
 					}
 					scene->ChangeCamera(object);
 				}
