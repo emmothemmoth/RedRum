@@ -2,12 +2,9 @@
 #include "Component.h"
 #include <filesystem>
 
-class AudioEngine;
+#include "../AudioEngine/RoomSimulator/EmitterSettings.h"
 
-struct AudioSourceSettings
-{
-	float Volume = 1.0f;
-};
+class AudioEngine;
 
 class AudioSourceComponent : public Component
 {
@@ -28,10 +25,10 @@ public:
 	bool IsPlayable() const { return myIsPlayable; }
 
 	const std::filesystem::path& GetAudioSourceName() const { return myFilePath; }
-	AudioSourceSettings& GetSettings() { return mySettings; }
+	EmitterSettings& GetSettings() { return mySettings; }
 private:
 	uint32_t myAudioHandle = UINT32_MAX;
 	std::filesystem::path myFilePath;
-	AudioSourceSettings mySettings;
+	EmitterSettings mySettings;
 	bool myIsPlayable = false;
 };

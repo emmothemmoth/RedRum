@@ -20,8 +20,3 @@ void ListenerComponent::StartPreview()
 void ListenerComponent::StopPreview()
 {
 }
-
-void ListenerComponent::ManualUpdate()
-{
-	//Update settings in audio engine: position, rotation, master volume
-}

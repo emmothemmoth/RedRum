@@ -3,10 +3,11 @@
 #include "JuceLibraryCode/AppConfig.h"
 #include <juce_audio_devices/juce_audio_devices.h>
 #include <juce_audio_formats/juce_audio_formats.h>
-#include <juce_audio_basics/juce_audio_basics.h>
+//#include <juce_audio_basics/juce_audio_basics.h>
 #include <juce_dsp/juce_dsp.h> 
 
 #include "AudioEngine.h"
+#include "RoomSimulator/RoomSimulator.h"
 
 #include <unordered_map>
 #include <optional>
@@ -148,7 +149,6 @@ struct AudioEngine::Impl : public juce::AudioIODeviceCallback
 	void audioDeviceAboutToStart(juce::AudioIODevice* device) override;
 	void audioDeviceStopped() override;
 
-	void InitListener(const CU::Matrix4x4f& aMatrix);
 	std::optional<AudioHandle> RegisterSoundSource(const std::filesystem::path& aFilePath);
 	void UnregisterSoundSource();
 
@@ -171,6 +171,8 @@ struct AudioEngine::Impl : public juce::AudioIODeviceCallback
 	AudioHandle HandleCounter = 0;
 
     std::filesystem::path ContentPath;
+
+    RoomSimulator Simulator;
 };
 
 AudioEngine::AudioEngine()
@@ -193,9 +195,9 @@ void AudioEngine::Initialize()
     }
 }
 
-void AudioEngine::InitListener(const CommonUtilities::Matrix4x4f& aMatrix)
+void AudioEngine::InitListener(const CU::Matrix4x4f& aTransform)
 {
-    aMatrix;
+    myImpl->Simulator.InitListener(aTransform);
 }
 
 std::optional<AudioHandle> AudioEngine::RegisterSoundSource(const std::filesystem::path& aFilePath)
@@ -258,11 +260,42 @@ std::optional<AudioHandle> AudioEngine::RegisterSoundSource(const std::filesyste
     cmd.SourceData = std::move(newSource);
     myImpl->PushCommand(std::move(cmd));
 
+
+    //TODO: Need to decouple handles for audio sources and emitters. There can be multiple emitters with the same audio source!!!
+    
     return handle;
 }
 
-void AudioEngine::UnregisterSoundSource()
+void AudioEngine::Impl::UnregisterSoundSource()
 {
+    //TODO: remove the file from impl
+}
+
+void AudioEngine::UnregisterSoundSource(const AudioHandle aHandle)
+{
+    myImpl->Simulator.UnregisterEmitter(aHandle);
+}
+
+std::optional<EmitterHandle> AudioEngine::RegisterAudioEmitter(AudioHandle aSourceHandle, const EmitterSettings& someSettings, const CU::Matrix4x4f& aTransform)
+{
+    aSourceHandle;
+    someSettings;
+    aTransform;
+    EmitterHandle handle;
+    //TODO: need to get the source buffer from the impl
+    //auto handle = myImpl->Simulator.RegisterEmitter(BUFFER, someSettings, aTransform);
+    //return handle;
+    return handle;
+}
+
+std::optional<ObstacleHandle> AudioEngine::RegisterAudioObstacle(const AbsorberSettings& someSettings, const Collider& aCollider, const CU::Matrix4x4f& aTransform)
+{
+    return myImpl->Simulator.RegisterObstacle(someSettings, aCollider, aTransform);
+}
+
+void AudioEngine::UnregisterAudioObstacle(ObstacleHandle aHandle)
+{
+    myImpl->Simulator.UnregisterObstacle(aHandle);
 }
 
 void AudioEngine::UpdateSoundSource(const AudioHandle aHandle, const CU::Matrix4x4f& aMatrix)

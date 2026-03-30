@@ -7,13 +7,12 @@ public:
 	ListenerComponent(GameObject& aParent);
 	~ListenerComponent();
 
+	//Play the simulation file
 	void StartPreview();
+	//Stop the simulation file
 	void StopPreview();
 
-	//Updates the settings for listener
-	void ManualUpdate();
-
-
+	//If the room simulation is ready for playback
 	bool IsPlayable() const { return myIsPlayable; }
 
 private:
