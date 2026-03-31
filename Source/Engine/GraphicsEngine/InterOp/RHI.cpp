@@ -335,7 +335,6 @@ bool RHI::UpdateVertexBufferInternal(const VertexBuffer& aVertexBuffer, const ui
 {
 	size_t activeDataSizeInBytes = aNumActiveVertices * aVertexSize;
 
-	// CHANGE: Check if activeDataSizeInBytes > aVertexBuffer.DataSize (allow smaller updates!)
 	if (!aVertexBuffer.Buffer || aVertexBuffer.VertexStride != aVertexSize || activeDataSizeInBytes > aVertexBuffer.DataSize)
 	{
 		LOG(RHILog, Error, "Failed to update vertex buffer {}.", aVertexBuffer.Name);
@@ -351,7 +350,6 @@ bool RHI::UpdateVertexBufferInternal(const VertexBuffer& aVertexBuffer, const ui
 		return false;
 	}
 
-	// CHANGE: Only copy the activeDataSizeInBytes, not the full aVertexBuffer.DataSize
 	memcpy_s(bufferData.pData, aVertexBuffer.DataSize, aBufferData, activeDataSizeInBytes);
 
 	myContext->Unmap(aVertexBuffer.Buffer.Get(), 0);

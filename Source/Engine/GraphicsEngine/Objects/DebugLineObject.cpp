@@ -121,6 +121,7 @@ void DebugLineObject::Reserve(unsigned aMaxVertices, unsigned aMaxIndices)
 
 void DebugLineObject::UpdateBuffers()
 {
+	if (!myIsDynamic) return;
 	if (myVertices.empty() || myIndices.empty())
 		return;
 
@@ -139,13 +140,32 @@ void DebugLineObject::UpdateBuffers()
 	GraphicsEngine::Get().UpdateIndexBuffer(myIndexBuffer, myIndices);
 }
 
+void DebugLineObject::AddLine(const CU::Vector3f& aStart, const CU::Vector3f& anEnd, const CU::Vector4f& aStartColor, const CU::Vector4f& anEndColor)
+{
+	myIndices.emplace_back(static_cast<unsigned>(myVertices.size()));
+
+	Vertex startVert;
+	startVert.Position = { aStart.x, aStart.y, aStart.z, 1.0f };
+	startVert.Color = aStartColor;
+	myVertices.emplace_back(startVert);
+
+	myIndices.emplace_back(static_cast<unsigned>(myVertices.size()));
+
+	Vertex endVert;
+	endVert.Position = { anEnd.x, anEnd.y, anEnd.z, 1.0f };
+	endVert.Color = anEndColor;
+	myVertices.emplace_back(endVert);
+
+	myNumIndices = static_cast<unsigned>(myIndices.size());
+	myNumVertices = static_cast<unsigned>(myVertices.size());
+}
+
 void DebugLineObject::AddLine(const CU::Vector3f& aStart, const CU::Vector3f& anEnd)
 {
 	myIndices.emplace_back(static_cast<unsigned>(myVertices.size()));
 	myVertices.emplace_back(aStart);
 	myIndices.emplace_back(static_cast<unsigned>(myVertices.size()));
 	myVertices.emplace_back(anEnd);
-
 	myNumIndices = static_cast<unsigned>(myIndices.size());
 	myNumVertices = static_cast<unsigned>(myVertices.size());
 }

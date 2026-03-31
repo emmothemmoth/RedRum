@@ -5,6 +5,7 @@
 #include "CommonUtilities/Input.h"
 #include <random>
 #include "../../GraphicsEngine/Commands/GCmdDrawDebugLines.h"
+#include "../../GraphicsEngine/Objects/DebugLineObject.h"
 
 AudioSourceComponent::AudioSourceComponent(GameObject& aParent)
 	: Component(aParent)
@@ -14,7 +15,8 @@ AudioSourceComponent::AudioSourceComponent(GameObject& aParent)
 	myRenderStages.at(RenderStage::Deferred) = false;
 
 	auto& audioEngine = MainSingleton::Get().GetAudioEngine();
-	myVisualizeHandle = audioEngine.OnSimulationStarted.AddRaw(this, &AudioSourceComponent::StartVisualRays);
+	myVisualizeHandle = audioEngine.OnSimulationStarted.AddRaw(this, &AudioSourceComponent::ClearRays);
+	myScoutHandle = audioEngine.OnVisualRaysReady.AddRaw(this, &AudioSourceComponent::ReceiveScoutRays);
 }
 
 AudioSourceComponent::~AudioSourceComponent()
@@ -23,6 +25,7 @@ AudioSourceComponent::~AudioSourceComponent()
 	audioEngine.UnregisterEmitter(myEmitterHandle);
 
 	audioEngine.OnSimulationStarted.Remove(myVisualizeHandle);
+	audioEngine.OnVisualRaysReady.Remove(myScoutHandle);
 }
 
 void AudioSourceComponent::Init(const std::filesystem::path& aSourceFile)
@@ -44,35 +47,45 @@ void AudioSourceComponent::Init(const std::filesystem::path& aSourceFile)
 
 void AudioSourceComponent::Update(const float aDeltaTime)
 {
-	aDeltaTime;
 	if (myParent.IsDirty() || myIsDirty)
 	{
 		myIsDirty = false;
 		MainSingleton::Get().GetAudioEngine().UpdateAudioEmitter(myEmitterHandle, mySettings, myParent.GetTransform());
 	}
+
 	if (myIsAnimatingRays)
 	{
 		bool allFinished = true;
 
-		for (auto& ray : myVisualRays)
+		for (auto& anim : myAnimators)
 		{
-			if (!ray.IsFinished)
-			{
-				ray.CurrentDistance += ray.Speed * aDeltaTime;
+			if (anim.CurrentBounceIndex >= anim.PathData.Bounces.size())
+				continue;
 
-				if (ray.CurrentDistance >= ray.MaxDistance)
-				{
-					ray.CurrentDistance = ray.MaxDistance;
-					ray.IsFinished = true;
-				}
-				else
-				{
-					allFinished = false;
-				}
+			allFinished = false;
+
+			const auto& bounce = anim.PathData.Bounces[anim.CurrentBounceIndex];
+
+			CU::Vector3f dir = bounce.EndPos - bounce.StartPos;
+			float segmentLength = dir.Length();
+
+			if (segmentLength > 0.0001f) 
+			{
+				float distanceToMove = anim.Speed * aDeltaTime;
+				anim.CurrentBounceProgress += (distanceToMove / segmentLength);
+			}
+			else
+			{
+				anim.CurrentBounceProgress = 1.0f;
+			}
+
+			if (anim.CurrentBounceProgress >= 1.0f)
+			{
+				anim.CurrentBounceIndex++;
+				anim.CurrentBounceProgress = 0.0f;
 			}
 		}
 
-		// Optional: Stop drawing them a few seconds after they hit the walls
 		if (allFinished)
 		{
 			// myIsAnimatingRays = false; 
@@ -83,31 +96,42 @@ void AudioSourceComponent::Update(const float aDeltaTime)
 void AudioSourceComponent::Render()
 {
 	if (!myIsVisible) return;
-	if (!myIsAnimatingRays) return;
-	if (myVisualRays.empty()) return;
+	if (!myIsAnimatingRays || myAnimators.empty()) return;
 
-	// 1. Clear CPU vectors (keeps GPU capacity intact)
 	myDebugLines->ResetLines();
+	myDebugLines->SetTopology(2);
 
-	// 2. Build the new frame's lines
-	for (const auto& ray : myVisualRays)
+	for (const auto& anim : myAnimators)
 	{
-		CU::Vector3f endPos = ray.Origin + (ray.Direction * ray.CurrentDistance);
-		myDebugLines->AddLine(ray.Origin, endPos);
+		CU::Vector4f baseColor = anim.PathData.HitListener ? CU::Vector4f(0.0f, 1.0f, 0.0f, 1.0f) : CU::Vector4f( 1.0f, 0.0f, 1.0f, 1.0f);
+
+		for (int i = 0; i < anim.CurrentBounceIndex; ++i)
+		{
+			const auto& bounce = anim.PathData.Bounces[i];
+			CU::Vector4f startColor = baseColor; startColor.w = bounce.StartPower;
+			CU::Vector4f endColor = baseColor;   endColor.w = bounce.EndPower;
+
+			myDebugLines->AddLine(bounce.StartPos, bounce.EndPos, startColor, endColor);
+		}
+
+		if (anim.CurrentBounceIndex < anim.PathData.Bounces.size())
+		{
+			const auto& bounce = anim.PathData.Bounces[anim.CurrentBounceIndex];
+
+			CU::Vector3f currentEndPos = bounce.StartPos + ((bounce.EndPos - bounce.StartPos) * anim.CurrentBounceProgress);
+			float currentPower = bounce.StartPower + ((bounce.EndPower - bounce.StartPower) * anim.CurrentBounceProgress);
+
+			CU::Vector4f startColor = baseColor; startColor.w = bounce.StartPower;
+			CU::Vector4f endColor = baseColor;   endColor.w = currentPower;
+
+			myDebugLines->AddLine(bounce.StartPos, currentEndPos, startColor, endColor);
+		}
 	}
 
-	// 3. Set the color for the newly generated vertices
-	myDebugLines->SetColor(DebugColor::Pink);
-
-	// 4. STREAM TO GPU (Replaces Initialize!)
-	// This uses the lock-free mapping we just wrote, allowing it to run at thousands of FPS
-	//myDebugLines->UpdateBuffers();
-
-	// 5. Submit to the Render Queue
 	MainSingleton::Get().GetRenderer().Enqueue<GCmdDrawDebugLines>(
-		RenderStage::Forward, // Or whatever stage you draw debug lines
+		RenderStage::Forward,
 		myDebugLines,
-		CU::Matrix4x4f() // Identity matrix, because our lines are already in world space!
+		CU::Matrix4x4f()
 	);
 }
 
@@ -130,42 +154,41 @@ void AudioSourceComponent::Stop()
 	engine.Control2DSource(mySourceHandle, AudiosourceControl::Stop);
 }
 
-void AudioSourceComponent::StartVisualRays()
+void AudioSourceComponent::ClearRays()
 {
-	myVisualRays.clear();
-	myIsAnimatingRays = true;
+	myAnimators.clear();
+	myIsAnimatingRays = false;
+
+	if (myDebugLines)
+	{
+		myDebugLines->ResetLines();
+		myDebugLines->UpdateBuffers();
+	}
+}
+
+void AudioSourceComponent::ReceiveScoutRays(EmitterHandle aHandle, std::vector<VisualRayPath> somePaths)
+{
+	if (aHandle != myEmitterHandle) return;
+
+	myAnimators.clear();
+	int totalLineSegments = 0;
+
+	for (const auto& path : somePaths)
+	{
+		RayAnimationTracker anim;
+		anim.PathData = path;
+		anim.Speed = 100.0f;
+		myAnimators.push_back(anim);
+
+		totalLineSegments += static_cast<int>(path.Bounces.size());
+	}
 
 	if (!myDebugLines)
 	{
 		myDebugLines = std::make_shared<DebugLineObject>();
 		myDebugLines->SetName("Simulation_Rays");
-		myDebugLines->SetTopology(2);
-
-		// PRE-ALLOCATE THE GPU MEMORY (100 rays * 2 vertices/indices)
-		myDebugLines->Reserve(200, 200);
 	}
+	myDebugLines->Reserve(totalLineSegments * 2, totalLineSegments * 2);
 
-	CU::Vector3f startPos = myParent.GetPosition();
-
-	// Generate 100 random rays in a sphere
-	std::mt19937 rng(42); // Seeded so the visual burst looks the same every time
-	std::uniform_real_distribution<float> dist(-1.0f, 1.0f);
-
-	for (int i = 0; i < 100; ++i)
-	{
-		CU::Vector3f randomDir(dist(rng), dist(rng), dist(rng));
-		randomDir.Normalize();
-
-		VisualRay ray;
-		ray.Origin = startPos;
-		ray.Direction = randomDir;
-		ray.Speed = 800.0f + (dist(rng) * 200.0f); // Slight speed variation looks cooler
-
-		// TODO: Physics Raycast here to find the actual distance to the nearest wall!
-		// float hitDistance = PhysicsEngine::Raycast(startPos, randomDir);
-		// ray.MaxDistance = hitDistance; 
-
-		ray.CurrentDistance = 0.0f;
-		myVisualRays.push_back(ray);
-	}
+	myIsAnimatingRays = true;
 }

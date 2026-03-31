@@ -2,6 +2,7 @@
 #include "EmitterSettings.h"
 #include "AbsorberSettings.h"
 #include "Collider.h"
+#include "VisualRayPath.h"
 
 #include "CommonUtilities/Matrix4x4.hpp"
 
@@ -20,7 +21,6 @@ struct AudioObstacle
 	CU::Matrix4x4f Transform;
 	AbsorberSettings Absorber;
 	Collider Collider;
-	//Absorber settings, transmission etc
 	uint32_t ID;
 };
 
@@ -49,6 +49,7 @@ public:
 	void Simulate();
 
 	MulticastDelegate<juce::AudioBuffer<float>> OnBakeComplete;
+	MulticastDelegate<uint32_t, std::vector<VisualRayPath>> OnScoutBatchReady;
 	const juce::AudioBuffer<float>& GetSimulation() const { return mySimulation; }
 
 private:

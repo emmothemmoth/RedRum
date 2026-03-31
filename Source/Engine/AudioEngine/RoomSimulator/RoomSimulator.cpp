@@ -1,6 +1,7 @@
 #include "RoomSimulator.h"
 
 #include <cmath>
+#include <random>
 
 RoomSimulator::RoomSimulator()
 {
@@ -96,116 +97,135 @@ void RoomSimulator::Simulate()
 
 void RoomSimulator::WorkerThreadLoop()
 {
-    while (true)
-    {
-        // --- THE SLEEPING PHASE ---
-        std::unique_lock<std::mutex> lock(myMutex);
+	while (true)
+	{
+		std::unique_lock<std::mutex> lock(myMutex);
 
-        myConditionVariable.wait(lock, [this] { return myHasWork || myShouldExit; });
+		myConditionVariable.wait(lock, [this] { return myHasWork || myShouldExit; });
 
-        if (myShouldExit) break;
+		if (myShouldExit) break;
 
-        myHasWork = false;
+		myHasWork = false;
 
-        // --- 1. THREAD SAFETY: COPY THE DATA ---
-        std::vector<AudioEmitter> localSources = mySources;
-        CU::Matrix4x4f localListener = myListener;
+		std::vector<AudioEmitter> localSources = mySources;
+		CU::Matrix4x4f localListener = myListener;
 
-        // Unlock so the editor can keep running smoothly while we crunch numbers!
-        lock.unlock();
+		lock.unlock();
 
-        // --- 2. PREPARE THE OUTPUT BUFFER ---
-        // Find the longest audio source so we know how big to make our wet buffer
-        int maxSamples = 0;
-        for (const auto& emitter : localSources)
-        {
-            if (emitter.SourceBuffer != nullptr)
-            {
-                maxSamples = std::max(maxSamples, emitter.SourceBuffer->getNumSamples());
-            }
-        }
+		int maxSamples = 0;
+		for (const auto& emitter : localSources)
+		{
+			if (emitter.SourceBuffer != nullptr)
+			{
+				int sampleCount = emitter.SourceBuffer->getNumSamples();
+				maxSamples = sampleCount > maxSamples ? sampleCount : maxSamples;
+			}
+		}
 
-        juce::AudioBuffer<float> finishedBake(2, maxSamples);
-        finishedBake.clear(); // Ensure it's filled with silence initially
+		juce::AudioBuffer<float> finishedBake(2, maxSamples);
+		finishedBake.clear();
 
-        // Extract Listener position and Right vector
-        // NOTE: Adjust the indices (4,1 etc) based on how your Matrix4x4 is structured!
-        CU::Vector3f listenerPos = { localListener(4,1), localListener(4,2), localListener(4,3) };
-        CU::Vector3f listenerRight = { localListener(1,1), localListener(1,2), localListener(1,3) };
-        listenerRight.Normalize();
+		CU::Vector3f listenerPos = { localListener(4,1), localListener(4,2), localListener(4,3) };
+		CU::Vector3f listenerRight = { localListener(1,1), localListener(1,2), localListener(1,3) };
+		listenerRight.Normalize();
 
-        // --- 3. THE DSP PROCESSING LOOP ---
-        for (const auto& emitter : localSources)
-        {
-            if (!emitter.SourceBuffer || emitter.SourceBuffer->getNumSamples() == 0)
-                continue;
+		std::mt19937 rng(42); 
+		std::uniform_real_distribution<float> dist(-1.0f, 1.0f);
 
-            // Calculate Distance and Direction
-            CU::Vector3f sourcePos = { emitter.Transform(4,1), emitter.Transform(4,2), emitter.Transform(4,3) };
-            CU::Vector3f dirToSource = sourcePos - listenerPos;
+		const int SCOUT_RAY_COUNT = 100;
+		//const int HEAVY_RAY_COUNT = 9900;
 
-            float distance = dirToSource.Length();
-            float attenuation = 1.0f;
+		for (const auto& emitter : localSources)
+		{
+			if (!emitter.SourceBuffer || emitter.SourceBuffer->getNumSamples() == 0)
+				continue;
 
-            // Using sensible defaults if they aren't in your EmitterSettings yet
-            float minDistance = 100.0f;  // 1 meter (100 cm)
-            float maxDistance = 5000.0f; // 50 meters (5000 cm)
-            float rolloffFactor = 1.0f;
+			CU::Vector3f sourcePos = { emitter.Transform(4,1), emitter.Transform(4,2), emitter.Transform(4,3) };
 
-            if (distance <= minDistance)
-            {
-                attenuation = 1.0f; // Inside the "full volume" bubble
-            }
-            else if (distance >= maxDistance)
-            {
-                attenuation = 0.0f; // Outside the hearing range, hard cutoff
-            }
-            else
-            {
-                // The Industry Standard Inverse Distance Curve
-                attenuation = minDistance / (minDistance + rolloffFactor * (distance - minDistance));
+			std::vector<VisualRayPath> scoutPaths;
+			scoutPaths.reserve(SCOUT_RAY_COUNT);
 
-                // Optional: Many game engines do a secondary calculation here to ensure 
-                // the curve cleanly hits exactly 0.0 at the MaxDistance to prevent audio pops.
-                // For pure simulation, the raw curve is often fine.
-            }
+			for (int i = 0; i < SCOUT_RAY_COUNT; ++i)
+			{
+				CU::Vector3f randomDir(dist(rng), dist(rng), dist(rng));
+				randomDir.Normalize();
 
-            // Constant Power Panning
-            dirToSource.Normalize();
-            float pan = dirToSource.Dot(listenerRight); // Range: -1 (Left) to 1 (Right)
+				VisualRayPath path;
+				RayBounce firstBounce;
+				firstBounce.StartPos = sourcePos;
+				firstBounce.StartPower = 1.0f;
 
-            float pMapped = (pan + 1.0f) * 0.5f;
-            const float PI = 3.14159265359f;
-            float angle = pMapped * (PI * 0.5f);
+				// TODO: Replace this mock distance with actual PhysicsEngine::Raycast!
+				float mockHitDistance = 500.0f + (dist(rng) * 200.0f);
 
-            float leftGain = std::cos(angle) * attenuation;
-            float rightGain = std::sin(angle) * attenuation;
+				firstBounce.EndPos = sourcePos + (randomDir * mockHitDistance);
+				firstBounce.EndPower = 0.8f; // Drops slightly after hitting a wall
 
-            // Mix the emitter into the final buffer
-            int numSamples = emitter.SourceBuffer->getNumSamples();
+				path.Bounces.push_back(firstBounce);
 
-            // Assuming the source file is Mono for 3D spatialization. 
-            // If it's stereo, you'd usually mix it down to mono first, or process channels separately.
-            const float* readPtr = emitter.SourceBuffer->getReadPointer(0);
+				path.HitListener = false;
 
-            float* outLeft = finishedBake.getWritePointer(0);
-            float* outRight = finishedBake.getWritePointer(1);
+				scoutPaths.push_back(path);
+			}
 
-            for (int i = 0; i < numSamples; ++i)
-            {
-                outLeft[i] += readPtr[i] * leftGain;
-                outRight[i] += readPtr[i] * rightGain;
-            }
-        }
 
-        // --- 4. THE CALLBACK ---
-        // Let the AudioEngine know we are done!
-        // We do a quick lock check to ensure we didn't get a new Bake request while calculating
-        lock.lock();
-        if (myHasWork == false)
-        {
-            OnBakeComplete.Broadcast(std::move(finishedBake));
-        }
-        lock.unlock();
-    }
+			OnScoutBatchReady.Broadcast(emitter.ID, std::move(scoutPaths));
+
+
+			// TODO: In the future, you will run a loop here 9,900 times, bouncing rays.
+			// Every time a ray hits the listener, you will calculate its total distance traveled
+			// (which gives you the audio delay/reverb time) and its remaining power (volume), 
+			// and mix it directly into the `finishedBake` buffer.
+
+			/*
+			for (int i = 0; i < HEAVY_RAY_COUNT; ++i)
+			{
+				// Shoot ray, bounce off walls, if it hits listener -> mix audio
+			}
+			*/
+
+			CU::Vector3f dirToSource = sourcePos - listenerPos;
+			float distance = dirToSource.Length();
+			float minDistance = 100.0f;
+			float maxDistance = 5000.0f;
+			float rolloffFactor = 1.0f;
+			float attenuation = 1.0f;
+
+			if (distance > minDistance && distance < maxDistance)
+			{
+				attenuation = minDistance / (minDistance + rolloffFactor * (distance - minDistance));
+			}
+			else if (distance >= maxDistance)
+			{
+				attenuation = 0.0f;
+			}
+
+			dirToSource.Normalize();
+			float pan = dirToSource.Dot(listenerRight);
+			float pMapped = (pan + 1.0f) * 0.5f;
+			const float PI = 3.14159265359f;
+			float angle = pMapped * (PI * 0.5f);
+
+			float leftGain = std::cos(angle) * attenuation;
+			float rightGain = std::sin(angle) * attenuation;
+
+			int numSamples = emitter.SourceBuffer->getNumSamples();
+			const float* readPtr = emitter.SourceBuffer->getReadPointer(0);
+			float* outLeft = finishedBake.getWritePointer(0);
+			float* outRight = finishedBake.getWritePointer(1);
+
+			for (int i = 0; i < numSamples; ++i)
+			{
+				outLeft[i] += readPtr[i] * leftGain;
+				outRight[i] += readPtr[i] * rightGain;
+			}
+		}
+
+		lock.lock();
+		if (myHasWork == false)
+		{
+			OnBakeComplete.Broadcast(std::move(finishedBake));
+		}
+		lock.unlock();
+	}
 }

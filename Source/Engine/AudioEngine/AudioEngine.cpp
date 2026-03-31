@@ -193,7 +193,11 @@ void AudioEngine::Initialize()
         myImpl = std::make_unique<Impl>();
         myIsInitialized = true;
 
-        // --- Define the callback here ---
+        myImpl->Simulator.OnScoutBatchReady.AddLambda([this](EmitterHandle handle, std::vector<VisualRayPath> paths)
+            {
+                OnVisualRaysReady.Broadcast(handle, std::move(paths));
+            });
+
         myImpl->Simulator.OnBakeComplete.AddLambda([this](juce::AudioBuffer<float> bakedBuffer)
             {
                 auto newFile = std::make_shared<AudioFile>();
@@ -214,7 +218,6 @@ void AudioEngine::Initialize()
                 AudioCommand cmd;
                 cmd.SourceData = std::move(newSource);
 
-                // CHECK IF WE ALREADY HAVE A SIMULATION RUNNING
                 if (myImpl->BakedRoomHandle.has_value())
                 {
                     cmd.Type = AudioCommand::UpdateSource;
@@ -232,7 +235,6 @@ void AudioEngine::Initialize()
                 OnSimulationReady.Broadcast(handleCopy);
             });
 
-        // Initialize the device AFTER setting up callbacks
         myImpl->DeviceManager.initialiseWithDefaultDevices(0, 2);
         myImpl->DeviceManager.addAudioCallback(myImpl.get());
     }
@@ -266,16 +268,12 @@ std::optional<AudioHandle> AudioEngine::RegisterSoundSource(const std::filesyste
         }
         std::filesystem::path cleanRelativePath(cleanPathStr);
 
-        // Now operator/ will safely append "Audio/..." to "Content/"
         fullPath = std::filesystem::weakly_canonical(absoluteContentRoot / cleanRelativePath);
     }
 
-    // Generate a path relative to your content root.
     std::filesystem::path relativeKey = std::filesystem::relative(fullPath, absoluteContentRoot);
 
 
-    // 1. Load the file (Heavy Work - Main Thread)
-    // ALWAYS pass the absolute 'fullPath' to JUCE so the OS can actually find it on disk.
     juce::File file(fullPath.wstring().c_str());
     std::unique_ptr<juce::AudioFormatReader> reader(myImpl->FormatManager.createReaderFor(file));
 
@@ -286,7 +284,6 @@ std::optional<AudioHandle> AudioEngine::RegisterSoundSource(const std::filesyste
     newFile->Buffer.setSize((int)reader->numChannels, (int)reader->lengthInSamples);
     reader->read(&newFile->Buffer, 0, (int)reader->lengthInSamples, 0, true, true);
 
-    // 2. Prepare the Source
     AudioHandle handle = myImpl->HandleCounter++;
     auto newSource = std::make_unique<AudioSource>();
     auto* device = myImpl->DeviceManager.getCurrentAudioDevice();
@@ -296,21 +293,15 @@ std::optional<AudioHandle> AudioEngine::RegisterSoundSource(const std::filesyste
     newSource->CurrentSound = newFile;
     newSource->IsPlaying = false;
 
-    // 3. Keep the data alive in our "Library"
-    // Use the relativeKey so your engine's asset tracking remains 100% consistent, 
-    // even if the user dragged in an absolute file path!
     myImpl->LoadedFiles[relativeKey.string()] = newFile;
     myImpl->FileRegistry[handle] = newFile;
 
-    // 4. Send the command to the Audio Thread
     AudioCommand cmd;
     cmd.Type = AudioCommand::AddSource;
     cmd.Handle = handle;
     cmd.SourceData = std::move(newSource);
     myImpl->PushCommand(std::move(cmd));
 
-
-    //TODO: Need to decouple handles for audio sources and emitters. There can be multiple emitters with the same audio source!!!
     
     return handle;
 }
@@ -327,15 +318,12 @@ void AudioEngine::UnregisterSoundSource(const AudioHandle aHandle)
 
 std::optional<EmitterHandle> AudioEngine::RegisterAudioEmitter(AudioHandle aSourceHandle, const EmitterSettings& someSettings, const CU::Matrix4x4f& aTransform)
 {
-    // Look up the raw file in our Main-Thread registry!
     auto it = myImpl->FileRegistry.find(aSourceHandle);
 
     if (it != myImpl->FileRegistry.end() && it->second != nullptr)
     {
-        // Grab the pointer to the buffer
         const juce::AudioBuffer<float>* sourceBuffer = &it->second->Buffer;
 
-        // Pass it securely to the Room Simulator
         return myImpl->Simulator.RegisterEmitter(sourceBuffer, someSettings, aTransform);
     }
 
@@ -492,13 +480,10 @@ void AudioEngine::Impl::audioDeviceIOCallbackWithContext(const float* const* inp
             auto it = AudioSources.find(cmd.Handle);
             if (it != AudioSources.end())
             {
-                // 1. Remember if the old source was playing or stopped
                 bool wasPlaying = AudioSources[cmd.Handle]->IsPlaying;
 
-                // 2. Swap the data
                 AudioSources[cmd.Handle] = std::move(cmd.SourceData);
 
-                // 3. Apply the old state to the new source
                 AudioSources[cmd.Handle]->IsPlaying = wasPlaying;
             }
             break;
@@ -507,7 +492,6 @@ void AudioEngine::Impl::audioDeviceIOCallbackWithContext(const float* const* inp
     }
     CommandFifo.finishedRead(size1);
 
-    // 2. MIXING
     juce::AudioBuffer<float> outputBuffer(const_cast<float**>(outputChannelData), numOutputChannels, numSamples);
     outputBuffer.clear();
 

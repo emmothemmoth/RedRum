@@ -28,7 +28,17 @@ void EditorInterface::Init(std::shared_ptr<Scene> aScene)
 void EditorInterface::InterfaceUpdate(const CU::Vector2U& aCursorPos, const float aDeltaTime)
 {
 	UpdateInputState(aCursorPos);
-	ToolUpdate(aDeltaTime);
+	switch (myMode
+)
+	{
+	case EditorMode::Editing:
+		ToolUpdate(aDeltaTime);
+		break;
+	case EditorMode::ListenerPOV:
+		break;
+	default:
+		break;
+	}
 }
 
 const std::vector<uint32_t>& EditorInterface::GetSelectedObjects()const

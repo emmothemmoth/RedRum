@@ -24,6 +24,7 @@ public:
 	void InitializeFromPoints(const std::vector<CU::Vector3f>& aPointList, std::vector<unsigned>& anIndexList, DebugColor aColor = DebugColor::Red, std::string_view aName = "");
 	void Initialize();
 
+	void AddLine(const CU::Vector3f& aStart, const CU::Vector3f& anEnd, const CU::Vector4f& aStartColor, const CU::Vector4f& anEndColor);
 	void AddLine(const CU::Vector3f& aStart, const CU::Vector3f& anEnd);
 	void SetColor(const DebugColor aColor);
 

@@ -199,29 +199,33 @@ void GUI::DisplayViewport(const float aDeltaTime)
 	{
 		ImGui::Image((ImTextureID)myViewportTexture->GetSRV().Get(), viewportPanelSize);
 	}
-	if (ImGui::BeginDragDropTarget())
+	if (myInterface.GetEditorMode() == EditorMode::Editing)
 	{
-		// Check if the payload is from the Content Browser
-		if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
+		if (ImGui::BeginDragDropTarget())
 		{
-			// Extract the string from the payload memory
-			const char* droppedPathStr = static_cast<const char*>(payload->Data);
-			std::filesystem::path droppedPath(droppedPathStr);
+			// Check if the payload is from the Content Browser
+			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
+			{
+				// Extract the string from the payload memory
+				const char* droppedPathStr = static_cast<const char*>(payload->Data);
+				std::filesystem::path droppedPath(droppedPathStr);
 
-			// Reuse the logic you already wrote for OS drag-and-drop!
-			myInterface.OnExternalFileDropped(droppedPath);
+				// Reuse the logic you already wrote for OS drag-and-drop!
+				myInterface.OnExternalFileDropped(droppedPath);
+			}
+
+			// Check if the payload is from the Built-In Types window
+			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("BUILT_IN_ITEM"))
+			{
+				// Extract the enum from the payload memory
+				BuiltInType droppedType = *static_cast<const BuiltInType*>(payload->Data);
+				myInterface.OnInternalFileDropped(droppedType);
+			}
+
+			ImGui::EndDragDropTarget();
 		}
-
-		// Check if the payload is from the Built-In Types window
-		if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("BUILT_IN_ITEM"))
-		{
-			// Extract the enum from the payload memory
-			BuiltInType droppedType = *static_cast<const BuiltInType*>(payload->Data);
-			myInterface.OnInternalFileDropped(droppedType);
-		}
-
-		ImGui::EndDragDropTarget();
 	}
+	
 
 	ImGui::End();
 	ImGui::PopStyleVar();
@@ -269,7 +273,7 @@ void GUI::DisplayInspector()
 			if (std::shared_ptr<ListenerComponent> listener = object->GetLastAddedComponent<ListenerComponent>())
 			{
 				ImGui::Separator();
-				if (scene->GetActiveCamera() != scene->GetCurrentLevel().Camera)
+				if (myInterface.GetEditorMode() == EditorMode::ListenerPOV)
 				{
 					if (ImGui::Button("Escape"))
 					{
@@ -284,9 +288,10 @@ void GUI::DisplayInspector()
 							box->SetVisible(true);
 						}
 						scene->ResetCamera();
+						myInterface.SetEditorMode(EditorMode::Editing);
 					}
 				}
-				else if(ImGui::Button("POV"))
+				else if(ImGui::Button("Enter POV"))
 				{
 					object->AddPosition(Gizmo_Axis::Gizmo_Y, 150.f);
 					object->GetComponent<MeshComponent>()->SetVisible(false);
@@ -299,6 +304,7 @@ void GUI::DisplayInspector()
 						box->SetVisible(false);
 					}
 					scene->ChangeCamera(object);
+					myInterface.SetEditorMode(EditorMode::ListenerPOV);
 				}
 			}
 			else if (std::shared_ptr<MeshComponent> mesh = object->GetLastAddedComponent<MeshComponent>())

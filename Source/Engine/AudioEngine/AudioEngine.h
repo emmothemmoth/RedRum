@@ -1,5 +1,7 @@
 #pragma once
 
+#include "RoomSimulator/VisualRayPath.h"
+
 #include <memory>
 #include <optional>
 #include <filesystem>
@@ -18,6 +20,7 @@ typedef uint32_t EmitterHandle;
 typedef uint32_t ObstacleHandle;
 using FOnSimulationReady = MulticastDelegate<AudioHandle>;
 using FOnSimulationStarted = MulticastDelegate<>;
+using FOnVisualRaysReady = MulticastDelegate<EmitterHandle, std::vector<VisualRayPath>>;
 
 enum class AudiosourceControl
 {
@@ -51,6 +54,7 @@ public:
 	bool IsInitialized() const { return myIsInitialized; }
 	FOnSimulationStarted OnSimulationStarted;
 	FOnSimulationReady OnSimulationReady;
+	FOnVisualRaysReady OnVisualRaysReady;
 
 private:
 	struct Impl;

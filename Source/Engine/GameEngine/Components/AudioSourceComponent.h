@@ -3,20 +3,19 @@
 #include <filesystem>
 
 #include "../AudioEngine/RoomSimulator/EmitterSettings.h"
-#include "../../GraphicsEngine/Objects/DebugLineObject.h"
+#include "../AudioEngine/RoomSimulator/VisualRayPath.h"
 
 #include "MainSingleton.h"
 
+class DebugLineObject;
 class AudioEngine;
 
-struct VisualRay
+struct RayAnimationTracker
 {
-	CU::Vector3f Origin;
-	CU::Vector3f Direction;
-	float MaxDistance = 1000.0f; // Where it hits a wall (you'll get this from a physics raycast later)
-	float CurrentDistance = 0.0f;
-	float Speed = 500.0f; // Units per second
-	bool IsFinished = false;
+	VisualRayPath PathData;
+	int CurrentBounceIndex = 0;
+	float CurrentBounceProgress = 0.0f; 
+	float Speed = 2500.0f;
 };
 
 class AudioSourceComponent : public Component
@@ -40,16 +39,19 @@ public:
 
 	void MarkDirty() { myIsDirty = true; }
 
-	void StartVisualRays();
 private:
-	std::vector<VisualRay> myVisualRays;
+	void ClearRays();
+	void ReceiveScoutRays(EmitterHandle aHandle, std::vector<VisualRayPath> somePaths);
+private:
+	std::vector<RayAnimationTracker> myAnimators;
 	std::shared_ptr<DebugLineObject> myDebugLines;
-	bool myIsAnimatingRays = false;
 	std::filesystem::path myFilePath;
 	EmitterSettings mySettings;
 	uint32_t mySourceHandle = UINT32_MAX;
 	uint32_t myEmitterHandle = UINT32_MAX;
 	DelegateHandle myVisualizeHandle;
+	DelegateHandle myScoutHandle;
+	bool myIsAnimatingRays = false;
 	bool myIsPlayable = false;
 	bool myIsDirty = false;
 };

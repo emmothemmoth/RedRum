@@ -7,6 +7,12 @@
 #include <memory>
 #include <array>
 
+enum class EditorMode
+{
+	Editing,
+	ListenerPOV
+};
+
 enum class EditorToolType
 {
 	ScreenPicker,
@@ -21,6 +27,9 @@ public:
 	EditorInterface() = default;
 	~EditorInterface() = default;
 	void Init(std::shared_ptr<Scene> aScene);
+
+	void SetEditorMode(EditorMode aMode) { myMode = aMode; }
+	EditorMode GetEditorMode() const { return myMode; }
 
 	void InterfaceUpdate(const CU::Vector2U& aCursorPos, const float aDeltaTime);
 
@@ -44,6 +53,7 @@ private:
 	std::array<std::shared_ptr<IEditorTool>, static_cast<size_t>(EditorToolType::Count)> myAvailableTools;
 	std::vector<uint32_t> mySelectedObjects;
 	std::shared_ptr<Scene> myActiveScene = nullptr;
+	EditorMode myMode = EditorMode::Editing;
 	EditorToolType myActiveTool = EditorToolType::ScreenPicker;
 	InputState myInputState;
 };
