@@ -105,7 +105,7 @@ void EditorInterface::AddBuiltInObject(BuiltInType aType)
 	case BuiltInType::Wall:
 	{
 		newObject = std::make_shared<GameObject>("Wall");
-		newObject->AddComponent(std::make_shared<MeshComponent>(*newObject, assetManager.GetAsset<MeshAsset>("WallMesh")));
+		newObject->AddComponent(std::make_shared<MeshComponent>(*newObject, assetManager.GetAsset<MeshAsset>("WallMesh"), true, true));
 		newObject->SetIcon(ComponentType::Mesh);
 		break;
 	}
@@ -115,7 +115,7 @@ void EditorInterface::AddBuiltInObject(BuiltInType aType)
 		newObject = std::make_shared<GameObject>(randomIndex == 0 ? "Mannequin_Male" : "Mannequin_Female");
 
 		std::string meshName = (randomIndex == 0) ? "SM_MannequinMale" : "SM_MannequinFemale";
-		newObject->AddComponent(std::make_shared<MeshComponent>(*newObject, assetManager.GetAsset<MeshAsset>(meshName)));
+		newObject->AddComponent(std::make_shared<MeshComponent>(*newObject, assetManager.GetAsset<MeshAsset>(meshName), true, true));
 		newObject->SetIcon(ComponentType::Mesh);
 		break;
 	}
@@ -123,7 +123,6 @@ void EditorInterface::AddBuiltInObject(BuiltInType aType)
 		return;
 	}
 
-	// Make sure they start at the origin (or at the mouse cursor's 3D projection if you have that math!)
 	newObject->SetPosition({ 0.0f, 0.0f, 0.0f });
 
 	myActiveScene->AddObject(newObject);

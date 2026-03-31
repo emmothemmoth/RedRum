@@ -1,0 +1,175 @@
+{
+  "Entities": [
+    {
+      "Name": "Camera",
+      "Transform": {
+        "Position": [ 0, 100, -1000 ],
+        "RotationDegrees": [ 0, 0, 0 ],
+        "scale": [ 1, 1, 1 ]
+      },
+      "Components": [
+        {
+          "TypeName": "CameraComponent",
+          "ComponentTypeID": 5
+        }
+      ]
+    },
+    {
+      "Name": "Listener",
+      "Transform": {
+        "Position": [ 0, 0, -200 ],
+        "RotationDegrees": [ 0, 0, 0 ],
+        "scale": [ 1, 1, 1 ]
+      },
+      "Components": [
+        {
+          "TypeName": "CameraComponent",
+          "ComponentTypeID": 5
+        },
+        {
+          "TypeName": "MeshComponent",
+          "ComponentTypeID": 0,
+          "AudioObstacle": true,
+          "Mesh": "SM_MannequinFemale"
+        },
+        {
+          "TypeName": "ListenerComponent",
+          "ComponentTypeID": 8
+        }
+      ]
+    },
+    {
+      "Name": "Ground",
+      "Transform": {
+        "Position": [ 0, 0, 0 ],
+        "RotationDegrees": [ 0, 0, 0 ],
+        "scale": [ 0.1, 0.1, 0.1 ]
+      },
+      "Components": [
+        {
+          "TypeName": "MeshComponent",
+          "ComponentTypeID": 0,
+          "Mesh": "GroundMesh",
+          "Material": "M_GroundMaterial"
+        }
+      ]
+    },
+    {
+      "Name": "Roof",
+      "Transform": {
+        "Position": [ 0.0, 250.0, 0.0 ],
+        "RotationDegrees": [ 90, 0, 0 ],
+        "scale": [ 1, 2.2, 1 ]
+      },
+      "Components": [
+        {
+          "TypeName": "MeshComponent",
+          "ComponentTypeID": 0,
+          "AudioObstacle": true,
+          "Mesh": "WallMesh"
+        }
+      ]
+    },
+    {
+      "Name": "Floor",
+      "Transform": {
+        "Position": [ 0.0, 0.0, 0.0 ],
+        "RotationDegrees": [ -90, 0, 0 ],
+        "scale": [ 1, 2.2, 1 ]
+      },
+      "Components": [
+        {
+          "TypeName": "MeshComponent",
+          "ComponentTypeID": 0,
+          "AudioObstacle": true,
+          "Mesh": "WallMesh"
+        }
+      ]
+    },
+    {
+      "Name": "Left",
+      "Transform": {
+        "Position": [ -240.0, 120.0, 0.0 ],
+        "RotationDegrees": [ 0, 90, 0 ],
+        "scale": [ 1, 1, 1 ]
+      },
+      "Components": [
+        {
+          "TypeName": "MeshComponent",
+          "ComponentTypeID": 0,
+          "AudioObstacle": true,
+          "Mesh": "WallMesh"
+        }
+      ]
+    },
+    {
+      "Name": "Right",
+      "Transform": {
+        "Position": [ 240.0, 120.0, 0.0 ],
+        "RotationDegrees": [ 0, -90, 0 ],
+        "scale": [ 1, 1, 1 ]
+      },
+      "Components": [
+        {
+          "TypeName": "MeshComponent",
+          "ComponentTypeID": 0,
+          "AudioObstacle": true,
+          "Mesh": "WallMesh"
+        }
+      ]
+    },
+    {
+      "Name": "Front",
+      "Transform": {
+        "Position": [ 0.0, 120.0, 250.0 ],
+        "RotationDegrees": [ 0, 180, 0 ],
+        "scale": [ 1, 1, 1 ]
+      },
+      "Components": [
+        {
+          "TypeName": "MeshComponent",
+          "ComponentTypeID": 0,
+          "AudioObstacle": true,
+          "Mesh": "WallMesh"
+        }
+      ]
+    },
+    {
+      "Name": "Back",
+      "Transform": {
+        "Position": [ 0.0, 120.0, -250.0 ],
+        "RotationDegrees": [ 0, -180, 0 ],
+        "scale": [ 1, 1, 1 ]
+      },
+      "Components": [
+        {
+          "TypeName": "MeshComponent",
+          "ComponentTypeID": 0,
+          "AudioObstacle": true,
+          "Mesh": "WallMesh"
+        }
+      ]
+    },
+    {
+      "Name": "Speaker",
+      "Transform": {
+        "Position": [ 0.0, 160.0, 157.0 ],
+        "RotationDegrees": [ 15, 180, 0 ],
+        "scale": [ 1, 1, 1 ]
+      },
+      "Components": [
+        {
+          "TypeName": "MeshComponent",
+          "ComponentTypeID": 0,
+          "AudioObstacle": false,
+          "Mesh": "SM_Speaker"
+        },
+        {
+          "TypeName": "AudioSourceComponent",
+          "ComponentTypeID": 7,
+          "File": "\\Audio\\example_music.wav"
+        }
+      ]
+    }
+  ]
+    }

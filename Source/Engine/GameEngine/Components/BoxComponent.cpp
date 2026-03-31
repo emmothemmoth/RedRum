@@ -18,7 +18,7 @@ BoxComponent::~BoxComponent()
 {
 }
 
-void BoxComponent::Initialize(const CU::Vector3f aMin, const CU::Vector3f aMax)
+void BoxComponent::Initialize(const CU::Vector3f aMin, const CU::Vector3f aMax, bool aIsAudioObstacle)
 {
 	myDebugObject = std::make_shared<DebugLineObject>();
 	CU::Vector3f topLeftClose(aMin.x, aMax.y, aMin.z);
@@ -49,6 +49,37 @@ void BoxComponent::Initialize(const CU::Vector3f aMin, const CU::Vector3f aMax)
 
 	myParent.OnComponentSelected.AddRaw(this, &BoxComponent::ShowLines);
 	myParent.OnComponentDeselected.AddRaw(this, &BoxComponent::HideLines);
+
+	if (!aIsAudioObstacle) return;
+
+	AABBCollider boxShape;
+	boxShape.MinPoint = aMin;
+	boxShape.MaxPoint = aMax;
+
+	myCollider.Shape = boxShape;
+
+	auto handle = MainSingleton::Get().GetAudioEngine().RegisterAudioObstacle(
+		myAbsorberSettings,
+		myCollider, myParent.GetTransform());
+	if (handle)
+	{
+		myObstacleHandle = handle.value();
+	}
+}
+
+void BoxComponent::Update(const float aDeltaTime)
+{
+	if (myObstacleHandle == UINT32_MAX) return;
+	aDeltaTime;
+	if (myParent.IsDirty())
+	{
+		MainSingleton::Get().GetAudioEngine().UpdateAudioObstacle(
+			myObstacleHandle,
+			myAbsorberSettings,
+			myCollider,
+			myParent.GetTransform()
+		);
+	}
 }
 
 

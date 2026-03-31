@@ -14,7 +14,7 @@
 #include "..\GraphicsEngine\GraphicsEngine.h"
 #include "BoxComponent.h"
 
-MeshComponent::MeshComponent(GameObject& aParent, std::shared_ptr<MeshAsset> aMesh, bool aShouldRenderLines)
+MeshComponent::MeshComponent(GameObject& aParent, std::shared_ptr<MeshAsset> aMesh, bool aShouldRenderLines, bool aIsAudioObstacle)
 	: Component(aParent)
 {
 	myMesh = aMesh;
@@ -25,7 +25,7 @@ MeshComponent::MeshComponent(GameObject& aParent, std::shared_ptr<MeshAsset> aMe
 	if (aShouldRenderLines)
 	{
 		myParent.AddComponent(std::make_shared<BoxComponent>(myParent));
-		myParent.GetLastAddedComponent<BoxComponent>()->Initialize(myMesh->GetMinPoint(), myMesh->GetMaxPoint());
+		myParent.GetLastAddedComponent<BoxComponent>()->Initialize(myMesh->GetMinPoint(), myMesh->GetMaxPoint(), aIsAudioObstacle);
 	}
 }
 

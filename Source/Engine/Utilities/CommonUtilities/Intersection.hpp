@@ -7,6 +7,63 @@
 #include <vector>
 namespace CommonUtilities
 {
+
+	inline bool RaycastAABB(const CU::Vector3f& rayOrigin, const CU::Vector3f& rayDir, const CU::Vector3f& boxMin, const CU::Vector3f& boxMax, float& outT, CU::Vector3f& outNormal)
+	{
+		float tMin = -INFINITY;
+		float tMax = INFINITY;
+
+		CU::Vector3f normals[3] = { {1,0,0}, {0,1,0}, {0,0,1} };
+		CU::Vector3f hitNormal = { 0,0,0 };
+
+		// Check all 3 axes (X, Y, Z)
+		for (int i = 0; i < 3; ++i)
+		{
+			// Manual absolute value
+			float dirAbs = rayDir[i] < 0.0f ? -rayDir[i] : rayDir[i];
+
+			if (dirAbs < 0.00001f)
+			{
+				// Ray is parallel to slab. No hit if origin not within slab
+				if (rayOrigin[i] < boxMin[i] || rayOrigin[i] > boxMax[i]) return false;
+			}
+			else
+			{
+				float ood = 1.0f / rayDir[i];
+				float t1 = (boxMin[i] - rayOrigin[i]) * ood;
+				float t2 = (boxMax[i] - rayOrigin[i]) * ood;
+
+				CU::Vector3f n = normals[i] * -1.0f;
+
+				if (t1 > t2)
+				{
+					// Manual Swap
+					float temp = t1;
+					t1 = t2;
+					t2 = temp;
+					n = normals[i];
+				}
+
+				if (t1 > tMin)
+				{
+					tMin = t1;
+					hitNormal = n;
+				}
+
+				// Manual Min
+				tMax = t2 < tMax ? t2 : tMax;
+
+				if (tMin > tMax) return false;
+			}
+		}
+
+		if (tMin < 0) return false; // Box is behind the ray
+
+		outT = tMin;
+		outNormal = hitNormal;
+		return true;
+	}
+
 	// If the ray is parallel to the plane, aOutIntersectionPoint remains unchanged. If
 // the ray is in the plane, true is returned, if not, false is returned. If the ray
 // isn't parallel to the plane, the intersection point is stored in

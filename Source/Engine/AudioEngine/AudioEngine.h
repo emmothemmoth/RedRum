@@ -45,6 +45,7 @@ public:
 	void UpdateAudioEmitter(const EmitterHandle aHandle, const EmitterSettings& someSettings, const CU::Matrix4x4f& aMatrix);
 	void UnregisterEmitter(const EmitterHandle aHandle);
 	std::optional<ObstacleHandle> RegisterAudioObstacle(const AbsorberSettings& someSettings, const Collider& aCollider, const CU::Matrix4x4f& aTransform);
+	void UpdateAudioObstacle(ObstacleHandle aHandle, const AbsorberSettings& someSettings, const Collider& aCollider, const CU::Matrix4x4f& aTransform);
 	void UnregisterAudioObstacle(ObstacleHandle aHandle);
 
 	void Control2DSource(const AudioHandle aHandle, const AudiosourceControl aControltype);

@@ -54,6 +54,23 @@ namespace CommonUtilities
 			negatedVector.z = z * -1;
 			return negatedVector;
 		}
+		// Read-only access by index
+		const T& operator[](const int aIndex) const
+		{
+			assert(aIndex >= 0 && aIndex < 3 && "Vector3 index out of bounds!");
+			if (aIndex == 0) return x;
+			if (aIndex == 1) return y;
+			return z;
+		}
+
+		// Write access by index
+		T& operator[](const int aIndex)
+		{
+			assert(aIndex >= 0 && aIndex < 3 && "Vector3 index out of bounds!");
+			if (aIndex == 0) return x;
+			if (aIndex == 1) return y;
+			return z;
+		}
 
 		//Returns the squared length of the vector
 		T LengthSqr() const

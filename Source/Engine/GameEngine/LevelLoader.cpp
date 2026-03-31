@@ -61,7 +61,12 @@ bool LevelLoader::LoadLevelFromJSON(const std::filesystem::path& aLevelPath, Lev
                 {
                 case ComponentType::Mesh:
                 {
-                    gameObject->AddComponent(std::make_shared<MeshComponent>(*gameObject, AssetManager::Get().GetAsset<MeshAsset>(component.at("Mesh"))));
+                    bool audioObstacle = false;
+                    if (component.contains("AudioObstacle"))
+                    {
+                        audioObstacle = component["AudioObstacle"];
+                    }
+                    gameObject->AddComponent(std::make_shared<MeshComponent>(*gameObject, AssetManager::Get().GetAsset<MeshAsset>(component.at("Mesh")), true, audioObstacle));
                     std::shared_ptr<MeshComponent> meshComp = gameObject->GetLastAddedComponent<MeshComponent>();
                     if (component.contains("RenderPass"))
                     {

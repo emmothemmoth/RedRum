@@ -19,6 +19,7 @@
 struct AudioObstacle
 {
 	CU::Matrix4x4f Transform;
+	CU::Matrix4x4f InverseTransform; // CRITICAL for the local-space trick
 	AbsorberSettings Absorber;
 	Collider Collider;
 	uint32_t ID;
@@ -43,7 +44,7 @@ public:
 	void UpdateEmitter(const uint32_t aHandle, const EmitterSettings& someSettings, const CU::Matrix4x4f& aTransform);
 	void UnregisterEmitter(const uint32_t aHandle);
 	std::optional<uint32_t> RegisterObstacle(const AbsorberSettings& someSettings, const Collider& aCollider, const CU::Matrix4x4f& aTransform);
-	void UpdateObstacle(const AbsorberSettings& someSettings, const Collider& aCollider, const CU::Matrix4x4f& aTransform);
+	void UpdateObstacle(const uint32_t aHandle, const AbsorberSettings& someSettings, const Collider& aCollider, const CU::Matrix4x4f& aTransform);
 	void UnregisterObstacle(const uint32_t aHandle);
 
 	void Simulate();

@@ -345,6 +345,11 @@ std::optional<ObstacleHandle> AudioEngine::RegisterAudioObstacle(const AbsorberS
     return myImpl->Simulator.RegisterObstacle(someSettings, aCollider, aTransform);
 }
 
+void AudioEngine::UpdateAudioObstacle(ObstacleHandle aHandle, const AbsorberSettings& someSettings, const Collider& aCollider, const CU::Matrix4x4f& aTransform)
+{
+    myImpl->Simulator.UpdateObstacle(aHandle, someSettings, aCollider, aTransform);
+}
+
 void AudioEngine::UnregisterAudioObstacle(ObstacleHandle aHandle)
 {
     myImpl->Simulator.UnregisterObstacle(aHandle);

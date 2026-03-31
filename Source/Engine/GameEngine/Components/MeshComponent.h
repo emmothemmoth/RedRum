@@ -10,7 +10,7 @@ class MeshComponent : public Component
 {
 public:
 	MeshComponent() = delete;
-	MeshComponent(GameObject& aParent, std::shared_ptr<MeshAsset> aMesh, bool aShouldRenderLines = true);
+	MeshComponent(GameObject& aParent, std::shared_ptr<MeshAsset> aMesh, bool aShouldRenderLines = true, bool aIsAudioObstacle = false);
 	~MeshComponent();
 	void Update(const float aDeltaTime) override;
 
