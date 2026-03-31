@@ -94,7 +94,7 @@ public:
 	template<typename VertexType>
 	bool CreateVertexBuffer(const std::string_view& aName, const std::vector<VertexType>& aVertexList, ComPtr<ID3D11Buffer>& outVxBuffer, bool aIsDynamic = false);
 
-	bool CreateIndexBuffer(std::string_view aName, const std::vector<unsigned>& aIndexList, Microsoft::WRL::ComPtr<ID3D11Buffer>& outIxBuffer);
+	bool CreateIndexBuffer(std::string_view aName, const std::vector<unsigned>& aIndexList, Microsoft::WRL::ComPtr<ID3D11Buffer>& outIxBuffer, bool aIsDynamic = false);
 
 	bool CreateConstantBuffer(std::string_view aName, size_t aSize, unsigned aSlot, unsigned aPipelineStages, ConstantBuffer& outBuffer);
 
@@ -103,6 +103,8 @@ public:
 
 	template<typename VertexType>
 	bool UpdateVertexBuffer(const VertexBuffer& aVertexBuffer, const std::vector<VertexType>& aVertexList);
+
+	bool UpdateIndexBuffer(Microsoft::WRL::ComPtr<ID3D11Buffer>& aIndexBuffer, const std::vector<unsigned>& aIndexList);
 
 	bool CreateSamplerState(std::string_view aName,  const D3D11_SAMPLER_DESC& aDescription);
 
@@ -248,7 +250,7 @@ template<typename VertexType>
 bool RHI::UpdateVertexBuffer(const VertexBuffer& aVertexBuffer, const std::vector<VertexType>& aVertexList)
 {
 	const size_t dataSize = sizeof(VertexType);
-	return UpdateVertexBufferInternal(aVertexBuffer, reinterpret_cast<const uint8_t*>(aVertexList.data()), aVertexBuffer.NumVertices, dataSize);
+	return UpdateVertexBufferInternal(aVertexBuffer, reinterpret_cast<const uint8_t*>(aVertexList.data()), aVertexList.size(), dataSize);
 }
 
 

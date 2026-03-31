@@ -358,6 +358,10 @@ void GraphicsEngine::Update()
 
 }
 
+bool GraphicsEngine::UpdateIndexBuffer(Microsoft::WRL::ComPtr<ID3D11Buffer>& aIndexBuffer, const std::vector<unsigned>& aIndexList)
+{
+	return myRHI->UpdateIndexBuffer(aIndexBuffer, aIndexList);
+}
 
 bool GraphicsEngine::PrepareParticleEmitter(ParticleEmitter& anEmitter)
 {
@@ -693,7 +697,7 @@ void GraphicsEngine::RenderDebugLines(const DebugLineObject& aDebugLineObject)
 {
 	SetVertexShader("Default_VS");
 	SetPixelShader("DebugLine_PS");
-	myRHI->SetVertexBuffer(aDebugLineObject.GetVertexBuffer(), myCurrentVertexShader->VertexStride, 0);
+	myRHI->SetVertexBuffer(aDebugLineObject.GetVertexBuffer().Buffer, myCurrentVertexShader->VertexStride, 0);
 	myRHI->SetIndexBuffer(aDebugLineObject.GetIndexBuffer());
 	myRHI->SetPrimitiveTopology(aDebugLineObject.GetPrimitiveTopology());
 
@@ -962,9 +966,9 @@ void GraphicsEngine::ClearRenderTarget(const std::shared_ptr<TextureAsset>& aRen
 }
 
 
-void GraphicsEngine::CreateIndexBuffer(std::string_view aName, const std::vector<unsigned>& aIndexList, Microsoft::WRL::ComPtr<ID3D11Buffer>& aOutIxBuffer)
+void GraphicsEngine::CreateIndexBuffer(std::string_view aName, const std::vector<unsigned>& aIndexList, Microsoft::WRL::ComPtr<ID3D11Buffer>& aOutIxBuffer, bool aIsDynamic)
 {
-	myRHI->CreateIndexBuffer(aName, aIndexList, aOutIxBuffer);
+	myRHI->CreateIndexBuffer(aName, aIndexList, aOutIxBuffer, aIsDynamic);
 }
 
 void GraphicsEngine::ResizeViewport(const unsigned aWidth, const unsigned aHeight)

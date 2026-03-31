@@ -331,9 +331,12 @@ bool RHI::UpdateConstantBufferInternal(const ConstantBuffer& aBuffer, const void
 	return true;
 }
 
-bool RHI::UpdateVertexBufferInternal(const VertexBuffer& aVertexBuffer, const uint8_t* aBufferData, size_t aNumVertices, size_t aVertexSize) const
+bool RHI::UpdateVertexBufferInternal(const VertexBuffer& aVertexBuffer, const uint8_t* aBufferData, size_t aNumActiveVertices, size_t aVertexSize) const
 {
-	if (!aVertexBuffer.Buffer || aVertexBuffer.VertexStride != aVertexSize || aVertexBuffer.DataSize != aNumVertices * aVertexSize)
+	size_t activeDataSizeInBytes = aNumActiveVertices * aVertexSize;
+
+	// CHANGE: Check if activeDataSizeInBytes > aVertexBuffer.DataSize (allow smaller updates!)
+	if (!aVertexBuffer.Buffer || aVertexBuffer.VertexStride != aVertexSize || activeDataSizeInBytes > aVertexBuffer.DataSize)
 	{
 		LOG(RHILog, Error, "Failed to update vertex buffer {}.", aVertexBuffer.Name);
 		return false;
@@ -348,21 +351,23 @@ bool RHI::UpdateVertexBufferInternal(const VertexBuffer& aVertexBuffer, const ui
 		return false;
 	}
 
-	memcpy_s(bufferData.pData, aVertexBuffer.DataSize, aBufferData, aVertexBuffer.DataSize);
+	// CHANGE: Only copy the activeDataSizeInBytes, not the full aVertexBuffer.DataSize
+	memcpy_s(bufferData.pData, aVertexBuffer.DataSize, aBufferData, activeDataSizeInBytes);
+
 	myContext->Unmap(aVertexBuffer.Buffer.Get(), 0);
 
 	return true;
-
 }
 
 
 
 
-bool RHI::CreateIndexBuffer(std::string_view aName, const std::vector<unsigned>& aIndexList, Microsoft::WRL::ComPtr<ID3D11Buffer>& outIxBuffer)
+bool RHI::CreateIndexBuffer(std::string_view aName, const std::vector<unsigned>& aIndexList, Microsoft::WRL::ComPtr<ID3D11Buffer>& outIxBuffer, bool aIsDynamic)
 {
 	D3D11_BUFFER_DESC indexBufferDesc = {};
 	indexBufferDesc.ByteWidth = static_cast<unsigned>(aIndexList.size() * sizeof(unsigned));
-	indexBufferDesc.Usage = D3D11_USAGE_IMMUTABLE;
+	indexBufferDesc.Usage = aIsDynamic ? D3D11_USAGE_DYNAMIC : D3D11_USAGE_IMMUTABLE;
+	indexBufferDesc.CPUAccessFlags = aIsDynamic ? D3D11_CPU_ACCESS_WRITE : 0;
 	indexBufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
 
 	D3D11_SUBRESOURCE_DATA indexSubresourceData = {};
@@ -408,6 +413,43 @@ bool RHI::CreateConstantBuffer(std::string_view aName, size_t aSize, unsigned aS
 
 	SetObjectName(outBuffer.myBuffer, aName);
 	LOG(RHILog, Log, "Created constant buffer {}.", aName);
+
+	return true;
+}
+
+bool RHI::UpdateIndexBuffer(Microsoft::WRL::ComPtr<ID3D11Buffer>& aIndexBuffer, const std::vector<unsigned>& aIndexList)
+{
+	if (!aIndexBuffer || aIndexList.empty())
+	{
+		return false;
+	}
+
+	size_t activeDataSizeInBytes = aIndexList.size() * sizeof(unsigned);
+
+	// 1. SAFETY CHECK: Ensure we aren't trying to push more data than the GPU buffer holds
+	D3D11_BUFFER_DESC desc;
+	aIndexBuffer->GetDesc(&desc);
+
+	if (activeDataSizeInBytes > desc.ByteWidth)
+	{
+		// You can use your custom logger here
+		// LOG(RHILog, Error, "Failed to update index buffer: Data size exceeds buffer capacity.");
+		return false;
+	}
+
+	// 2. MAP AND COPY
+	D3D11_MAPPED_SUBRESOURCE bufferData = {};
+	HRESULT result = myContext->Map(aIndexBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &bufferData);
+
+	if (FAILED(result))
+	{
+		// LOG(RHILog, Error, "Failed to map index buffer.");
+		return false;
+	}
+
+	// Safely copy only the active elements
+	memcpy_s(bufferData.pData, desc.ByteWidth, aIndexList.data(), activeDataSizeInBytes);
+	myContext->Unmap(aIndexBuffer.Get(), 0);
 
 	return true;
 }

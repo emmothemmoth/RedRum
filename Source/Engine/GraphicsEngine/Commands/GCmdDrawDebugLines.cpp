@@ -19,6 +19,10 @@ GCmdDrawDebugLines::~GCmdDrawDebugLines() = default;
 
 void GCmdDrawDebugLines::Execute()
 {
+	if (myDebugObject)
+	{
+		myDebugObject->UpdateBuffers();
+	}
 	ObjectBufferData objectBufferData;
 	objectBufferData.Transform = myTransform;
 	objectBufferData.InverseTranspose = CU::Matrix4x4<float>::Transpose(myTransform.GetInverse());
@@ -26,9 +30,7 @@ void GCmdDrawDebugLines::Execute()
 
 	auto& engine = GraphicsEngine::Get();
 	engine.UpdateAndSetConstantBuffer(ConstantBufferType::ObjectBuffer, objectBufferData);
-	//engine.ChangeRenderTarget(GraphicsEngine::Get().GetLDRBuffer());
-	//engine.SetVertexShader("Default_VS");
-	//engine.SetPixelShader("DebugLine_PS");
+
 	engine.RenderDebugLines(*myDebugObject);
 
 }

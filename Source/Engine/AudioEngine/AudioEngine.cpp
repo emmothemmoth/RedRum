@@ -347,6 +347,11 @@ void AudioEngine::UpdateAudioEmitter(const EmitterHandle aHandle, const EmitterS
     myImpl->Simulator.UpdateEmitter(aHandle, someSettings, aMatrix);
 }
 
+void AudioEngine::UnregisterEmitter(const EmitterHandle aHandle)
+{
+    myImpl->Simulator.UnregisterEmitter(aHandle);
+}
+
 std::optional<ObstacleHandle> AudioEngine::RegisterAudioObstacle(const AbsorberSettings& someSettings, const Collider& aCollider, const CU::Matrix4x4f& aTransform)
 {
     return myImpl->Simulator.RegisterObstacle(someSettings, aCollider, aTransform);

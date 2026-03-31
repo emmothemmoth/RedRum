@@ -88,6 +88,8 @@ public:
 	template<typename VertexType>
 	bool UpdateVertexBuffer(const VertexBuffer& aVertexBuffer, const std::vector<VertexType>& aVertexList);
 
+	bool UpdateIndexBuffer(Microsoft::WRL::ComPtr<ID3D11Buffer>& aIndexBuffer, const std::vector<unsigned>& aIndexList);
+
 	bool PrepareParticleEmitter(ParticleEmitter& anEmitter);
 
 
@@ -155,7 +157,7 @@ public:
 		Microsoft::WRL::ComPtr<ID3D11Buffer>& aOutVxBuffer, bool aDynamic = false);
 
 	void CreateIndexBuffer(std::string_view aName, const std::vector<unsigned>& aIndexList,
-		Microsoft::WRL::ComPtr<ID3D11Buffer>& aOutIxBuffer);
+		Microsoft::WRL::ComPtr<ID3D11Buffer>& aOutIxBuffer, bool aIsDynamic = false);
 
 	void ResizeViewport(const unsigned aWidth, const unsigned aHeight);
 
