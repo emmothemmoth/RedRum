@@ -159,6 +159,11 @@ void Scene::RenderScene()
 	renderer.Enqueue<GCmdSetDebugBuffer>(myDebugBuffer);
 	myDirLight->GetComponent<ShadowCameraComponent>()->Render();
 	myActiveCamera->Render();
+	if (myActiveCamera != myCurrentLevel.Camera)
+	{
+		//TODO: Camera icon rendering
+		myCurrentLevel.Camera->Render();
+	}
 	
 	for (auto& object : mySortingList)
 	{

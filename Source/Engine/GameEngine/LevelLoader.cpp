@@ -34,6 +34,7 @@ bool LevelLoader::LoadLevelFromJSON(const std::filesystem::path& aLevelPath, Lev
         if (name.starts_with("Camera"))
         {
             inOutLevel.Camera = std::make_shared<GameObject>(name, gameObjectIDCounter++);
+            inOutLevel.Camera->SetIcon(ComponentType::Camera);
             gameObject = inOutLevel.Camera;
         }
         else

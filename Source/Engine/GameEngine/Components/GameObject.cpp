@@ -106,6 +106,10 @@ void GameObject::SetIcon(ComponentType aComponentType, const CU::Vector4f& anOff
 	icon->SetOffset(anOffset);
 	switch (aComponentType)
 	{
+	case ComponentType::Camera:
+		icon->SetTexture(AssetManager::Get().GetAsset<TextureAsset>("T_CameraIcon_C"));
+		icon->SetVisible(true);
+		return;
 	case ComponentType::AudioSource:
 		icon->SetTexture(AssetManager::Get().GetAsset<TextureAsset>("T_SourceIcon_C"));
 		icon->SetVisible(true);
