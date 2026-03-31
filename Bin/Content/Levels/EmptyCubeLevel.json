@@ -67,11 +67,6 @@
           "Mesh": "SM_Speaker"
         },
         {
-          "TypeName": "ControllerComponent",
-          "ComponentTypeID": 3,
-          "ControllerType": "USER"
-        },
-        {
           "TypeName": "AudioSourceComponent",
           "ComponentTypeID": 7,
           "File": "\\Audio\\example_music.wav"

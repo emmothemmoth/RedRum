@@ -346,6 +346,7 @@ void Scene::InitSceneLights()
 	myPointLights[0]->AddComponent(std::make_shared<PointLightComponent>(*myPointLights[0]));
 	myPointLights[0]->GetComponent<PointLightComponent>()->InitPointLight(0, pointColor, 4.5f, pointRange,
 		pointPos, pointProj, pointViewInv);
+	myPointLights[0]->GetComponent<PointLightComponent>()->GetLightData()->Active = false;
 	myPointLights[0]->AddComponent(std::make_shared<ShadowCameraComponent>(*myPointLights[0]));
 	myPointLights[0]->GetComponent<ShadowCameraComponent>()->Init(pointViewInv, pointProj, pointPos);
 	myLightBuffer->PointLightCount++;
@@ -367,6 +368,7 @@ void Scene::InitSceneLights()
 	mySpotLights[0]->AddComponent(std::make_shared<SpotLightComponent>(*mySpotLights[0]));
 	mySpotLights[0]->GetComponent<SpotLightComponent>()->InitSpotLight(0, spotColor, 0.5f, spotRange, spotDir,
 		spotPos, spotInnerConeAngle, spotOuterConeAngle, spotProj, spotViewInv);
+	mySpotLights[0]->GetComponent<SpotLightComponent>()->GetLightData()->Active = false;
 	mySpotLights[0]->AddComponent(std::make_shared<ShadowCameraComponent>(*mySpotLights[0]));
 	mySpotLights[0]->GetComponent<ShadowCameraComponent>()->Init(spotViewInv, spotProj, spotPos);
 	myLightBuffer->SpotLightCount++;
