@@ -65,6 +65,7 @@ private:
     void DisplayInspector();
     void DisplayContentBrowser();
     void DisplayBuiltInTypes();
+    void DisplayToolbar();
 
     std::string BuiltInTypeToString(BuiltInType aType);
 
@@ -77,6 +78,9 @@ private:
     std::shared_ptr<TextureAsset> myMeshIcon;
     std::shared_ptr<TextureAsset> myAudioIcon;
     std::shared_ptr<TextureAsset> myFileIcon;
+    std::shared_ptr<TextureAsset> myPlayIcon;
+    std::shared_ptr<TextureAsset> myStopIcon;
+    std::shared_ptr<TextureAsset> myBakeIcon;
     EditorInterface myInterface;
     std::filesystem::path myCurrentDirectory;
     std::filesystem::path myContentRoot;

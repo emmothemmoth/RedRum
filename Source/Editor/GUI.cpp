@@ -25,6 +25,7 @@
 #include "Components/AudioSourceComponent.h"
 #include "Components/ListenerComponent.h"
 #include "Components/BoxComponent.h"
+#include "../Engine/External/DearImGui/imgui_internal.h"
 
 
 
@@ -65,6 +66,7 @@ void GUI::Update(const float aDeltatime)
 	DisplayInspector();
 	DisplayContentBrowser();
 	DisplayBuiltInTypes();
+	DisplayToolbar();
 
 	ImGui::EndFrame();
 	//update editortools and other stuff
@@ -136,6 +138,9 @@ void GUI::InitIcons()
 	myMeshIcon = assetManager.GetAsset<TextureAsset>("T_MeshIcon_C");
 	myAudioIcon = assetManager.GetAsset<TextureAsset>("T_AudioIcon_C");
 	myFileIcon = assetManager.GetAsset<TextureAsset>("T_FileIcon_C");
+	myPlayIcon = assetManager.GetAsset<TextureAsset>("T_PlayIcon_C");
+	myStopIcon = assetManager.GetAsset<TextureAsset>("T_StopIcon_C");
+	myBakeIcon = assetManager.GetAsset<TextureAsset>("T_BakeIcon_C");
 }
 
 void GUI::DisplayViewport(const float aDeltaTime)
@@ -459,6 +464,66 @@ void GUI::DisplayBuiltInTypes()
 		ImGui::EndTable();
 	}
 	ImGui::Separator();
+	ImGui::End();
+}
+
+void GUI::DisplayToolbar()
+{
+	ImGui::Begin("Main Toolbar", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar);
+
+	const std::shared_ptr<Scene>& scene = myInterface.GetActiveScene();
+	if (scene)
+	{
+		std::shared_ptr<ListenerComponent> listener = scene->GetListener();
+
+		if (listener)
+		{
+			ImVec2 iconSize(24.0f, 24.0f);
+
+			// Get your Texture IDs (Casting your DirectX11 SRVs)
+			ImTextureID bakeTex = (ImTextureID)myBakeIcon->GetSRV().Get();
+			ImTextureID playTex = (ImTextureID)myPlayIcon->GetSRV().Get();
+			ImTextureID stopTex = (ImTextureID)myStopIcon->GetSRV().Get();
+
+
+			if (ImGui::ImageButton("BakeBtn", bakeTex, iconSize))
+			{
+				MainSingleton::Get().GetAudioEngine().StartRoomSimulation();
+			}
+
+			// Optional: Add a tooltip so users know what the icon does
+			if (ImGui::IsItemHovered()) ImGui::SetTooltip("Bake Room Simulation");
+
+			ImGui::SameLine();
+			ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical);
+			ImGui::SameLine();
+
+			// 2. Play & Stop Buttons
+			bool isPlayable = listener->IsPlayable();
+			ImGui::BeginDisabled(!isPlayable);
+
+			if (ImGui::ImageButton("PlayBtn", playTex, iconSize))
+			{
+				listener->StartPreview();
+			}
+			if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) ImGui::SetTooltip("Play Simulation");
+
+			ImGui::SameLine();
+
+			if (ImGui::ImageButton("StopBtn", stopTex, iconSize))
+			{
+				listener->StopPreview();
+			}
+			if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) ImGui::SetTooltip("Stop Simulation");
+
+			ImGui::EndDisabled();
+		}
+		else
+		{
+			ImGui::TextColored(ImVec4(1.0f, 0.4f, 0.4f, 1.0f), "No Listener in Scene!");
+		}
+	}
+
 	ImGui::End();
 }
 

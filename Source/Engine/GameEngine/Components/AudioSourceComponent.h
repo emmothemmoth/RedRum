@@ -20,15 +20,17 @@ public:
 	void Pause();
 	void Stop();
 
-	void OnEditorChange();
-
 	bool IsPlayable() const { return myIsPlayable; }
 
 	const std::filesystem::path& GetAudioSourceName() const { return myFilePath; }
 	EmitterSettings& GetSettings() { return mySettings; }
+
+	void MarkDirty() { myIsDirty = true; }
 private:
-	uint32_t myAudioHandle = UINT32_MAX;
 	std::filesystem::path myFilePath;
 	EmitterSettings mySettings;
+	uint32_t mySourceHandle = UINT32_MAX;
+	uint32_t myEmitterHandle = UINT32_MAX;
 	bool myIsPlayable = false;
+	bool myIsDirty = false;
 };

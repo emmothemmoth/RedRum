@@ -49,6 +49,7 @@ public:
 	const CU::Vector3f& GetScale() const { return myScale; }
 
 	bool IsSelected() const { return myIsSelected; }
+	bool IsDirty() const { return myIsDirty; }
 
 	void OnSelected();
 	void OnDeselected();

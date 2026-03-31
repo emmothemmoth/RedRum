@@ -111,7 +111,7 @@ struct AudioSource
         }
     }
     CommonUtilities::Matrix4x4f Transform;
-    AudioFile* CurrentSound = nullptr;
+    std::shared_ptr<AudioFile> CurrentSound;
     std::vector<std::unique_ptr<juce::LagrangeInterpolator>> Interpolators;
     double Ratio = 1.0;
     int ReadIndex = 0;
@@ -125,7 +125,7 @@ struct AudioCommand
     AudioCommand(AudioCommand&&) noexcept = default;
     AudioCommand& operator=(AudioCommand&&) noexcept = default;
 
-    enum { Play, Stop, Pause, StopAll, UpdateTransform, AddSource } Type;
+    enum { Play, Stop, Pause, StopAll, AddSource, UpdateSource } Type;
     AudioHandle Handle;
     std::unique_ptr<AudioSource> SourceData;
     // You can add Matrix4x4 here for 3D updates later
@@ -164,6 +164,7 @@ struct AudioEngine::Impl : public juce::AudioIODeviceCallback
 
     juce::AudioFormatManager FormatManager;
     std::unordered_map<std::string, std::shared_ptr<AudioFile>> LoadedFiles;
+    std::unordered_map<AudioHandle, std::shared_ptr<AudioFile>> FileRegistry;
 
     juce::ScopedJuceInitialiser_GUI juceInit;
 	juce::AudioDeviceManager DeviceManager;
@@ -173,6 +174,7 @@ struct AudioEngine::Impl : public juce::AudioIODeviceCallback
     std::filesystem::path ContentPath;
 
     RoomSimulator Simulator;
+    std::optional<AudioHandle> BakedRoomHandle = std::nullopt;
 };
 
 AudioEngine::AudioEngine()
@@ -190,6 +192,47 @@ void AudioEngine::Initialize()
     {
         myImpl = std::make_unique<Impl>();
         myIsInitialized = true;
+
+        // --- Define the callback here ---
+        myImpl->Simulator.OnBakeComplete.AddLambda([this](juce::AudioBuffer<float> bakedBuffer)
+            {
+                auto newFile = std::make_shared<AudioFile>();
+                newFile->Buffer = std::move(bakedBuffer);
+                newFile->SampleRate = 44100.0;
+
+                myImpl->LoadedFiles["Baked_Room_Simulation"] = newFile;
+
+                auto newSource = std::make_unique<AudioSource>();
+                auto* device = myImpl->DeviceManager.getCurrentAudioDevice();
+                double hardwareSampleRate = device ? device->getCurrentSampleRate() : 44100.0;
+
+                newSource->Prepare(newFile->Buffer.getNumChannels());
+                newSource->Ratio = newFile->SampleRate / hardwareSampleRate;
+                newSource->CurrentSound = newFile;
+                newSource->IsPlaying = false;
+
+                AudioCommand cmd;
+                cmd.SourceData = std::move(newSource);
+
+                // CHECK IF WE ALREADY HAVE A SIMULATION RUNNING
+                if (myImpl->BakedRoomHandle.has_value())
+                {
+                    cmd.Type = AudioCommand::UpdateSource;
+                    cmd.Handle = myImpl->BakedRoomHandle.value();
+                }
+                else
+                {
+                    myImpl->BakedRoomHandle = myImpl->HandleCounter++;
+                    cmd.Type = AudioCommand::AddSource;
+                    cmd.Handle = myImpl->BakedRoomHandle.value();
+                }
+
+                AudioHandle handleCopy = cmd.Handle;
+                myImpl->PushCommand(std::move(cmd));
+                OnSimulationReady.Broadcast(handleCopy);
+            });
+
+        // Initialize the device AFTER setting up callbacks
         myImpl->DeviceManager.initialiseWithDefaultDevices(0, 2);
         myImpl->DeviceManager.addAudioCallback(myImpl.get());
     }
@@ -198,6 +241,11 @@ void AudioEngine::Initialize()
 void AudioEngine::InitListener(const CU::Matrix4x4f& aTransform)
 {
     myImpl->Simulator.InitListener(aTransform);
+}
+
+void AudioEngine::UpdateListener(const CU::Matrix4x4f& aTransform)
+{
+    myImpl->Simulator.UpdateListener(aTransform);
 }
 
 std::optional<AudioHandle> AudioEngine::RegisterSoundSource(const std::filesystem::path& aFilePath)
@@ -245,13 +293,14 @@ std::optional<AudioHandle> AudioEngine::RegisterSoundSource(const std::filesyste
     double hardwareSampleRate = device ? device->getCurrentSampleRate() : 44100.0;
     newSource->Prepare(reader->numChannels);
     newSource->Ratio = newFile->SampleRate / hardwareSampleRate;
-    newSource->CurrentSound = newFile.get();
+    newSource->CurrentSound = newFile;
     newSource->IsPlaying = false;
 
     // 3. Keep the data alive in our "Library"
     // Use the relativeKey so your engine's asset tracking remains 100% consistent, 
     // even if the user dragged in an absolute file path!
     myImpl->LoadedFiles[relativeKey.string()] = newFile;
+    myImpl->FileRegistry[handle] = newFile;
 
     // 4. Send the command to the Audio Thread
     AudioCommand cmd;
@@ -278,14 +327,24 @@ void AudioEngine::UnregisterSoundSource(const AudioHandle aHandle)
 
 std::optional<EmitterHandle> AudioEngine::RegisterAudioEmitter(AudioHandle aSourceHandle, const EmitterSettings& someSettings, const CU::Matrix4x4f& aTransform)
 {
-    aSourceHandle;
-    someSettings;
-    aTransform;
-    EmitterHandle handle;
-    //TODO: need to get the source buffer from the impl
-    //auto handle = myImpl->Simulator.RegisterEmitter(BUFFER, someSettings, aTransform);
-    //return handle;
-    return handle;
+    // Look up the raw file in our Main-Thread registry!
+    auto it = myImpl->FileRegistry.find(aSourceHandle);
+
+    if (it != myImpl->FileRegistry.end() && it->second != nullptr)
+    {
+        // Grab the pointer to the buffer
+        const juce::AudioBuffer<float>* sourceBuffer = &it->second->Buffer;
+
+        // Pass it securely to the Room Simulator
+        return myImpl->Simulator.RegisterEmitter(sourceBuffer, someSettings, aTransform);
+    }
+
+    return std::nullopt;
+}
+
+void AudioEngine::UpdateAudioEmitter(const EmitterHandle aHandle, const EmitterSettings& someSettings, const CU::Matrix4x4f& aMatrix)
+{
+    myImpl->Simulator.UpdateEmitter(aHandle, someSettings, aMatrix);
 }
 
 std::optional<ObstacleHandle> AudioEngine::RegisterAudioObstacle(const AbsorberSettings& someSettings, const Collider& aCollider, const CU::Matrix4x4f& aTransform)
@@ -296,11 +355,6 @@ std::optional<ObstacleHandle> AudioEngine::RegisterAudioObstacle(const AbsorberS
 void AudioEngine::UnregisterAudioObstacle(ObstacleHandle aHandle)
 {
     myImpl->Simulator.UnregisterObstacle(aHandle);
-}
-
-void AudioEngine::UpdateSoundSource(const AudioHandle aHandle, const CU::Matrix4x4f& aMatrix)
-{
-    aMatrix, aHandle;
 }
 
 void AudioEngine::Impl::PushCommand(AudioCommand aCommand)
@@ -344,6 +398,12 @@ void AudioEngine::Control2DSource(const AudioHandle aHandle, const AudiosourceCo
     cmd.Handle = aHandle;
 
     myImpl->PushCommand(std::move(cmd));
+}
+
+void AudioEngine::StartRoomSimulation()
+{
+    OnSimulationStarted.Broadcast();
+    myImpl->Simulator.Simulate();
 }
 
 AudioEngine::Impl::Impl()
@@ -419,6 +479,22 @@ void AudioEngine::Impl::audioDeviceIOCallbackWithContext(const float* const* inp
             {
                 source->IsPlaying = false;
                 source->ReadIndex = 0;
+            }
+            break;
+        }
+        case AudioCommand::UpdateSource:
+        {
+            auto it = AudioSources.find(cmd.Handle);
+            if (it != AudioSources.end())
+            {
+                // 1. Remember if the old source was playing or stopped
+                bool wasPlaying = AudioSources[cmd.Handle]->IsPlaying;
+
+                // 2. Swap the data
+                AudioSources[cmd.Handle] = std::move(cmd.SourceData);
+
+                // 3. Apply the old state to the new source
+                AudioSources[cmd.Handle]->IsPlaying = wasPlaying;
             }
             break;
         }

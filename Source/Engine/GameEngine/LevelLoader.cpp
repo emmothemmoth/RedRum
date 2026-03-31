@@ -13,7 +13,7 @@
 
 #include <fstream>
 
-bool LevelLoader::LoadLevelFromJSON(const std::filesystem::path& aLevelPath, Level& inOutLevel, uint32_t& outIDCount)
+bool LevelLoader::LoadLevelFromJSON(const std::filesystem::path& aLevelPath, Level& inOutLevel, uint32_t& outIDCount, uint32_t& outListenerID)
 {
     nlohmann::json jsonReader;
     std::fstream file(aLevelPath);
@@ -165,6 +165,7 @@ bool LevelLoader::LoadLevelFromJSON(const std::filesystem::path& aLevelPath, Lev
                     break;
                 case ComponentType::Listener:
                 {
+                    outListenerID = gameObject->GetID();
                     gameObject->AddComponent(std::make_shared<ListenerComponent>(*gameObject));
                     gameObject->SetIcon(ComponentType::Listener, { 0.0f, 125.0f, 0.0f, 0.0f });
                 }

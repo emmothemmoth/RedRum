@@ -18,6 +18,7 @@ class Component;
 class CameraComponent;
 class ShadowCameraComponent;
 class AnimationComponent;
+class ListenerComponent;
 class GameObject;
 struct DebugBuffer;
 
@@ -65,6 +66,8 @@ public:
 	void ChangeCamera(std::shared_ptr<GameObject> aCameraObject);
 	void ResetCamera();
 
+	std::shared_ptr<ListenerComponent> GetListener() const;
+
 private:
 	void SortObjects();
 	void InitSceneLights();
@@ -92,4 +95,5 @@ private:
 	uint32_t myIDCounter = 0;
 	std::string myCurrentScene;
 	bool myShouldClear = false;
+	uint32_t myListenerID = UINT32_MAX;
 };

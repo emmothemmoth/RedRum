@@ -65,7 +65,16 @@ void Scene::LoadScene(const std::filesystem::path& aPath, bool aIsNetworkLevel)
 	InitSceneLights();
 	if (!aIsNetworkLevel)
 	{
-		myLevelLoader.LoadLevelFromJSON(aPath, myCurrentLevel, myIDCounter);
+		myLevelLoader.LoadLevelFromJSON(aPath, myCurrentLevel, myIDCounter, myListenerID);
+		if (myListenerID == UINT32_MAX)
+		{
+			LOG(SceneLog, Verbose, "Scene with no listener loaded!");
+			myListenerID = myIDCounter;
+			myCurrentLevel.GameObjects.push_back(std::make_shared<GameObject>("Listener", myIDCounter++));
+			std::shared_ptr<GameObject> listener = myCurrentLevel.GameObjects.back();
+			listener->AddComponent(std::make_shared<ListenerComponent>(*listener));
+			listener->SetIcon(ComponentType::Listener, { 0.0f, 125.0f, 0.0f, 0.0f });
+		}
 	}
 	else
 	{
@@ -285,6 +294,12 @@ void Scene::ResetCamera()
 	myActiveCamera = myCurrentLevel.Camera;
 	myActiveCamera->GetComponent<CameraComponent>()->SetEnabled(true);
 	myActiveCamera->GetComponent<CameraComponent>()->SetVisible(true);
+}
+
+std::shared_ptr<ListenerComponent> Scene::GetListener() const
+{
+	assert(myListenerID != UINT32_MAX);
+	return myCurrentLevel.GameObjects.at(myIDtoIndex.at(myListenerID))->GetComponent<ListenerComponent>();
 }
 
 void Scene::SortObjects()
