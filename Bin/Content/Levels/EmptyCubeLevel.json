@@ -29,7 +29,8 @@
         {
           "TypeName": "MeshComponent",
           "ComponentTypeID": 0,
-          "Mesh": "SM_MannequinFemale"
+          "Mesh": "SM_MannequinFemale",
+          "Material": "M_ListenerMaterial"
         },
         {
           "TypeName": "ListenerComponent",
@@ -64,7 +65,8 @@
         {
           "TypeName": "MeshComponent",
           "ComponentTypeID": 0,
-          "Mesh": "SM_Speaker"
+          "Mesh": "SM_Speaker",
+          "Material": "M_SpeakerMaterial"
         },
         {
           "TypeName": "AudioSourceComponent",

@@ -3,8 +3,8 @@
     {
       "Name": "Camera",
       "Transform": {
-        "Position": [ 0, 100, -1000 ],
-        "RotationDegrees": [ 0, 0, 0 ],
+        "Position": [ -400, 150, 0 ],
+        "RotationDegrees": [ 0, 90, 0 ],
         "scale": [ 1, 1, 1 ]
       },
       "Components": [
@@ -17,9 +17,9 @@
     {
       "Name": "Listener",
       "Transform": {
-        "Position": [ 0, 0, -200 ],
+        "Position": [ 0, 150, -200 ],
         "RotationDegrees": [ 0, 0, 0 ],
-        "scale": [ 1, 1, 1 ]
+        "scale": [ 0.5, 0.5, 0.5 ]
       },
       "Components": [
         {
@@ -30,7 +30,8 @@
           "TypeName": "MeshComponent",
           "ComponentTypeID": 0,
           "AudioObstacle": false,
-          "Mesh": "SM_MannequinFemale"
+          "Mesh": "SpereMesh",
+          "Material": "M_ListenerMaterial"
         },
         {
           "TypeName": "ListenerComponent",
@@ -57,16 +58,17 @@
     {
       "Name": "Roof",
       "Transform": {
-        "Position": [ 0.0, 250.0, 0.0 ],
+        "Position": [ 0.0, 480.0, 0.0 ],
         "RotationDegrees": [ 90, 0, 0 ],
-        "scale": [ 1, 2.2, 1 ]
+        "scale": [ 2, 4, 1 ]
       },
       "Components": [
         {
           "TypeName": "MeshComponent",
           "ComponentTypeID": 0,
           "AudioObstacle": true,
-          "Mesh": "WallMesh"
+          "Mesh": "WallMesh",
+          "Material": "M_WoodMaterial"
         }
       ]
     },
@@ -75,78 +77,83 @@
       "Transform": {
         "Position": [ 0.0, 0.0, 0.0 ],
         "RotationDegrees": [ -90, 0, 0 ],
-        "scale": [ 1, 2.2, 1 ]
+        "scale": [ 2, 4, 1 ]
       },
       "Components": [
         {
           "TypeName": "MeshComponent",
           "ComponentTypeID": 0,
           "AudioObstacle": true,
-          "Mesh": "WallMesh"
+          "Mesh": "WallMesh",
+          "Material": "M_WoodMaterial"
         }
       ]
     },
     {
       "Name": "Left",
       "Transform": {
-        "Position": [ -240.0, 120.0, 0.0 ],
+        "Position": [ -480.0, 240.0, 0.0 ],
         "RotationDegrees": [ 0, 90, 0 ],
-        "scale": [ 1, 1, 1 ]
+        "scale": [ 2, 2, 1 ]
       },
       "Components": [
         {
           "TypeName": "MeshComponent",
           "ComponentTypeID": 0,
           "AudioObstacle": true,
-          "Mesh": "WallMesh"
+          "Mesh": "WallMesh",
+          "Material": "M_WoodMaterial"
         }
       ]
     },
     {
       "Name": "Right",
       "Transform": {
-        "Position": [ 240.0, 120.0, 0.0 ],
+        "Position": [ 480.0, 240.0, 0.0 ],
         "RotationDegrees": [ 0, -90, 0 ],
-        "scale": [ 1, 1, 1 ]
+        "scale": [ 2, 2, 1 ]
       },
       "Components": [
         {
           "TypeName": "MeshComponent",
           "ComponentTypeID": 0,
           "AudioObstacle": true,
-          "Mesh": "WallMesh"
+          "Mesh": "WallMesh",
+          "Material": "M_WoodMaterial"
         }
       ]
     },
     {
       "Name": "Front",
       "Transform": {
-        "Position": [ 0.0, 120.0, 250.0 ],
+        "Position": [ 0.0, 240.0, 480.0 ],
         "RotationDegrees": [ 0, 180, 0 ],
-        "scale": [ 1, 1, 1 ]
+        "scale": [ 2, 2, 1 ]
       },
       "Components": [
         {
           "TypeName": "MeshComponent",
           "ComponentTypeID": 0,
           "AudioObstacle": true,
-          "Mesh": "WallMesh"
+          "Mesh": "WallMesh",
+          "Material": "M_WoodMaterial"
         }
       ]
     },
     {
       "Name": "Back",
       "Transform": {
-        "Position": [ 0.0, 120.0, -250.0 ],
+        "Position": [ 0.0, 240.0, -480.0 ],
         "RotationDegrees": [ 0, -180, 0 ],
-        "scale": [ 1, 1, 1 ]
+        "scale": [ 2, 2, 1 ]
       },
       "Components": [
         {
           "TypeName": "MeshComponent",
           "ComponentTypeID": 0,
           "AudioObstacle": true,
-          "Mesh": "WallMesh"
+          "Mesh": "WallMesh",
+          "Material": "M_WoodMaterial"
         }
       ]
     },
@@ -162,7 +169,8 @@
           "TypeName": "MeshComponent",
           "ComponentTypeID": 0,
           "AudioObstacle": false,
-          "Mesh": "SM_Speaker"
+          "Mesh": "SM_Speaker",
+          "Material": "M_SpeakerMaterial"
         },
         {
           "TypeName": "AudioSourceComponent",

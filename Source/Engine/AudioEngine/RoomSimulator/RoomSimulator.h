@@ -30,6 +30,7 @@ struct AudioEmitter
 	const juce::AudioBuffer<float>* SourceBuffer = nullptr;
 	CU::Matrix4x4f Transform;
 	EmitterSettings Settings;
+	float SampleRate;
 	uint32_t ID;
 };
 
@@ -51,7 +52,7 @@ public:
 	void Update();
 	void InitListener(const CU::Matrix4x4f& aTransform);
 	void UpdateListener(const CU::Matrix4x4f& aTransform);
-	std::optional<uint32_t> RegisterEmitter(const juce::AudioBuffer<float>* aSourceBuffer, const EmitterSettings& someSettings, const CU::Matrix4x4f& aTransform);
+	std::optional<uint32_t> RegisterEmitter(const juce::AudioBuffer<float>* aSourceBuffer, float aSampleRate, const EmitterSettings& someSettings, const CU::Matrix4x4f& aTransform);
 	void UpdateEmitter(const uint32_t aHandle, const EmitterSettings& someSettings, const CU::Matrix4x4f& aTransform);
 	void UnregisterEmitter(const uint32_t aHandle);
 	std::optional<uint32_t> RegisterObstacle(const AbsorberSettings& someSettings, const Collider& aCollider, const CU::Matrix4x4f& aTransform);
@@ -63,7 +64,7 @@ public:
 	MulticastDelegate<juce::AudioBuffer<float>> OnBakeComplete;
 	MulticastDelegate<uint32_t, std::vector<VisualRayPath>> OnScoutBatchReady;
 	const juce::AudioBuffer<float>& GetSimulation() const { return mySimulation; }
-
+	void SetBakeRate(const double& aBakeRate) { myBakeRate = aBakeRate; }
 private:
 	void WorkerThreadLoop();
 
@@ -82,7 +83,7 @@ private:
 
 	std::mutex myComputeMutex;
 	std::optional<ComputeRequest> myPendingComputeRequest = std::nullopt;
-
+	double myBakeRate = 48000;
 	bool myHasWork = false;
 	bool myShouldExit = false;
 };

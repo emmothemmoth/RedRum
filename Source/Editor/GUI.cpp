@@ -277,7 +277,6 @@ void GUI::DisplayInspector()
 				{
 					if (ImGui::Button("Escape"))
 					{
-						object->AddPosition(Gizmo_Axis::Gizmo_Y, -150.f);
 						object->GetComponent<MeshComponent>()->SetVisible(true);
 						if (std::shared_ptr<MeshComponent> mesh = object->GetLastAddedComponent<MeshComponent>())
 						{
@@ -293,7 +292,6 @@ void GUI::DisplayInspector()
 				}
 				else if(ImGui::Button("Enter POV"))
 				{
-					object->AddPosition(Gizmo_Axis::Gizmo_Y, 150.f);
 					object->GetComponent<MeshComponent>()->SetVisible(false);
 					if (std::shared_ptr<MeshComponent> mesh = object->GetLastAddedComponent<MeshComponent>())
 					{

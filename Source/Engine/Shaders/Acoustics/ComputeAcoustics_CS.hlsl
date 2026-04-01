@@ -73,10 +73,6 @@ bool RaycastAABB(float3 rayOrigin, float3 rayDir, float3 boxMin, float3 boxMax, 
 [numthreads(64, 1, 1)]
 void main(uint3 DTid : SV_DispatchThreadID)
 {
-    float3 hardCodedPos = float3(0, 0, -200);
-    float hardCodedRadius = 500.0f;
-    
-    
     uint index = DTid.x;
     
     // Safety check (in case we dispatch more threads than rays)
@@ -103,12 +99,12 @@ void main(uint3 DTid : SV_DispatchThreadID)
         bool hitListener = false;
 
         // A. Check Listener Sphere
-        float3 L = hardCodedPos - currentRay.Origin;
+        float3 L = ListenerPos - currentRay.Origin;
         float tca = dot(L, currentRay.Direction);
         if (tca > 0.0f)
         {
             float d2 = dot(L, L) - (tca * tca);
-            float radius2 = hardCodedRadius * hardCodedRadius;
+            float radius2 = ListenerRadius * ListenerRadius;
             if (d2 < radius2)
             {
                 float thc = sqrt(radius2 - d2);
@@ -156,7 +152,7 @@ void main(uint3 DTid : SV_DispatchThreadID)
             result.TotalDistance = totalDistance;
             result.FinalPower = currentRay.Power;
             
-            float pan = dot(currentRay.Direction, ListenerRight);
+            float pan = dot(-currentRay.Direction, ListenerRight);
             result.PanAngle = (pan + 1.0f) * 0.5f * (3.14159f * 0.5f);
             break;
         }

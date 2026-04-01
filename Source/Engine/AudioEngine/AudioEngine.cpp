@@ -202,16 +202,16 @@ void AudioEngine::Initialize()
             {
                 auto newFile = std::make_shared<AudioFile>();
                 newFile->Buffer = std::move(bakedBuffer);
-                newFile->SampleRate = 48000.0;
+                newFile->SampleRate = mySampleRate;
 
                 myImpl->LoadedFiles["Baked_Room_Simulation"] = newFile;
 
                 auto newSource = std::make_unique<AudioSource>();
                 auto* device = myImpl->DeviceManager.getCurrentAudioDevice();
-                double hardwareSampleRate = device ? device->getCurrentSampleRate() : 48000.0;
+                double hardwareSampleRate = device ? device->getCurrentSampleRate() : 44100.0;
 
                 newSource->Prepare(newFile->Buffer.getNumChannels());
-                newSource->Ratio = newFile->SampleRate / hardwareSampleRate;
+                newSource->Ratio = mySampleRate / hardwareSampleRate;
                 newSource->CurrentSound = newFile;
                 newSource->IsPlaying = false;
 
@@ -272,32 +272,70 @@ std::optional<AudioHandle> AudioEngine::RegisterSoundSource(const std::filesyste
             cleanPathStr.erase(0, 1);
         }
         std::filesystem::path cleanRelativePath(cleanPathStr);
-
         fullPath = std::filesystem::weakly_canonical(absoluteContentRoot / cleanRelativePath);
     }
 
     std::filesystem::path relativeKey = std::filesystem::relative(fullPath, absoluteContentRoot);
 
-
+    // 2. OPEN FILE
     juce::File file(fullPath.wstring().c_str());
     std::unique_ptr<juce::AudioFormatReader> reader(myImpl->FormatManager.createReaderFor(file));
 
     if (reader == nullptr) return std::nullopt;
 
+    // 3. DEFINE GLOBAL STANDARD
+    const double& globalEditorRate = mySampleRate;
     auto newFile = std::make_shared<AudioFile>();
-    newFile->SampleRate = reader->sampleRate;
-    newFile->Buffer.setSize((int)reader->numChannels, (int)reader->lengthInSamples);
-    reader->read(&newFile->Buffer, 0, (int)reader->lengthInSamples, 0, true, true);
+    newFile->SampleRate = globalEditorRate;
 
+    int originalLength = (int)reader->lengthInSamples;
+    int numChannels = (int)reader->numChannels;
+
+    // 4. RESAMPLING LOGIC
+    if (std::abs(reader->sampleRate - globalEditorRate) < 0.1)
+    {
+        // No conversion needed, just read directly
+        newFile->Buffer.setSize(numChannels, originalLength);
+        reader->read(&newFile->Buffer, 0, originalLength, 0, true, true);
+    }
+    else
+    {
+        // Calculate new length: (OriginalSamples * TargetRate) / SourceRate
+        double resampleRatio = reader->sampleRate / globalEditorRate;
+        int resampledLength = static_cast<int>(originalLength * (globalEditorRate / reader->sampleRate));
+
+        newFile->Buffer.setSize(numChannels, resampledLength);
+
+        // Temporary buffer to hold the raw file data before conversion
+        juce::AudioBuffer<float> rawFileBuffer(numChannels, originalLength);
+        reader->read(&rawFileBuffer, 0, originalLength, 0, true, true);
+
+        // Perform interpolation per channel
+        for (int chan = 0; chan < numChannels; ++chan)
+        {
+            juce::LagrangeInterpolator resampler;
+            resampler.process(resampleRatio,
+                rawFileBuffer.getReadPointer(chan),
+                newFile->Buffer.getWritePointer(chan),
+                resampledLength);
+        }
+    }
+
+    // 5. PREPARE VOICE FOR PLAYBACK
     AudioHandle handle = myImpl->HandleCounter++;
     auto newSource = std::make_unique<AudioSource>();
+
+    // We still need to check the hardware rate here.
+    // If the editor is 48k but the headphones are 44.1k, we need a ratio of 1.088
     auto* device = myImpl->DeviceManager.getCurrentAudioDevice();
     double hardwareSampleRate = device ? device->getCurrentSampleRate() : 44100.0;
-    newSource->Prepare(reader->numChannels);
-    newSource->Ratio = newFile->SampleRate / hardwareSampleRate;
+
+    newSource->Prepare(numChannels);
+    newSource->Ratio = globalEditorRate / hardwareSampleRate; // Standardized Ratio
     newSource->CurrentSound = newFile;
     newSource->IsPlaying = false;
 
+    // 6. REGISTRY & COMMAND
     myImpl->LoadedFiles[relativeKey.string()] = newFile;
     myImpl->FileRegistry[handle] = newFile;
 
@@ -307,7 +345,6 @@ std::optional<AudioHandle> AudioEngine::RegisterSoundSource(const std::filesyste
     cmd.SourceData = std::move(newSource);
     myImpl->PushCommand(std::move(cmd));
 
-    
     return handle;
 }
 
@@ -328,8 +365,9 @@ std::optional<EmitterHandle> AudioEngine::RegisterAudioEmitter(AudioHandle aSour
     if (it != myImpl->FileRegistry.end() && it->second != nullptr)
     {
         const juce::AudioBuffer<float>* sourceBuffer = &it->second->Buffer;
+        float sourceRate = static_cast<float>(it->second->SampleRate);
 
-        return myImpl->Simulator.RegisterEmitter(sourceBuffer, someSettings, aTransform);
+        return myImpl->Simulator.RegisterEmitter(sourceBuffer, sourceRate, someSettings, aTransform);
     }
 
     return std::nullopt;
@@ -407,6 +445,12 @@ void AudioEngine::StartRoomSimulation()
 {
     OnSimulationStarted.Broadcast();
     myImpl->Simulator.Simulate();
+}
+
+void AudioEngine::SetSampleRate(const double& aSampleRate)
+{
+    mySampleRate = aSampleRate;
+    myImpl->Simulator.SetBakeRate(aSampleRate);
 }
 
 AudioEngine::Impl::Impl()

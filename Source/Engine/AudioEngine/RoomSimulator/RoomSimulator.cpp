@@ -57,7 +57,7 @@ void RoomSimulator::UpdateListener(const CU::Matrix4x4f& aTransform)
     myListener = aTransform;
 }
 
-std::optional<uint32_t> RoomSimulator::RegisterEmitter(const juce::AudioBuffer<float>* aSourceBuffer, const EmitterSettings& someSettings, const CU::Matrix4x4f& aTransform)
+std::optional<uint32_t> RoomSimulator::RegisterEmitter(const juce::AudioBuffer<float>* aSourceBuffer, float aSampleRate, const EmitterSettings& someSettings, const CU::Matrix4x4f& aTransform)
 {
 	std::lock_guard<std::mutex> lock(myMutex);
 
@@ -65,6 +65,7 @@ std::optional<uint32_t> RoomSimulator::RegisterEmitter(const juce::AudioBuffer<f
 	newEmitter.SourceBuffer = aSourceBuffer;
 	newEmitter.Settings = someSettings;
 	newEmitter.Transform = aTransform;
+	newEmitter.SampleRate = aSampleRate;
 	newEmitter.ID = myEmitterCounter++;
 
 	mySources.push_back(newEmitter);
@@ -172,7 +173,7 @@ void RoomSimulator::WorkerThreadLoop()
 		}
 
 		// Add 2 seconds of extra space for the Reverb Tail/Delay
-		int sampleRate = 48000;
+		int sampleRate = static_cast<int>(myBakeRate);
 		int tailSamples = sampleRate * 2;
 		juce::AudioBuffer<float> finishedBake(2, maxSamples + tailSamples);
 		finishedBake.clear();
@@ -372,7 +373,7 @@ void RoomSimulator::WorkerThreadLoop()
 			std::vector<GPURayResult> gpuResults = future.get();
 
 			// 4. ☀️ WAKE UP! ☀️ (Mix the GPU results into the Audio Buffer)
-			const float minDistance = 400.0f; // 4 meters
+			const float minDistance = 200.0f; // 4 meters
 			const float rolloffFactor = 0.5f;
 			const int sourceLength = emitter.SourceBuffer->getNumSamples();
 			//const float* readPtr = emitter.SourceBuffer->getReadPointer(0);

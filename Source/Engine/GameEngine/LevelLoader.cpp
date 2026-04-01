@@ -173,7 +173,7 @@ bool LevelLoader::LoadLevelFromJSON(const std::filesystem::path& aLevelPath, Lev
                 {
                     outListenerID = gameObject->GetID();
                     gameObject->AddComponent(std::make_shared<ListenerComponent>(*gameObject));
-                    gameObject->SetIcon(ComponentType::Listener, { 0.0f, 125.0f, 0.0f, 0.0f });
+                    gameObject->SetIcon(ComponentType::Listener, { 0.0f, 50.0f, 0.0f, 0.0f });
                 }
                 break;
                 default:

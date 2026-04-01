@@ -54,6 +54,8 @@ public:
 	void StartRoomSimulation();
 
 	bool IsInitialized() const { return myIsInitialized; }
+	const double& GetSampleRate() const { return mySampleRate; }
+	void SetSampleRate(const double& aSampleRate);
 	FOnSimulationStarted OnSimulationStarted;
 	FOnSimulationReady OnSimulationReady;
 	FOnVisualRaysReady OnVisualRaysReady;
@@ -61,6 +63,7 @@ public:
 private:
 	struct Impl;
 	std::unique_ptr<Impl> myImpl;
+	double mySampleRate = 48000.0;
 	bool myIsInitialized = false;
 };
 
