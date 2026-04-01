@@ -3,7 +3,7 @@
 #include "AbsorberSettings.h"
 #include "Collider.h"
 #include "VisualRayPath.h"
-
+#include "AcousticData.h"
 #include "CommonUtilities/Matrix4x4.hpp"
 
 #include "../GameEngine/Events/MulticastDelegate.h"
@@ -33,11 +33,19 @@ struct AudioEmitter
 	uint32_t ID;
 };
 
+struct ComputeRequest
+{
+	std::vector<GPURay> Rays;
+	std::vector<GPUObstacle> Obstacles;
+	std::shared_ptr<std::promise<std::vector<GPURayResult>>> Promise;
+};
+
 class RoomSimulator
 {
 public:
 	RoomSimulator();
 	~RoomSimulator();
+	void Update();
 	void InitListener(const CU::Matrix4x4f& aTransform);
 	void UpdateListener(const CU::Matrix4x4f& aTransform);
 	std::optional<uint32_t> RegisterEmitter(const juce::AudioBuffer<float>* aSourceBuffer, const EmitterSettings& someSettings, const CU::Matrix4x4f& aTransform);
@@ -68,6 +76,9 @@ private:
 	std::thread myWorkerThread;
 	std::mutex myMutex;
 	std::condition_variable myConditionVariable;
+
+	std::mutex myComputeMutex;
+	std::optional<ComputeRequest> myPendingComputeRequest = std::nullopt;
 
 	bool myHasWork = false;
 	bool myShouldExit = false;

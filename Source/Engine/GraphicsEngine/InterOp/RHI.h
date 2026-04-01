@@ -128,6 +128,9 @@ public:
 	void SetVertexShader(std::shared_ptr<Shader> aPixelShader);
 	void SetPixelShader(std::shared_ptr<Shader> aPixelShader);
 	void SetGeometryShader(std::shared_ptr<Shader> aGeometryShader);
+	void SetComputeShader(std::shared_ptr<Shader> aComputeShader);
+	void SetCSShaderResource(unsigned aSlot, const Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>& aSRV);
+	void SetCSUnorderedAccessView(unsigned aSlot, const Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView>& aUAV);
 
 	void SetRenderTarget(std::shared_ptr<TextureAsset> aRenderTarget) const;
 
@@ -143,6 +146,8 @@ public:
 
 	void Draw(unsigned aCount);
 
+	void Dispatch(unsigned aThreadCountX, unsigned aThreadCountY, unsigned aThreadCountZ);
+
 	void ClearRenderTargets(const int& aNumViews = 1) const;
 	void ClearBackBuffer() const;
 	void ClearViewportBackBuffer() const;
@@ -151,6 +156,12 @@ public:
 		TextureAsset* outTexture, bool aStaging, bool aShaderResource, bool aRenderTarget, bool aCpuAccessRead, bool aCpuAccessWrite) const;
 
 	bool CreateSRV(TextureAsset* outTexture, std::string_view aName);
+
+	bool CreateStagingBuffer(size_t aByteWidth, Microsoft::WRL::ComPtr<ID3D11Buffer>& outStagingBuffer);
+	bool CreateStagingTexture2D(unsigned aWidth, unsigned aHeight, DXGI_FORMAT aFormat, Microsoft::WRL::ComPtr<ID3D11Texture2D>& outStagingTexture);
+	bool CreateStructuredBuffer(size_t aStride, size_t aElementCount, const void* aInitData, Microsoft::WRL::ComPtr<ID3D11Buffer>& outBuffer, Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>& outSRV);
+	bool CreateUAVBuffer(size_t aStride, size_t aElementCount, Microsoft::WRL::ComPtr<ID3D11Buffer>& outBuffer, Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView>& outUAV);
+
 
 	void ClearRenderTarget(const TextureAsset* aTexture, std::array<float, 4> aClearColor = { 0, 0, 0, 0 });
 
@@ -190,7 +201,14 @@ public:
 	void SetPrimitiveTopology(unsigned aTopology);
 	void SetInputLayout(const Microsoft::WRL::ComPtr<ID3D11InputLayout>& aInputLayout);
 
-	uint32_t ReadID(const int aPosX, const int aPosY, TextureAsset* anRTVTexture, TextureAsset* aStagingTexture);
+	template<typename T>
+	T ReadTexture2DPixel(ID3D11Resource* aSourceTexture, ID3D11Resource* aStagingTexture, unsigned aX, unsigned aY);
+
+	template<typename T>
+	std::vector<T> ReadStructuredBuffer(ID3D11Buffer* aSourceBuffer, ID3D11Buffer* aStagingBuffer, size_t aElementCount);
+
+	template<typename T>
+	bool UpdateDynamicBuffer(ID3D11Buffer* aBuffer, const std::vector<T>& aData);
 
 	void ResizeViewport(const unsigned aWidth, const unsigned aHeight);
 
@@ -251,6 +269,74 @@ bool RHI::UpdateVertexBuffer(const VertexBuffer& aVertexBuffer, const std::vecto
 {
 	const size_t dataSize = sizeof(VertexType);
 	return UpdateVertexBufferInternal(aVertexBuffer, reinterpret_cast<const uint8_t*>(aVertexList.data()), aVertexList.size(), dataSize);
+}
+
+template<typename T>
+inline T RHI::ReadTexture2DPixel(ID3D11Resource* aSourceTexture, ID3D11Resource* aStagingTexture, unsigned aX, unsigned aY)
+{
+	if (!aSourceTexture || !aStagingTexture) return T();
+
+	D3D11_BOX srcBox;
+	srcBox.left = aX;
+	srcBox.right = aX + 1;
+	srcBox.top = aY;
+	srcBox.bottom = aY + 1;
+	srcBox.front = 0;
+	srcBox.back = 1;
+
+	myContext->CopySubresourceRegion(aStagingTexture, 0, 0, 0, 0, aSourceTexture, 0, &srcBox);
+
+	D3D11_MAPPED_SUBRESOURCE mapped;
+	HRESULT hr = myContext->Map(aStagingTexture, 0, D3D11_MAP_READ, 0, &mapped);
+
+	if (SUCCEEDED(hr))
+	{
+		T result = *(reinterpret_cast<T*>(mapped.pData));
+		myContext->Unmap(aStagingTexture, 0);
+		return result;
+	}
+
+	return T();
+}
+
+template<typename T>
+inline std::vector<T> RHI::ReadStructuredBuffer(ID3D11Buffer* aSourceBuffer, ID3D11Buffer* aStagingBuffer, size_t aElementCount)
+{
+	if (!aSourceBuffer || !aStagingBuffer || aElementCount == 0) return {};
+
+	myContext->CopyResource(aStagingBuffer, aSourceBuffer);
+
+	D3D11_MAPPED_SUBRESOURCE mapped;
+	HRESULT hr = myContext->Map(aStagingBuffer, 0, D3D11_MAP_READ, 0, &mapped);
+
+	if (SUCCEEDED(hr))
+	{
+		T* rawData = reinterpret_cast<T*>(mapped.pData);
+		std::vector<T> results(rawData, rawData + aElementCount);
+
+		myContext->Unmap(aStagingBuffer, 0);
+		return results;
+	}
+
+	return {};
+}
+
+template<typename T>
+bool RHI::UpdateDynamicBuffer(ID3D11Buffer* aBuffer, const std::vector<T>& aData)
+{
+	if (!aBuffer || aData.empty()) return false;
+
+	D3D11_MAPPED_SUBRESOURCE mapped;
+	HRESULT hr = myContext->Map(aBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
+
+	if (SUCCEEDED(hr))
+	{
+		// Safely copy the vector data directly into GPU memory
+		memcpy(mapped.pData, aData.data(), aData.size() * sizeof(T));
+		myContext->Unmap(aBuffer, 0);
+		return true;
+	}
+	return false;
 }
 
 

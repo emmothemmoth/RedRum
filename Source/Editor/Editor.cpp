@@ -141,7 +141,7 @@ void Editor::UpdateLoop()
 			continue;
 		}
 		MainSingleton::Get().GetInputMapper().Refresh();
-
+		MainSingleton::Get().GetAudioEngine().Update();
 		myScene->UpdateScene(CU::Timer::Get().GetDeltaTime());
 		myScene->RenderScene();
 		myGUI.Update(CU::Timer::Get().GetDeltaTime());

@@ -36,6 +36,7 @@ public:
 	~AudioEngine();
 
 	void Initialize();
+	void Update();
 	//Reads provided file and returns an audio handle for control
 	void InitListener(const CU::Matrix4x4f& aTransform);
 	void UpdateListener(const CU::Matrix4x4f& aTransform);

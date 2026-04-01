@@ -1,6 +1,8 @@
 #pragma once
 #include "IEditorTool.h"
 
+#include <future>
+
 
 class ScreenPicker : public IEditorTool
 {
@@ -12,4 +14,5 @@ public:
 private:
 private:
 	bool myShiftHeld = false;
+	std::future<uint32_t> myPickingFuture;
 };

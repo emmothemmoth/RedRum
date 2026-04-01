@@ -37,6 +37,7 @@
 #include <filesystem>
 #include <utility>
 #include <Objects\InstanceData.h>
+#include "../AudioEngine/RoomSimulator/AcousticData.h"
 
 
 
@@ -130,6 +131,7 @@ bool GraphicsEngine::Initialize(bool enableDeviceDebug)
 		CreateParticleShaders();
 		CreatePostProcessShaders();
 		CreateObjectIDShader();
+		CreateComputeShaders();
 		myShaderMap;
 		CreateIntermediateBuffers();
 		CreateObjectIDBuffer();
@@ -373,6 +375,50 @@ bool GraphicsEngine::PrepareParticleEmitter(ParticleEmitter& anEmitter)
 	{
 		return myRHI->UpdateVertexBuffer(*anEmitter.GetVertexBuffer(), anEmitter.GetParticleVertices());
 	}
+}
+
+bool GraphicsEngine::PrepareAcousticBuffers(size_t aRayCount, size_t aObstacleCount)
+{
+	if (aRayCount > myAcousticRayCapacity)
+	{
+		myAcousticRayCapacity = static_cast<size_t>(aRayCount * 1.2f);
+
+		myAcousticRayBuffer.Reset();
+		myAcousticRaySRV.Reset();
+		myAcousticResultBuffer.Reset();
+		myAcousticResultUAV.Reset();
+
+		if (!myRHI->CreateStructuredBuffer(sizeof(GPURay), myAcousticRayCapacity, nullptr, myAcousticRayBuffer, myAcousticRaySRV))
+		{
+			LOG(GELog, Error, "Failed to allocate Acoustic Ray Buffer!");
+			return false;
+		}
+
+		if (!myRHI->CreateUAVBuffer(sizeof(GPURayResult), myAcousticRayCapacity, myAcousticResultBuffer, myAcousticResultUAV))
+		{
+			LOG(GELog, Error, "Failed to allocate Acoustic Result UAV!");
+			return false;
+		}
+	}
+
+	if (aObstacleCount > myAcousticObstacleCapacity)
+	{
+		myAcousticObstacleCapacity = static_cast<size_t>(aObstacleCount * 1.2f);
+
+		myAcousticObsBuffer.Reset();
+		myAcousticObsSRV.Reset();
+
+		if (myAcousticObstacleCapacity > 0)
+		{
+			if (!myRHI->CreateStructuredBuffer(sizeof(GPUObstacle), myAcousticObstacleCapacity, nullptr, myAcousticObsBuffer, myAcousticObsSRV))
+			{
+				LOG(GELog, Error, "Failed to allocate Acoustic Obstacle Buffer!");
+				return false;
+			}
+		}
+	}
+
+	return true;
 }
 
 
@@ -706,26 +752,6 @@ void GraphicsEngine::RenderDebugLines(const DebugLineObject& aDebugLineObject)
 	SetPixelShader("WorldspaceUI_PS");
 }
 
-uint32_t GraphicsEngine::GetIDFromPoint(const int aMousePosX, const int aMousePosY)
-{
- 	myScreenPickingResult = myRHI->ReadID(aMousePosX, aMousePosY, myObjectIDTexture.get(), myScreenPickingTexture.get());
-	myPickingResultDone.store(true, std::memory_order_release);
-	return myScreenPickingResult;
-}
-
-void GraphicsEngine::ScreenPickingResult(bool& aResultDone, uint32_t& inOutID)
-{
-	if (myPickingResultDone.load(std::memory_order_acquire))
-	{
-		aResultDone = true;
-		inOutID = myScreenPickingResult;
-
-		myScreenPickingResult = 0;
-		myPickingResultDone.store(false, std::memory_order_release);
-	}
-}
-
-
 void GraphicsEngine::ConfigureInputAssembler(unsigned aTopology, const ComPtr<ID3D11Buffer>& aVxBuffer, const ComPtr<ID3D11Buffer>& anIxBuffer, unsigned aVertexStride, const ComPtr<ID3D11InputLayout>& anInputLayout)
 {
 	myRHI->ConfigureInputAssembler(aTopology, aVxBuffer, anIxBuffer, aVertexStride, anInputLayout);
@@ -810,6 +836,28 @@ void GraphicsEngine::SetGeometryShader(const std::string_view& aShaderName)
 	//myRHI->SetInputLayout(gShader->inputLayout);
 	myRHI->SetGeometryShader(gShader);
 	myCurrentGeometryShader = gShader;
+}
+
+void GraphicsEngine::SetComputeShader(const std::string_view& aShaderName)
+{
+	auto shader = myShaders[myShaderMap[aShaderName]];
+	if (!shader)
+	{
+		LOG(GELog, Error, "{} does not exist, {}", aShaderName);
+		return;
+	}
+	if (shader->type != ShaderType::ComputeShader)
+	{
+		LOG(GELog, Error, "The compute shader can't be set as it isn't a vertex shader");
+	}
+	std::shared_ptr<ComputeShader> csShader = std::dynamic_pointer_cast<ComputeShader>(shader);
+	if (csShader == nullptr)
+	{
+		LOG(GELog, Error, "The compute shader can't be set as it isn't a vertex shader");
+	}
+	//myRHI->SetInputLayout(gShader->inputLayout);
+	myRHI->SetGeometryShader(csShader);
+	myCurrentComputeShader = csShader;
 }
 
 void GraphicsEngine::SetShadowMap(ShadowMaps aShadowMap, unsigned anIndex)
@@ -2180,6 +2228,20 @@ void GraphicsEngine::CreateObjectIDShader()
 	{
 		LOG(GELog, Error, "Failed to load ObjectID_PS from memory");
 	}
+}
+
+void GraphicsEngine::CreateComputeShaders()
+{
+#include "CompiledHeaders/ComputeAcoustics_CS.h"
+	myShaderNames.emplace_back("ComputeAcoustics_CS");
+	myShaderMap.emplace(myShaderNames.back(), static_cast<unsigned>(myShaders.size()));
+	myShaders.push_back(std::make_shared<ComputeShader>());
+	std::shared_ptr<ComputeShader> acousticShader = std::dynamic_pointer_cast<ComputeShader>(myShaders.back());
+	if (!myRHI->LoadShaderFromMemory(myShaderNames.back(), *acousticShader, BuiltIn_ComputeAcoustics_CS_ByteCode, sizeof(BuiltIn_ComputeAcoustics_CS_ByteCode)))
+	{
+		LOG(GELog, Error, "Failed to load ComputeAcoustics shader from memory");
+	}
+	acousticShader->type = ShaderType::ComputeShader;
 }
 
 void GraphicsEngine::InitPostProcessBuffer()

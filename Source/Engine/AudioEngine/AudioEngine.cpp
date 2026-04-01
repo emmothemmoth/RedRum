@@ -240,6 +240,11 @@ void AudioEngine::Initialize()
     }
 }
 
+void AudioEngine::Update()
+{
+    myImpl->Simulator.Update();
+}
+
 void AudioEngine::InitListener(const CU::Matrix4x4f& aTransform)
 {
     myImpl->Simulator.InitListener(aTransform);

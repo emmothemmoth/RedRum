@@ -9,7 +9,8 @@ enum class ShaderType : unsigned
 	Unknown,
 	VertexShader,
 	GeometryShader,
-	PixelShader
+	PixelShader,
+	ComputeShader
 };
 
 struct Shader
@@ -36,4 +37,9 @@ public:
 	~GeometryShader() override = default;
 	Microsoft::WRL::ComPtr<ID3D11InputLayout> inputLayout;
 	unsigned VertexStride = 0;
+};
+
+struct ComputeShader : public Shader
+{
+	~ComputeShader() override = default;
 };

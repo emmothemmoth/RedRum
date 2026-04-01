@@ -92,6 +92,7 @@ public:
 
 	bool PrepareParticleEmitter(ParticleEmitter& anEmitter);
 
+	bool PrepareAcousticBuffers(size_t aRayCount, size_t aObstacleCount);
 
 	bool ClearTextureResourceSlot(unsigned aPipelineStages, unsigned aSlot) const;
 
@@ -126,10 +127,6 @@ public:
 
 	void RenderDebugLines(const DebugLineObject& aDebugLineObject);
 
-	uint32_t GetIDFromPoint(const int aMousePosX, const int aMousePosY);
-
-	void ScreenPickingResult(bool& aResultDone, uint32_t& inOutID);
-
 	void ConfigureInputAssembler(unsigned aTopology, const ComPtr<ID3D11Buffer>& aVxBuffer, const ComPtr<ID3D11Buffer>& anIxBuffer, unsigned aVertexStride, const ComPtr<ID3D11InputLayout>& anInputLayout);
 
 	bool SetTextureResource(unsigned aPipelineStages, unsigned aSlot, const TextureAsset& aTexture) const;
@@ -138,6 +135,7 @@ public:
 	void SetPixelShader(const std::string_view& aShaderName);
 	void SetVertexShader(const std::string_view& aShaderName);
 	void SetGeometryShader(const std::string_view& aShaderName);
+	void SetComputeShader(const std::string_view& aShaderName);
 
 	void SetShadowMap(ShadowMaps aShadowMap, unsigned anIndex = 0);
 	void SetVertexBuffer(Microsoft::WRL::ComPtr<ID3D11Buffer> aVertexBuffer);
@@ -193,6 +191,16 @@ public:
 	std::shared_ptr<TextureAsset> GetBlueNoiseTexture() { return myBluenoiseTexture; }
 	std::shared_ptr<TextureAsset> GetBackBuffer() { return myRHI->GetBackBuffer(); }
 	std::shared_ptr<TextureAsset> GetViewportBackBuffer() { return myRHI->GetViewportBackBuffer(); }
+	std::shared_ptr<TextureAsset> GetObjectIDTexture() { return myObjectIDTexture; }
+	std::shared_ptr<TextureAsset> GetScreenPickingTexture() { return myScreenPickingTexture; }
+
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> GetAcousticRaySRV() const { return myAcousticRaySRV; }
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> GetAcousticObsSRV() const { return myAcousticObsSRV; }
+	Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView> GetAcousticResultUAV() const { return myAcousticResultUAV; }
+
+	Microsoft::WRL::ComPtr<ID3D11Buffer> GetAcousticRayBuffer() const { return myAcousticRayBuffer; }
+	Microsoft::WRL::ComPtr<ID3D11Buffer> GetAcousticObsBuffer() const { return myAcousticObsBuffer; }
+	Microsoft::WRL::ComPtr<ID3D11Buffer> GetAcousticResultBuffer() const { return myAcousticResultBuffer; }
 
 	HWND GetWindowHandle() const;
 	SIZE GetWindowSize() const;
@@ -245,6 +253,8 @@ private:
 	void CreatePostProcessShaders();
 
 	void CreateObjectIDShader();
+
+	void CreateComputeShaders();
 
 	void InitPostProcessBuffer();
 
@@ -324,11 +334,21 @@ private:
 	std::shared_ptr<Shader> myCurrentPixelShader;
 	std::shared_ptr<VertexShader> myCurrentVertexShader;
 	std::shared_ptr<GeometryShader> myCurrentGeometryShader;
+	std::shared_ptr<ComputeShader> myCurrentComputeShader;
 
-	std::atomic<bool> myPickingResultDone = false;
-	unsigned myScreenPickingResult = 0;
 	ComPtr<ID3D11Buffer> myBillboardIndexBuffer;
 	ComPtr<ID3D11Buffer> myBillboardVertexBuffer;
+
+	size_t myAcousticRayCapacity = 0;
+	Microsoft::WRL::ComPtr<ID3D11Buffer> myAcousticRayBuffer;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> myAcousticRaySRV;
+
+	Microsoft::WRL::ComPtr<ID3D11Buffer> myAcousticResultBuffer;
+	Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView> myAcousticResultUAV;
+
+	size_t myAcousticObstacleCapacity = 0;
+	Microsoft::WRL::ComPtr<ID3D11Buffer> myAcousticObsBuffer;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> myAcousticObsSRV;
 
 	std::vector<ComPtr<IUnknown>> myStaleCOMObjects;
 

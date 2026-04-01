@@ -1069,6 +1069,30 @@ void RHI::SetGeometryShader(std::shared_ptr<Shader> aGeometryShader)
 	}
 }
 
+void RHI::SetComputeShader(std::shared_ptr<Shader> aComputeShader)
+{
+	ComPtr<ID3D11ComputeShader> csShader = nullptr;
+	if (aComputeShader)
+	{
+		aComputeShader->shader.As(&csShader);
+		myContext->CSSetShader(csShader.Get(), nullptr, 0);
+	}
+	else
+	{
+		myContext->CSSetShader(nullptr, nullptr, 0);
+	}
+}
+
+void RHI::SetCSShaderResource(unsigned aSlot, const Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>& aSRV)
+{
+	myContext->CSSetShaderResources(aSlot, 1, aSRV.GetAddressOf());
+}
+
+void RHI::SetCSUnorderedAccessView(unsigned aSlot, const Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView>& aUAV)
+{
+	myContext->CSSetUnorderedAccessViews(aSlot,1,  aUAV.GetAddressOf(), nullptr);
+}
+
 void RHI::SetRenderTarget(std::shared_ptr<TextureAsset> aRenderTarget) const
 {
 	if (aRenderTarget)
@@ -1134,6 +1158,11 @@ void RHI::DrawIndexedInstanced(unsigned anIndexCount, unsigned anInstanceCount)
 void RHI::Draw(unsigned aCount)
 {
 	myContext->Draw(aCount, 0);
+}
+
+void RHI::Dispatch(unsigned aThreadCountX, unsigned aThreadCountY, unsigned aThreadCountZ)
+{
+	myContext->Dispatch(aThreadCountX, aThreadCountY, aThreadCountZ);
 }
 
 void RHI::ClearRenderTargets(const int& aNumViews) const
@@ -1262,6 +1291,84 @@ bool RHI::CreateSRV(TextureAsset* outTexture, std::string_view aName)
 	return false;
 }
 
+bool RHI::CreateStagingBuffer(size_t aByteWidth, Microsoft::WRL::ComPtr<ID3D11Buffer>& outStagingBuffer)
+{
+	D3D11_BUFFER_DESC desc = {};
+	desc.ByteWidth = static_cast<UINT>(aByteWidth);
+	desc.Usage = D3D11_USAGE_STAGING;
+	desc.BindFlags = 0; // Staging buffers cannot be bound to the pipeline!
+	desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+	desc.MiscFlags = 0;
+	desc.StructureByteStride = 0;
+
+	HRESULT hr = myDevice->CreateBuffer(&desc, nullptr, outStagingBuffer.GetAddressOf());
+	return SUCCEEDED(hr);
+}
+
+bool RHI::CreateStagingTexture2D(unsigned aWidth, unsigned aHeight, DXGI_FORMAT aFormat, Microsoft::WRL::ComPtr<ID3D11Texture2D>& outStagingTexture)
+{
+	D3D11_TEXTURE2D_DESC desc = {};
+	desc.Width = aWidth;
+	desc.Height = aHeight;
+	desc.MipLevels = 1;
+	desc.ArraySize = 1;
+	desc.Format = aFormat;
+	desc.SampleDesc.Count = 1;
+	desc.SampleDesc.Quality = 0;
+	desc.Usage = D3D11_USAGE_STAGING;
+	desc.BindFlags = 0;
+	desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+
+	HRESULT hr = myDevice->CreateTexture2D(&desc, nullptr, outStagingTexture.GetAddressOf());
+	return SUCCEEDED(hr);
+}
+
+bool RHI::CreateStructuredBuffer(size_t aStride, size_t aElementCount, const void* aInitData, Microsoft::WRL::ComPtr<ID3D11Buffer>& outBuffer, Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>& outSRV)
+{
+	D3D11_BUFFER_DESC desc = {};
+	desc.ByteWidth = static_cast<UINT>(aStride * aElementCount);
+	desc.Usage = D3D11_USAGE_DYNAMIC;
+	desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+	desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE; // Allows CPU to update it every bake
+	desc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+	desc.StructureByteStride = static_cast<UINT>(aStride);
+
+	D3D11_SUBRESOURCE_DATA* initDataPtr = nullptr;
+	D3D11_SUBRESOURCE_DATA initData = {};
+	if (aInitData)
+	{
+		initData.pSysMem = aInitData;
+		initDataPtr = &initData;
+	}
+
+	if (FAILED(myDevice->CreateBuffer(&desc, initDataPtr, outBuffer.GetAddressOf()))) return false;
+
+	D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+	srvDesc.Format = DXGI_FORMAT_UNKNOWN;
+	srvDesc.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
+	srvDesc.Buffer.NumElements = static_cast<UINT>(aElementCount);
+
+	return SUCCEEDED(myDevice->CreateShaderResourceView(outBuffer.Get(), &srvDesc, outSRV.GetAddressOf()));
+}
+
+bool RHI::CreateUAVBuffer(size_t aStride, size_t aElementCount, Microsoft::WRL::ComPtr<ID3D11Buffer>& outBuffer, Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView>& outUAV)
+{
+	D3D11_BUFFER_DESC desc = {};
+	desc.ByteWidth = static_cast<UINT>(aStride * aElementCount);
+	desc.Usage = D3D11_USAGE_DEFAULT;
+	desc.BindFlags = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE;
+	desc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+	desc.StructureByteStride = static_cast<UINT>(aStride);
+
+	if (FAILED(myDevice->CreateBuffer(&desc, nullptr, outBuffer.GetAddressOf()))) return false;
+
+	D3D11_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
+	uavDesc.Format = DXGI_FORMAT_UNKNOWN;
+	uavDesc.ViewDimension = D3D11_UAV_DIMENSION_BUFFER;
+	uavDesc.Buffer.NumElements = static_cast<UINT>(aElementCount);
+
+	return SUCCEEDED(myDevice->CreateUnorderedAccessView(outBuffer.Get(), &uavDesc, outUAV.GetAddressOf()));
+}
 
 void RHI::ClearRenderTarget(const TextureAsset* aTexture, std::array<float, 4> aClearColor)
 {
@@ -1705,37 +1812,6 @@ void RHI::SetPrimitiveTopology(unsigned aTopology)
 void RHI::SetInputLayout(const Microsoft::WRL::ComPtr<ID3D11InputLayout>& aInputLayout)
 {
 	myContext->IASetInputLayout(aInputLayout.Get());
-}
-
-uint32_t RHI::ReadID(const int aPosX, const int aPosY, TextureAsset* anRTVTexture, TextureAsset* aStagingTexture)
-{
-	// 1. Get the underlying D3D11 Resources from your wrappers
-	ID3D11Resource* gpuTexture = anRTVTexture->GetResource().Get();
-	ID3D11Resource* cpuTexture = aStagingTexture->GetResource().Get();
-
-	// 2. Define the source pixel area (1x1 at mouse pos)
-	D3D11_BOX srcBox;
-	srcBox.left = aPosX;
-	srcBox.right = aPosX + 1;
-	srcBox.top = aPosY;
-	srcBox.bottom = aPosY + 1;
-	srcBox.front = 0;
-	srcBox.back = 1;
-
-	// 3. Copy just that one pixel to our 1x1 staging texture
-	// Destination is (0,0,0) in our tiny 1x1 texture
-	myContext->CopySubresourceRegion(cpuTexture, 0, 0, 0, 0, gpuTexture, 0, &srcBox);
-
-	// 4. Map and Read
-	D3D11_MAPPED_SUBRESOURCE mapped;
-	uint32_t id = 0;
-	if (SUCCEEDED(myContext->Map(cpuTexture, 0, D3D11_MAP_READ, 0, &mapped)))
-	{
-		id = *(uint32_t*)mapped.pData;
-		myContext->Unmap(cpuTexture, 0);
-	}
-
-	return id;
 }
 
 void RHI::ResizeViewport(unsigned int aWidth, unsigned int aHeight)
