@@ -3,11 +3,16 @@
 
 #include "GraphicsEngine.h"
 
-GCmdComputeAcoustics::GCmdComputeAcoustics(std::vector<GPURay> someRays, std::vector<GPUObstacle> someObstacles, std::shared_ptr<std::promise<std::vector<GPURayResult>>> aPromise)
+GCmdComputeAcoustics::GCmdComputeAcoustics(std::vector<GPURay> rays, std::vector<GPUObstacle> obs,
+	CU::Vector3f lPos, CU::Vector3f lRight, float lRad,
+	std::shared_ptr<std::promise<std::vector<GPURayResult>>> promise)
 {
-	myRays = someRays;
-	myObstacles = someObstacles;
-	myPromise = aPromise;
+	myRays = rays;
+	myObstacles = obs;
+	myPromise = promise;
+	myListenerPos = lPos;
+	myListenerRight = lRight;
+	myListenerRadius = lRad;
 }
 
 void GCmdComputeAcoustics::Execute()
@@ -23,22 +28,35 @@ void GCmdComputeAcoustics::Execute()
 	{
 		rhi->UpdateDynamicBuffer(ge.GetAcousticObsBuffer().Get(), myObstacles);
 	}
-	ge.SetComputeShader("ComputeAcoustics_cs");
-	rhi->SetCSShaderResource(0, ge.GetAcousticRaySRV());
-	rhi->SetCSShaderResource(1, ge.GetAcousticObsSRV());
+	AcousticSceneData sceneData;
+	sceneData.ListenerPos = myListenerPos;
+	sceneData.ListenerRight = myListenerRight;
+	sceneData.ListenerRadius = myListenerRadius;
+	sceneData.ObstacleCount = static_cast<int>(myObstacles.size());
+
+	D3D11_MAPPED_SUBRESOURCE mappedCB;
+	if (SUCCEEDED(rhi->GetContext()->Map(ge.GetAcousticSceneCB().Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedCB)))
+	{
+		memcpy(mappedCB.pData, &sceneData, sizeof(AcousticSceneData));
+		rhi->GetContext()->Unmap(ge.GetAcousticSceneCB().Get(), 0);
+	}
+
+	ge.SetComputeShader("ComputeAcoustics_CS");
+	ID3D11Buffer* cbPtr = ge.GetAcousticSceneCB().Get();
+	rhi->GetContext()->CSSetConstantBuffers(7, 1, &cbPtr);
+	rhi->SetCSShaderResource(6, ge.GetAcousticRaySRV());
+	rhi->SetCSShaderResource(7, ge.GetAcousticObsSRV());
 	rhi->SetCSUnorderedAccessView(0, ge.GetAcousticResultUAV());
 
 	rhi->Dispatch(static_cast<unsigned>((myRays.size() / 64) + 1), 1, 1);
 
 	rhi->SetCSUnorderedAccessView(0, nullptr);
-	ComPtr<ID3D11Buffer> stagingBuffer;
-	rhi->CreateStagingBuffer(sizeof(GPURayResult) * myRays.size(), stagingBuffer);
+
 
 	std::vector<GPURayResult> finalResults = rhi->ReadStructuredBuffer<GPURayResult>(
 		ge.GetAcousticResultBuffer().Get(),
-		stagingBuffer.Get(),
-		myRays.size()
-	);
+		ge.GetAcousticStagingBuffer().Get(),
+		myRays.size());
 	if (myPromise)
 	{
 		myPromise->set_value(std::move(finalResults));

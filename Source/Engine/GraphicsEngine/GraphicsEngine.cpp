@@ -399,6 +399,11 @@ bool GraphicsEngine::PrepareAcousticBuffers(size_t aRayCount, size_t aObstacleCo
 			LOG(GELog, Error, "Failed to allocate Acoustic Result UAV!");
 			return false;
 		}
+		if (!myRHI->CreateStagingBuffer(sizeof(GPURayResult) * myAcousticRayCapacity, myAcousticStagingBuffer))
+		{
+			LOG(GELog, Error, "Failed to allocate Acoustic Staging Buffer!");
+			return false;
+		}
 	}
 
 	if (aObstacleCount > myAcousticObstacleCapacity)
@@ -415,6 +420,20 @@ bool GraphicsEngine::PrepareAcousticBuffers(size_t aRayCount, size_t aObstacleCo
 				LOG(GELog, Error, "Failed to allocate Acoustic Obstacle Buffer!");
 				return false;
 			}
+		}
+	}
+	if (!myAcousticSceneCB)
+	{
+		D3D11_BUFFER_DESC cbDesc = {};
+		cbDesc.ByteWidth = sizeof(AcousticSceneData);
+		cbDesc.Usage = D3D11_USAGE_DYNAMIC;
+		cbDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+		cbDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+
+		if (FAILED(myRHI->GetDevice()->CreateBuffer(&cbDesc, nullptr, myAcousticSceneCB.GetAddressOf())))
+		{
+			LOG(GELog, Error, "Failed to allocate Acoustic Scene Constant Buffer!");
+			return false;
 		}
 	}
 
@@ -856,7 +875,7 @@ void GraphicsEngine::SetComputeShader(const std::string_view& aShaderName)
 		LOG(GELog, Error, "The compute shader can't be set as it isn't a vertex shader");
 	}
 	//myRHI->SetInputLayout(gShader->inputLayout);
-	myRHI->SetGeometryShader(csShader);
+	myRHI->SetComputeShader(csShader);
 	myCurrentComputeShader = csShader;
 }
 

@@ -202,13 +202,13 @@ void AudioEngine::Initialize()
             {
                 auto newFile = std::make_shared<AudioFile>();
                 newFile->Buffer = std::move(bakedBuffer);
-                newFile->SampleRate = 44100.0;
+                newFile->SampleRate = 48000.0;
 
                 myImpl->LoadedFiles["Baked_Room_Simulation"] = newFile;
 
                 auto newSource = std::make_unique<AudioSource>();
                 auto* device = myImpl->DeviceManager.getCurrentAudioDevice();
-                double hardwareSampleRate = device ? device->getCurrentSampleRate() : 44100.0;
+                double hardwareSampleRate = device ? device->getCurrentSampleRate() : 48000.0;
 
                 newSource->Prepare(newFile->Buffer.getNumChannels());
                 newSource->Ratio = newFile->SampleRate / hardwareSampleRate;

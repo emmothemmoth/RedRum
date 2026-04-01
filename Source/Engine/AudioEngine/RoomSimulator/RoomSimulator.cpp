@@ -27,21 +27,20 @@ RoomSimulator::~RoomSimulator()
 
 void RoomSimulator::Update()
 {
-	// 1. Lock the handshake mutex (Super fast, won't stall the thread)
 	std::lock_guard<std::mutex> computeLock(myComputeMutex);
 
-	// 2. Check if the Worker Thread left a compute request for us
 	if (myPendingComputeRequest.has_value())
 	{
-		// 3. Extract the request and clear the mailbox
 		ComputeRequest req = std::move(myPendingComputeRequest.value());
 		myPendingComputeRequest = std::nullopt;
 
-		// 4. THIS IS THE MAGIC LINE: Enqueue the command to the Render Thread!
 		MainSingleton::Get().GetRenderer().Enqueue<GCmdComputeAcoustics>(
-			RenderStage::PreRendering, // Or whatever stage makes sense in your pipeline
+			RenderStage::PreRendering,
 			std::move(req.Rays),
 			std::move(req.Obstacles),
+			std::move(req.ListenerPos),
+			std::move(req.ListenerRight),
+			std::move(req.ListenerRadius),
 			req.Promise
 		);
 	}
@@ -98,8 +97,6 @@ std::optional<uint32_t> RoomSimulator::RegisterObstacle(const AbsorberSettings& 
 	AudioObstacle newObstacle;
 	newObstacle.Transform = aTransform;
 
-	// CRITICAL: Cache the inverse matrix here so the worker thread doesn't 
-	// have to compute it 10,000 times a second!
 	newObstacle.InverseTransform = aTransform.GetInverse();
 
 	newObstacle.Absorber = someSettings;
@@ -122,7 +119,7 @@ void RoomSimulator::UpdateObstacle(const uint32_t aHandle, const AbsorberSetting
 			obstacle.InverseTransform = aTransform.GetInverse();
 			obstacle.Absorber = someSettings;
 			obstacle.Collider = aCollider;
-			break; // Found it, stop searching
+			break;
 		}
 	}
 }
@@ -175,7 +172,7 @@ void RoomSimulator::WorkerThreadLoop()
 		}
 
 		// Add 2 seconds of extra space for the Reverb Tail/Delay
-		int sampleRate = 44100;
+		int sampleRate = 48000;
 		int tailSamples = sampleRate * 2;
 		juce::AudioBuffer<float> finishedBake(2, maxSamples + tailSamples);
 		finishedBake.clear();
@@ -362,6 +359,10 @@ void RoomSimulator::WorkerThreadLoop()
 				ComputeRequest req;
 				req.Rays = std::move(gpuRays);
 				req.Obstacles = gpuObstacles; // Pass a copy of the prepared obstacles
+
+				req.ListenerPos = listenerPos;
+				req.ListenerRight = listenerRight;
+				req.ListenerRadius = listenerRadius;
 				req.Promise = promise;
 
 				myPendingComputeRequest = std::move(req);
@@ -374,38 +375,38 @@ void RoomSimulator::WorkerThreadLoop()
 			const float minDistance = 400.0f; // 4 meters
 			const float rolloffFactor = 0.5f;
 			const int sourceLength = emitter.SourceBuffer->getNumSamples();
-			const float* readPtr = emitter.SourceBuffer->getReadPointer(0);
-			float* outLeft = finishedBake.getWritePointer(0);
-			float* outRight = finishedBake.getWritePointer(1);
+			//const float* readPtr = emitter.SourceBuffer->getReadPointer(0);
+			//float* outLeft = finishedBake.getWritePointer(0);
+			//float* outRight = finishedBake.getWritePointer(1);
 
 			for (const auto& result : gpuResults)
 			{
-				if (result.HitListener == 1)
+				if (result.HitListener == 1 && result.TotalDistance > 0.01f)
 				{
-					// Delay
 					float delaySeconds = result.TotalDistance / 34300.0f;
 					int delaySamples = static_cast<int>(delaySeconds * sampleRate);
 
-					// Attenuation
+					// Calculate gains
 					float attenuation = minDistance / (minDistance + rolloffFactor * (result.TotalDistance - minDistance));
 					if (attenuation > 1.0f) attenuation = 1.0f;
 
-					// Final Volume (Divide by heavy ray count to normalize the energy!)
 					float finalGain = (attenuation * result.FinalPower) / (HEAVY_RAY_COUNT * 0.1f);
-
-					// Panning (Already converted to 0 - PI/2 angle by the shader)
 					float leftGain = std::cos(result.PanAngle) * finalGain;
 					float rightGain = std::sin(result.PanAngle) * finalGain;
 
-					// Additive Mix
-					for (int i = 0; i < sourceLength; ++i)
+					// --- OPTIMIZED MIXING ---
+					// Ensure we don't write past the end of our target buffer
+					int samplesToCopy = sourceLength;
+					if (delaySamples + samplesToCopy > finishedBake.getNumSamples())
 					{
-						int writePos = i + delaySamples;
-						if (writePos < finishedBake.getNumSamples())
-						{
-							outLeft[writePos] += readPtr[i] * leftGain;
-							outRight[writePos] += readPtr[i] * rightGain;
-						}
+						samplesToCopy = finishedBake.getNumSamples() - delaySamples;
+					}
+
+					if (samplesToCopy > 0)
+					{
+						// JUCE addFrom is significantly faster than a manual for-loop
+						finishedBake.addFrom(0, delaySamples, *emitter.SourceBuffer, 0, 0, samplesToCopy, leftGain);
+						finishedBake.addFrom(1, delaySamples, *emitter.SourceBuffer, 0, 0, samplesToCopy, rightGain);
 					}
 				}
 			}

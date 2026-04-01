@@ -331,7 +331,6 @@ bool RHI::UpdateDynamicBuffer(ID3D11Buffer* aBuffer, const std::vector<T>& aData
 
 	if (SUCCEEDED(hr))
 	{
-		// Safely copy the vector data directly into GPU memory
 		memcpy(mapped.pData, aData.data(), aData.size() * sizeof(T));
 		myContext->Unmap(aBuffer, 0);
 		return true;

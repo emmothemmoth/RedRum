@@ -1,4 +1,5 @@
 
+#pragma pack_matrix(row_major)
 struct GPURay
 {
     float3 Origin;
@@ -29,7 +30,7 @@ struct GPURayResult
 StructuredBuffer<GPURay> InputRays : register(t6);
 StructuredBuffer<GPUObstacle> Obstacles : register(t7);
 
-cbuffer SceneData : register(b0)
+cbuffer SceneData : register(b7)
 {
     float3 ListenerPos;
     float ListenerRadius;
@@ -72,6 +73,10 @@ bool RaycastAABB(float3 rayOrigin, float3 rayDir, float3 boxMin, float3 boxMax, 
 [numthreads(64, 1, 1)]
 void main(uint3 DTid : SV_DispatchThreadID)
 {
+    float3 hardCodedPos = float3(0, 0, -200);
+    float hardCodedRadius = 500.0f;
+    
+    
     uint index = DTid.x;
     
     // Safety check (in case we dispatch more threads than rays)
@@ -98,12 +103,12 @@ void main(uint3 DTid : SV_DispatchThreadID)
         bool hitListener = false;
 
         // A. Check Listener Sphere
-        float3 L = ListenerPos - currentRay.Origin;
+        float3 L = hardCodedPos - currentRay.Origin;
         float tca = dot(L, currentRay.Direction);
         if (tca > 0.0f)
         {
             float d2 = dot(L, L) - (tca * tca);
-            float radius2 = ListenerRadius * ListenerRadius;
+            float radius2 = hardCodedRadius * hardCodedRadius;
             if (d2 < radius2)
             {
                 float thc = sqrt(radius2 - d2);

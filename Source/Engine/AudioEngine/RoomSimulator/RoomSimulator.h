@@ -37,6 +37,9 @@ struct ComputeRequest
 {
 	std::vector<GPURay> Rays;
 	std::vector<GPUObstacle> Obstacles;
+	CU::Vector3f ListenerPos;
+	CU::Vector3f ListenerRight;
+	float ListenerRadius;
 	std::shared_ptr<std::promise<std::vector<GPURayResult>>> Promise;
 };
 

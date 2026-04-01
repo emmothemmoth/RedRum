@@ -29,7 +29,7 @@
         {
           "TypeName": "MeshComponent",
           "ComponentTypeID": 0,
-          "AudioObstacle": true,
+          "AudioObstacle": false,
           "Mesh": "SM_MannequinFemale"
         },
         {

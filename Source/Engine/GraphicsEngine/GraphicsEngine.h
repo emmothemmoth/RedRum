@@ -197,10 +197,12 @@ public:
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> GetAcousticRaySRV() const { return myAcousticRaySRV; }
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> GetAcousticObsSRV() const { return myAcousticObsSRV; }
 	Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView> GetAcousticResultUAV() const { return myAcousticResultUAV; }
+	Microsoft::WRL::ComPtr<ID3D11Buffer> GetAcousticSceneCB() const { return myAcousticSceneCB; }
 
 	Microsoft::WRL::ComPtr<ID3D11Buffer> GetAcousticRayBuffer() const { return myAcousticRayBuffer; }
 	Microsoft::WRL::ComPtr<ID3D11Buffer> GetAcousticObsBuffer() const { return myAcousticObsBuffer; }
 	Microsoft::WRL::ComPtr<ID3D11Buffer> GetAcousticResultBuffer() const { return myAcousticResultBuffer; }
+	Microsoft::WRL::ComPtr<ID3D11Buffer> GetAcousticStagingBuffer() const { return myAcousticStagingBuffer; }
 
 	HWND GetWindowHandle() const;
 	SIZE GetWindowSize() const;
@@ -349,6 +351,8 @@ private:
 	size_t myAcousticObstacleCapacity = 0;
 	Microsoft::WRL::ComPtr<ID3D11Buffer> myAcousticObsBuffer;
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> myAcousticObsSRV;
+	Microsoft::WRL::ComPtr<ID3D11Buffer> myAcousticSceneCB;
+	Microsoft::WRL::ComPtr<ID3D11Buffer> myAcousticStagingBuffer;
 
 	std::vector<ComPtr<IUnknown>> myStaleCOMObjects;
 

@@ -28,3 +28,11 @@ struct GPURayResult
 	float FinalPower;
 	float PanAngle; 
 };
+
+struct AcousticSceneData
+{
+	CU::Vector3f ListenerPos;
+	float ListenerRadius;
+	CU::Vector3f ListenerRight;
+	int ObstacleCount;
+};

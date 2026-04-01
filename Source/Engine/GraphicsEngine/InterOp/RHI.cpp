@@ -970,6 +970,19 @@ bool RHI::LoadShaderFromMemory(std::string_view aName, Shader& outShader, const 
 		outShader.shader = gsShader;
 		break;
 	}
+	case D3D11_SHVER_COMPUTE_SHADER:
+	{
+		outShader.type = ShaderType::ComputeShader;
+		ComPtr<ID3D11ComputeShader> csShader;
+		result = myDevice->CreateComputeShader(aShaderDataPtr, aShaderDataSize, nullptr, &csShader);
+		if (FAILED(result))
+		{
+			LOG(RHILog, Error, "Failed to create compute shader");
+			return false;
+		}
+		outShader.shader = csShader;
+		break;
+	}
 	}
 
 	SetObjectName(outShader.shader, aName);
