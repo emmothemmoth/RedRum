@@ -9,9 +9,10 @@
 * Drag \& Drop audio files and meshes into scene (from file explorer and file browser) \*
 * Multiple cameras \*
 * Listener Component, Audio Source Component \*
+* Ray casted audio with compute shaders + line trace debug drawing \*
+* Global Play, pause, stop buttons \*
+* Probe system (cached bakes, live previewing)
 * Serialization
-* Ray casted audio with compute shaders + line trace debug drawing
-* Global Play, pause, stop buttons
 * Export section
 
 
