@@ -377,64 +377,114 @@ bool GraphicsEngine::PrepareParticleEmitter(ParticleEmitter& anEmitter)
 	}
 }
 
-bool GraphicsEngine::PrepareAcousticBuffers(size_t aRayCount, size_t aObstacleCount)
+bool GraphicsEngine::PrepareAcousticBuffers(size_t aRayCount, size_t aObstacleCount, size_t aProbeCount)
 {
-	if (aRayCount > myAcousticRayCapacity)
-	{
-		myAcousticRayCapacity = static_cast<size_t>(aRayCount * 1.2f);
+	auto& rhi = GetRHI();
+	auto device = rhi->GetDevice();
 
-		myAcousticRayBuffer.Reset();
-		myAcousticRaySRV.Reset();
-		myAcousticResultBuffer.Reset();
-		myAcousticResultUAV.Reset();
-
-		if (!myRHI->CreateStructuredBuffer(sizeof(GPURay), myAcousticRayCapacity, nullptr, myAcousticRayBuffer, myAcousticRaySRV))
-		{
-			LOG(GELog, Error, "Failed to allocate Acoustic Ray Buffer!");
-			return false;
-		}
-
-		if (!myRHI->CreateUAVBuffer(sizeof(GPURayResult), myAcousticRayCapacity, myAcousticResultBuffer, myAcousticResultUAV))
-		{
-			LOG(GELog, Error, "Failed to allocate Acoustic Result UAV!");
-			return false;
-		}
-		if (!myRHI->CreateStagingBuffer(sizeof(GPURayResult) * myAcousticRayCapacity, myAcousticStagingBuffer))
-		{
-			LOG(GELog, Error, "Failed to allocate Acoustic Staging Buffer!");
-			return false;
-		}
-	}
-
-	if (aObstacleCount > myAcousticObstacleCapacity)
-	{
-		myAcousticObstacleCapacity = static_cast<size_t>(aObstacleCount * 1.2f);
-
-		myAcousticObsBuffer.Reset();
-		myAcousticObsSRV.Reset();
-
-		if (myAcousticObstacleCapacity > 0)
-		{
-			if (!myRHI->CreateStructuredBuffer(sizeof(GPUObstacle), myAcousticObstacleCapacity, nullptr, myAcousticObsBuffer, myAcousticObsSRV))
-			{
-				LOG(GELog, Error, "Failed to allocate Acoustic Obstacle Buffer!");
-				return false;
-			}
-		}
-	}
 	if (!myAcousticSceneCB)
 	{
 		D3D11_BUFFER_DESC cbDesc = {};
-		cbDesc.ByteWidth = sizeof(AcousticSceneData);
-		cbDesc.Usage = D3D11_USAGE_DYNAMIC;
+		cbDesc.ByteWidth = sizeof(AcousticSceneData); // 48 Bytes (Valid!)
+		cbDesc.Usage = D3D11_USAGE_DYNAMIC;           // We map/unmap it every frame
 		cbDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 		cbDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+		cbDesc.MiscFlags = 0;
+		cbDesc.StructureByteStride = 0;
 
-		if (FAILED(myRHI->GetDevice()->CreateBuffer(&cbDesc, nullptr, myAcousticSceneCB.GetAddressOf())))
+		if (FAILED(device->CreateBuffer(&cbDesc, nullptr, myAcousticSceneCB.GetAddressOf())))
 		{
-			LOG(GELog, Error, "Failed to allocate Acoustic Scene Constant Buffer!");
+			// Optional: Log an error here so you know exactly what failed!
 			return false;
 		}
+	}
+
+	// 1. DYNAMIC RAY INPUT BUFFER (t6)
+	if (aRayCount > myAcousticRayCapacity)
+	{
+		myAcousticRayCapacity = static_cast<size_t>(aRayCount * 1.2f);
+		myAcousticRayBuffer.Reset();
+		myAcousticRaySRV.Reset();
+
+		if (!rhi->CreateStructuredBuffer(sizeof(GPURay), myAcousticRayCapacity, nullptr, myAcousticRayBuffer, myAcousticRaySRV))
+			return false;
+	}
+
+	// 2. DYNAMIC OBSTACLE INPUT BUFFER (t7)
+	if (aObstacleCount > myAcousticObstacleCapacity)
+	{
+		myAcousticObstacleCapacity = static_cast<size_t>(aObstacleCount * 1.2f) + 1; // +1 to prevent 0-size
+		myAcousticObsBuffer.Reset();
+		myAcousticObsSRV.Reset();
+
+		if (!rhi->CreateStructuredBuffer(sizeof(GPUObstacle), myAcousticObstacleCapacity, nullptr, myAcousticObsBuffer, myAcousticObsSRV))
+			return false;
+	}
+
+	// 3. NEW: PROBE INPUT BUFFER (t8)
+	if (aProbeCount > myAcousticProbeCapacity)
+	{
+		myAcousticProbeCapacity = static_cast<size_t>(aProbeCount * 1.1f);
+		myAcousticProbeBuffer.Reset();
+		myAcousticProbeSRV.Reset();
+
+		if (!rhi->CreateStructuredBuffer(sizeof(CU::Vector3f), myAcousticProbeCapacity, nullptr, myAcousticProbeBuffer, myAcousticProbeSRV))
+			return false;
+	}
+
+	// 4. NEW: MEGA HIT APPEND BUFFER (u0)
+	// We estimate capacity: Rays * Avg Bounces * Chance to hit a probe
+	// Let's assume 10,000 rays * 10 bounces = 100,000 potential hits
+	size_t requiredHitCapacity = aRayCount * 15;
+
+	if (requiredHitCapacity > myMegaHitCapacity)
+	{
+		myMegaHitCapacity = requiredHitCapacity;
+		myMegaHitBuffer.Reset();
+		myMegaHitUAV.Reset();
+		myMegaHitStagingBuffer.Reset();
+		myMegaHitCountBuffer.Reset(); // The buffer to store the count
+
+		// Create Structured Buffer for UAV
+		D3D11_BUFFER_DESC desc = {};
+		desc.ByteWidth = static_cast<UINT>(sizeof(GPUMegaHit) * myMegaHitCapacity);
+		desc.Usage = D3D11_USAGE_DEFAULT;
+		desc.BindFlags = D3D11_BIND_UNORDERED_ACCESS;
+		desc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+		desc.StructureByteStride = sizeof(GPUMegaHit);
+
+		if (FAILED(device->CreateBuffer(&desc, nullptr, myMegaHitBuffer.GetAddressOf())))
+			return false;
+
+		// CREATE UAV WITH APPEND FLAG
+		D3D11_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
+		uavDesc.Format = DXGI_FORMAT_UNKNOWN;
+		uavDesc.ViewDimension = D3D11_UAV_DIMENSION_BUFFER;
+		uavDesc.Buffer.FirstElement = 0;
+		uavDesc.Buffer.NumElements = static_cast<UINT>(myMegaHitCapacity);
+		uavDesc.Buffer.Flags = D3D11_BUFFER_UAV_FLAG_APPEND; // <--- CRITICAL
+
+		if (FAILED(device->CreateUnorderedAccessView(myMegaHitBuffer.Get(), &uavDesc, myMegaHitUAV.GetAddressOf())))
+			return false;
+
+		// CREATE STAGING BUFFER FOR READBACK
+		desc.BindFlags = 0;
+		desc.Usage = D3D11_USAGE_STAGING;
+		desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+		desc.MiscFlags = 0; // Staging doesn't use MISC_BUFFER_STRUCTURED
+
+		if (FAILED(device->CreateBuffer(&desc, nullptr, myMegaHitStagingBuffer.GetAddressOf())))
+			return false;
+
+		// CREATE COUNT BUFFER (4 bytes to store the number of hits)
+		D3D11_BUFFER_DESC countDesc = {};
+		countDesc.ByteWidth = 4;
+		countDesc.Usage = D3D11_USAGE_STAGING;
+		countDesc.BindFlags = 0;
+		countDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+
+		if (FAILED(device->CreateBuffer(&countDesc, nullptr, myMegaHitCountBuffer.GetAddressOf())))
+			return false;
 	}
 
 	return true;

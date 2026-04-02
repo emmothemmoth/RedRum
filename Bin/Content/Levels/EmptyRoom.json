@@ -175,7 +175,7 @@
         {
           "TypeName": "AudioSourceComponent",
           "ComponentTypeID": 7,
-          "File": "\\Audio\\example_music.wav"
+          "File": "\\Audio\\example_drum_track.wav"
         }
       ]
     }

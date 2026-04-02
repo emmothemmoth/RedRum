@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CommonUtilities/Vector3.hpp"
+#include "CommonUtilities/Vector2.hpp"
 #include "CommonUtilities/Matrix.hpp"
 
 struct GPURay
@@ -23,16 +24,42 @@ struct GPUObstacle
 
 struct GPURayResult
 {
+	CU::Vector3f RayDirection;
 	int HitListener; 
 	float TotalDistance;
 	float FinalPower;
-	float PanAngle; 
+	CU::Vector2f Padding;
 };
 
 struct AcousticSceneData
 {
-	CU::Vector3f ListenerPos;
-	float ListenerRadius;
-	CU::Vector3f ListenerRight;
-	int ObstacleCount;
+	CU::Vector3f ListenerPos;    // 12 bytes
+	float ListenerRadius;        // 4 bytes  (Total: 16)
+	CU::Vector3f ListenerRight;  // 12 bytes
+	int ObstacleCount;           // 4 bytes  (Total: 32)
+	int TotalProbeCount;         // 4 bytes
+	CU::Vector3f PaddingCB;      // 12 bytes (Total: 48) -> PERFECT! Multiple of 16.
+};
+
+struct AcousticHit
+{
+	float delay; 
+	float gainL;
+	float gainR;
+	int bounceCount; 
+};
+
+struct GPUMegaHit
+{
+	CU::Vector3f RayDirection;
+	int ProbeIndex;
+	float Distance;
+	float Power;
+	CU::Vector2f Padding;
+};
+
+struct AcousticProbe
+{
+	CU::Vector3f Position;
+	std::vector<GPUMegaHit> Hits;
 };

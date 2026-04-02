@@ -92,7 +92,7 @@ public:
 
 	bool PrepareParticleEmitter(ParticleEmitter& anEmitter);
 
-	bool PrepareAcousticBuffers(size_t aRayCount, size_t aObstacleCount);
+	bool PrepareAcousticBuffers(size_t aRayCount, size_t aObstacleCount, size_t aProbeCount);
 
 	bool ClearTextureResourceSlot(unsigned aPipelineStages, unsigned aSlot) const;
 
@@ -196,13 +196,21 @@ public:
 
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> GetAcousticRaySRV() const { return myAcousticRaySRV; }
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> GetAcousticObsSRV() const { return myAcousticObsSRV; }
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> GetAcousticProbeSRV() const { return myAcousticProbeSRV; }
 	Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView> GetAcousticResultUAV() const { return myAcousticResultUAV; }
+	Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView> GetMegaHitUAV() const { return myMegaHitUAV; }
+	Microsoft::WRL::ComPtr<ID3D11Buffer> GetMegaHitStagingBuffer() const { return myMegaHitStagingBuffer; }
+	Microsoft::WRL::ComPtr<ID3D11Buffer> GetMegaHitBuffer() const { return myMegaHitBuffer; }
+	Microsoft::WRL::ComPtr<ID3D11Buffer> GetMegaHitCountBuffer() const { return myMegaHitCountBuffer; }
+	size_t GetMegaHitCapacity() const { return myMegaHitCapacity; }
+
 	Microsoft::WRL::ComPtr<ID3D11Buffer> GetAcousticSceneCB() const { return myAcousticSceneCB; }
 
 	Microsoft::WRL::ComPtr<ID3D11Buffer> GetAcousticRayBuffer() const { return myAcousticRayBuffer; }
 	Microsoft::WRL::ComPtr<ID3D11Buffer> GetAcousticObsBuffer() const { return myAcousticObsBuffer; }
 	Microsoft::WRL::ComPtr<ID3D11Buffer> GetAcousticResultBuffer() const { return myAcousticResultBuffer; }
 	Microsoft::WRL::ComPtr<ID3D11Buffer> GetAcousticStagingBuffer() const { return myAcousticStagingBuffer; }
+	Microsoft::WRL::ComPtr<ID3D11Buffer> GetAcousticProbeBuffer() const { return myAcousticProbeBuffer; }
 
 	HWND GetWindowHandle() const;
 	SIZE GetWindowSize() const;
@@ -353,6 +361,16 @@ private:
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> myAcousticObsSRV;
 	Microsoft::WRL::ComPtr<ID3D11Buffer> myAcousticSceneCB;
 	Microsoft::WRL::ComPtr<ID3D11Buffer> myAcousticStagingBuffer;
+
+	size_t myAcousticProbeCapacity = 0;
+	Microsoft::WRL::ComPtr<ID3D11Buffer> myAcousticProbeBuffer;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> myAcousticProbeSRV;
+
+	size_t myMegaHitCapacity = 0;
+	Microsoft::WRL::ComPtr<ID3D11Buffer> myMegaHitBuffer;
+	Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView> myMegaHitUAV;
+	Microsoft::WRL::ComPtr<ID3D11Buffer> myMegaHitStagingBuffer;
+	Microsoft::WRL::ComPtr<ID3D11Buffer> myMegaHitCountBuffer;
 
 	std::vector<ComPtr<IUnknown>> myStaleCOMObjects;
 

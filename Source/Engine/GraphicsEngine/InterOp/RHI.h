@@ -217,6 +217,7 @@ public:
 	FORCEINLINE std::shared_ptr<TextureAsset> GetBackBuffer() const { return myBackBuffer; }
 	FORCEINLINE std::shared_ptr<TextureAsset> GetDepthBuffer() const { return myDepthBuffer; }
 	FORCEINLINE std::shared_ptr<TextureAsset> GetViewportBackBuffer() const { return myViewportBackBuffer; }
+	FORCEINLINE ComPtr<ID3D11Device> GetDevice() const { return myDevice; }
 
 	CU::Vector2f GetViewPortSize() const;
 

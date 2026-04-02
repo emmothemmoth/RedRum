@@ -38,10 +38,10 @@ struct ComputeRequest
 {
 	std::vector<GPURay> Rays;
 	std::vector<GPUObstacle> Obstacles;
-	CU::Vector3f ListenerPos;
+	std::vector<CU::Vector3f> Probes;
+	float ProbeRadius;
 	CU::Vector3f ListenerRight;
-	float ListenerRadius;
-	std::shared_ptr<std::promise<std::vector<GPURayResult>>> Promise;
+	std::shared_ptr<std::promise<std::vector<GPUMegaHit>>> Promise;
 };
 
 class RoomSimulator
@@ -63,11 +63,19 @@ public:
 
 	MulticastDelegate<juce::AudioBuffer<float>> OnBakeComplete;
 	MulticastDelegate<uint32_t, std::vector<VisualRayPath>> OnScoutBatchReady;
+	MulticastDelegate<std::vector<AcousticProbe>> OnMegaBakeComplete;
 	const juce::AudioBuffer<float>& GetSimulation() const { return mySimulation; }
 	void SetBakeRate(const double& aBakeRate) { myBakeRate = aBakeRate; }
-	void SetRayLimit(const uint32_t aLimit) { myRayLimit = aLimit; }
+	void SetRayLimit(const int aLimit) { myRayLimit = aLimit; }
+
+	CU::Matrix4x4f GetListenerTransform();
+
+	std::vector<AudioEmitter> GetSourcesCopy();
+	int GetRayLimit() const { return myRayLimit; }
 private:
 	void WorkerThreadLoop();
+
+	std::vector<CU::Vector3f> GenerateGrid(CU::Vector3f minBounds, CU::Vector3f maxBounds, float spacing);
 
 
 private:
@@ -85,7 +93,9 @@ private:
 	std::mutex myComputeMutex;
 	std::optional<ComputeRequest> myPendingComputeRequest = std::nullopt;
 	double myBakeRate = 48000;
-	uint32_t myRayLimit = 500;
+	int myRayLimit = 500;
+	float myProbeSpacing = 200.0f;
+	float myProbeRadius = 50.0f;
 	bool myHasWork = false;
 	bool myShouldExit = false;
 };

@@ -19,7 +19,7 @@ void GCmdComputeAcoustics::Execute()
 {
 	auto& ge = GraphicsEngine::Get();
 	auto& rhi = ge.GetRHI();
-	if (!ge.PrepareAcousticBuffers(myRays.size(), myObstacles.size()))
+	if (!ge.PrepareAcousticBuffers(myRays.size(), myObstacles.size(), 0))
 	{
 		return;
 	}

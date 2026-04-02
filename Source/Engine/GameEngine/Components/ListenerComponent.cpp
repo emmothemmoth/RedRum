@@ -35,13 +35,13 @@ void ListenerComponent::Update(const float aDeltaTime)
 void ListenerComponent::StartPreview()
 {
 	auto& audioEngine = MainSingleton::Get().GetAudioEngine();
-	audioEngine.Control2DSource(mySimulationHandle, AudiosourceControl::Play);
+	audioEngine.ControlRoomPlayback(AudiosourceControl::Play);
 }
 
 void ListenerComponent::StopPreview()
 {
 	auto& audioEngine = MainSingleton::Get().GetAudioEngine();
-	audioEngine.Control2DSource(mySimulationHandle, AudiosourceControl::Stop);
+	audioEngine.ControlRoomPlayback(AudiosourceControl::Stop);
 }
 
 bool ListenerComponent::IsPlayable() const

@@ -125,7 +125,7 @@ struct AudioCommand
     AudioCommand(AudioCommand&&) noexcept = default;
     AudioCommand& operator=(AudioCommand&&) noexcept = default;
 
-    enum { Play, Stop, Pause, StopAll, AddSource, UpdateSource } Type;
+    enum { PlayScene, Play, Stop, Pause, StopAll, AddSource, UpdateSource } Type;
     AudioHandle Handle;
     std::unique_ptr<AudioSource> SourceData;
     // You can add Matrix4x4 here for 3D updates later
@@ -152,7 +152,7 @@ struct AudioEngine::Impl : public juce::AudioIODeviceCallback
 	std::optional<AudioHandle> RegisterSoundSource(const std::filesystem::path& aFilePath);
 	void UnregisterSoundSource();
 
-	void UpdateSoundSource(const AudioHandle, const CU::Matrix4x4f& aMatrix);
+    void LoadProbeIR(const AcousticProbe& activeProbe, int targetReverbIndex, const CU::Vector3f& listenerRight);
 
     void PushCommand(AudioCommand aCommand);
 
@@ -169,12 +169,27 @@ struct AudioEngine::Impl : public juce::AudioIODeviceCallback
     juce::ScopedJuceInitialiser_GUI juceInit;
 	juce::AudioDeviceManager DeviceManager;
 	std::unordered_map<AudioHandle, std::unique_ptr<AudioSource>> AudioSources;
+    juce::AudioBuffer<float> Dry3DBuffer;
+    std::vector<AudioHandle> SceneEmitterHandles;
 	AudioHandle HandleCounter = 0;
 
     std::filesystem::path ContentPath;
 
     RoomSimulator Simulator;
     std::optional<AudioHandle> BakedRoomHandle = std::nullopt;
+
+    juce::dsp::Convolution Reverbs[2];
+    juce::SmoothedValue<float, juce::ValueSmoothingTypes::Linear> ReverbVolumes[2];
+    juce::AudioBuffer<float> TempBufferA;
+    juce::AudioBuffer<float> TempBufferB;
+    int ActiveReverbIdx = 0;
+    CU::Vector3f LastListenerRight = { 0, 0, 0 };
+
+    std::vector<AcousticProbe> CachedGrid;
+    int ActiveProbeIndex = -1;
+    std::atomic<double> SampleRate;
+    bool IsRoomBaked = false;
+    bool IsSimulationRunning = false;
 };
 
 AudioEngine::AudioEngine()
@@ -191,6 +206,7 @@ void AudioEngine::Initialize()
     if (!myImpl)
     {
         myImpl = std::make_unique<Impl>();
+        myImpl->SampleRate = mySampleRate;
         myIsInitialized = true;
 
         myImpl->Simulator.OnScoutBatchReady.AddLambda([this](EmitterHandle handle, std::vector<VisualRayPath> paths)
@@ -198,41 +214,11 @@ void AudioEngine::Initialize()
                 OnVisualRaysReady.Broadcast(handle, std::move(paths));
             });
 
-        myImpl->Simulator.OnBakeComplete.AddLambda([this](juce::AudioBuffer<float> bakedBuffer)
+        myImpl->Simulator.OnMegaBakeComplete.AddLambda([this](std::vector<AcousticProbe> bakedGrid)
             {
-                auto newFile = std::make_shared<AudioFile>();
-                newFile->Buffer = std::move(bakedBuffer);
-                newFile->SampleRate = mySampleRate;
-
-                myImpl->LoadedFiles["Baked_Room_Simulation"] = newFile;
-
-                auto newSource = std::make_unique<AudioSource>();
-                auto* device = myImpl->DeviceManager.getCurrentAudioDevice();
-                double hardwareSampleRate = device ? device->getCurrentSampleRate() : 44100.0;
-
-                newSource->Prepare(newFile->Buffer.getNumChannels());
-                newSource->Ratio = mySampleRate / hardwareSampleRate;
-                newSource->CurrentSound = newFile;
-                newSource->IsPlaying = false;
-
-                AudioCommand cmd;
-                cmd.SourceData = std::move(newSource);
-
-                if (myImpl->BakedRoomHandle.has_value())
-                {
-                    cmd.Type = AudioCommand::UpdateSource;
-                    cmd.Handle = myImpl->BakedRoomHandle.value();
-                }
-                else
-                {
-                    myImpl->BakedRoomHandle = myImpl->HandleCounter++;
-                    cmd.Type = AudioCommand::AddSource;
-                    cmd.Handle = myImpl->BakedRoomHandle.value();
-                }
-
-                AudioHandle handleCopy = cmd.Handle;
-                myImpl->PushCommand(std::move(cmd));
-                OnSimulationReady.Broadcast(handleCopy);
+                myImpl->CachedGrid = std::move(bakedGrid);
+                myImpl->IsRoomBaked = true;
+                myImpl->ActiveProbeIndex = -1; // Force an audio update on the next frame
             });
 
         myImpl->DeviceManager.initialiseWithDefaultDevices(0, 2);
@@ -243,6 +229,58 @@ void AudioEngine::Initialize()
 void AudioEngine::Update()
 {
     myImpl->Simulator.Update();
+
+    if (!myImpl->IsRoomBaked || myImpl->CachedGrid.empty())
+        return;
+
+    CU::Vector3f listenerPos;
+    CU::Vector3f currentRight;
+    {
+        auto transform = myImpl->Simulator.GetListenerTransform();
+        listenerPos = { transform(4,1), transform(4,2), transform(4,3) };
+        currentRight = { transform(1,1), transform(1,2), transform(1,3) };
+    }
+
+    int nearestIdx = -1;
+    float minDist = 999999999.0f;
+
+    for (int i = 0; i < myImpl->CachedGrid.size(); ++i)
+    {
+        float dist = (myImpl->CachedGrid[i].Position - listenerPos).Length();
+        if (dist < minDist)
+        {
+            minDist = dist;
+            nearestIdx = i;
+        }
+    }
+
+    bool zoneChanged = (nearestIdx != -1 && nearestIdx != myImpl->ActiveProbeIndex);
+
+    // Check if player rotated more than ~3.5 degrees
+    bool rotationChanged = (myImpl->LastListenerRight.Dot(currentRight) < 0.998f);
+
+    if (zoneChanged || (rotationChanged && myImpl->ActiveProbeIndex != -1))
+    {
+        bool wasFirstTime = (myImpl->ActiveProbeIndex == -1);
+
+        myImpl->ActiveProbeIndex = nearestIdx;
+        myImpl->LastListenerRight = currentRight; // Save rotation
+
+        int inactiveIdx = (myImpl->ActiveReverbIdx == 0) ? 1 : 0;
+
+        // Pass the live rotation into the IR generator!
+        myImpl->LoadProbeIR(myImpl->CachedGrid[nearestIdx], inactiveIdx, currentRight);
+
+        myImpl->ReverbVolumes[myImpl->ActiveReverbIdx].setTargetValue(0.0f);
+        myImpl->ReverbVolumes[inactiveIdx].setTargetValue(1.0f);
+
+        myImpl->ActiveReverbIdx = inactiveIdx;
+
+        if (wasFirstTime)
+        {
+            OnSimulationReady.Broadcast(0);
+        }
+    }
 }
 
 void AudioEngine::InitListener(const CU::Matrix4x4f& aTransform)
@@ -364,6 +402,7 @@ std::optional<EmitterHandle> AudioEngine::RegisterAudioEmitter(AudioHandle aSour
 
     if (it != myImpl->FileRegistry.end() && it->second != nullptr)
     {
+        myImpl->SceneEmitterHandles.push_back(aSourceHandle);
         const juce::AudioBuffer<float>* sourceBuffer = &it->second->Buffer;
         float sourceRate = static_cast<float>(it->second->SampleRate);
 
@@ -380,6 +419,14 @@ void AudioEngine::UpdateAudioEmitter(const EmitterHandle aHandle, const EmitterS
 
 void AudioEngine::UnregisterEmitter(const EmitterHandle aHandle)
 {
+    for (int index = (int)myImpl->SceneEmitterHandles.size() - 1; index >= 0; --index)
+    {
+        if (myImpl->SceneEmitterHandles.at(index) == aHandle)
+        {
+            myImpl->SceneEmitterHandles.erase(myImpl->SceneEmitterHandles.begin() + index);
+            break;
+        }
+    }
     myImpl->Simulator.UnregisterEmitter(aHandle);
 }
 
@@ -396,6 +443,59 @@ void AudioEngine::UpdateAudioObstacle(ObstacleHandle aHandle, const AbsorberSett
 void AudioEngine::UnregisterAudioObstacle(ObstacleHandle aHandle)
 {
     myImpl->Simulator.UnregisterObstacle(aHandle);
+}
+
+void AudioEngine::Impl::LoadProbeIR(const AcousticProbe& activeProbe, int targetReverbIndex, const CU::Vector3f& listenerRight)
+{
+    int sampleRate = static_cast<int>(Simulator.GetRayLimit() > 0 ? 48000 : 48000);
+    int irLengthSamples = sampleRate * 2; // 2 seconds max reverb tail
+
+    juce::AudioBuffer<float> irBuffer(2, irLengthSamples);
+    irBuffer.clear();
+
+    const float minDistance = 200.0f;
+    const float rolloffFactor = 0.5f;
+    float rayLimitFloat = static_cast<float>(Simulator.GetRayLimit());
+
+    // 1. WE DELETED THE FAKE DRY SOUND HERE
+    // The physics engine will naturally provide the direct hits from the raycaster!
+
+    // 2. Mix the Reflections (The "Wet" Tail)
+    for (const auto& hit : activeProbe.Hits)
+    {
+        float delaySeconds = hit.Distance / 34300.0f;
+        int delaySamples = static_cast<int>(delaySeconds * sampleRate);
+
+        if (delaySamples >= irLengthSamples) continue;
+
+        float attenuation = minDistance / (minDistance + rolloffFactor * (hit.Distance - minDistance));
+        float clampedAtten = (attenuation < 1.0f) ? attenuation : 1.0f;
+
+        // --- THE ENERGY FIX ---
+        // A single-sample impulse needs significantly more amplitude than continuous audio.
+        // We multiply by a "Reverb Boost" factor (e.g., 500.0f) so it's actually audible.
+        // You can tweak this 500.0f up or down to act as a global "Wetness" knob!
+        float reverbBoost = 300.0f;
+        float finalGain = (clampedAtten * hit.Power * reverbBoost) / rayLimitFloat;
+
+        float pan = listenerRight.Dot(-hit.RayDirection); // Use live rotation!
+        float livePanAngle = (pan + 1.0f) * 0.5f * (3.14159f * 0.5f);
+
+        float leftGain = std::cos(livePanAngle) * finalGain;
+        float rightGain = std::sin(livePanAngle) * finalGain;
+
+        irBuffer.addSample(0, delaySamples, leftGain);
+        irBuffer.addSample(1, delaySamples, rightGain);
+    }
+
+    // 3. Hand the Room Fingerprint to the Convolution Engine
+    Reverbs[targetReverbIndex].loadImpulseResponse(
+        std::move(irBuffer),
+        sampleRate,
+        juce::dsp::Convolution::Stereo::yes,
+        juce::dsp::Convolution::Trim::no,
+        juce::dsp::Convolution::Normalise::no
+    );
 }
 
 void AudioEngine::Impl::PushCommand(AudioCommand aCommand)
@@ -441,6 +541,41 @@ void AudioEngine::Control2DSource(const AudioHandle aHandle, const AudiosourceCo
     myImpl->PushCommand(std::move(cmd));
 }
 
+void AudioEngine::ControlRoomPlayback(AudiosourceControl aControltype)
+{
+    if (!myIsInitialized) return;
+
+    AudioCommand cmd;
+    switch (aControltype)
+    {
+    case AudiosourceControl::Play:
+    {
+        {
+            AudioCommand stopAll;
+            stopAll.Type = AudioCommand::StopAll;
+            myImpl->PushCommand(std::move(stopAll));
+        }
+        cmd.Type = AudioCommand::PlayScene;
+        break;
+    }
+    case AudiosourceControl::Pause:
+    {
+        //TODO:
+        cmd.Type = AudioCommand::Pause;
+        return;
+    }
+    case AudiosourceControl::Stop:
+    {
+        cmd.Type = AudioCommand::StopAll;
+        break;
+    }
+    default:
+        return;
+    }
+
+    myImpl->PushCommand(std::move(cmd));
+}
+
 void AudioEngine::StartRoomSimulation()
 {
     OnSimulationStarted.Broadcast();
@@ -450,6 +585,7 @@ void AudioEngine::StartRoomSimulation()
 void AudioEngine::SetSampleRate(const double& aSampleRate)
 {
     mySampleRate = aSampleRate;
+    myImpl->SampleRate = aSampleRate;
     myImpl->Simulator.SetBakeRate(aSampleRate);
 }
 
@@ -487,8 +623,6 @@ void AudioEngine::Impl::audioDeviceIOCallbackWithContext(const float* const* inp
     context;
     numInputChannels;
     inputChannelData;
-
-
     // 1. DRAIN COMMANDS
     int start1, size1, start2, size2;
     CommandFifo.prepareToRead(CommandFifo.getNumReady(), start1, size1, start2, size2);
@@ -505,6 +639,7 @@ void AudioEngine::Impl::audioDeviceIOCallbackWithContext(const float* const* inp
 
         case AudioCommand::Play:
         {
+            IsSimulationRunning = false;
             auto it = AudioSources.find(cmd.Handle);
             if (it != AudioSources.end())
             {
@@ -514,6 +649,22 @@ void AudioEngine::Impl::audioDeviceIOCallbackWithContext(const float* const* inp
                 for (auto& interpolator : src->Interpolators)
                 {
                     interpolator->reset();
+                }
+            }
+            break;
+        }
+        case AudioCommand::PlayScene:
+        {
+            IsSimulationRunning = true;
+            for (auto& [handle, source] : AudioSources) source->IsPlaying = false;
+            for (AudioHandle emitterHandle : SceneEmitterHandles)
+            {
+                auto it = AudioSources.find(emitterHandle);
+                if (it != AudioSources.end())
+                {
+                    it->second->ReadIndex = 0;
+                    it->second->IsPlaying = true;
+                    for (auto& interpolator : it->second->Interpolators) interpolator->reset();
                 }
             }
             break;
@@ -540,6 +691,7 @@ void AudioEngine::Impl::audioDeviceIOCallbackWithContext(const float* const* inp
         }
         case AudioCommand::StopAll:
         {
+            IsSimulationRunning = false;
             for (auto& [handle, source] : AudioSources)
             {
                 source->IsPlaying = false;
@@ -567,18 +719,91 @@ void AudioEngine::Impl::audioDeviceIOCallbackWithContext(const float* const* inp
     juce::AudioBuffer<float> outputBuffer(const_cast<float**>(outputChannelData), numOutputChannels, numSamples);
     outputBuffer.clear();
 
+    // Clear our 3D routing bus
+    for (int c = 0; c < numOutputChannels; ++c)
+    {
+        Dry3DBuffer.clear(c, 0, numSamples);
+    }
+
+    // 1. ROUTE AUDIO
     for (auto& [handle, sourcePtr] : AudioSources)
     {
         if (sourcePtr && sourcePtr->IsPlaying)
         {
-            sourcePtr->Process(outputBuffer);
+            if (IsSimulationRunning)
+            {
+                sourcePtr->Process(Dry3DBuffer); // Send to Reverb
+            }
+            else
+            {
+                sourcePtr->Process(outputBuffer); // Send directly to Speakers!
+            }
+        }
+    }
+
+    if (IsRoomBaked && ActiveProbeIndex != -1)
+    {
+        // 1. Clear ONLY the chunk of the temp buffers we are about to use
+        // (Since block sizes fluctuate, we only clear 'numSamples')
+        for (int c = 0; c < numOutputChannels; ++c)
+        {
+            // FIX A: Copy from Dry3DBuffer, not outputBuffer!
+            TempBufferA.copyFrom(c, 0, Dry3DBuffer, c, 0, numSamples);
+            TempBufferB.copyFrom(c, 0, Dry3DBuffer, c, 0, numSamples);
+        }
+
+        // 2. Process Convolution A
+        juce::dsp::AudioBlock<float> blockA(TempBufferA.getArrayOfWritePointers(), numOutputChannels, numSamples);
+        juce::dsp::ProcessContextReplacing<float> contextA(blockA);
+        Reverbs[0].process(contextA);
+
+        // 3. Process Convolution B
+        juce::dsp::AudioBlock<float> blockB(TempBufferB.getArrayOfWritePointers(), numOutputChannels, numSamples);
+        juce::dsp::ProcessContextReplacing<float> contextB(blockB);
+        Reverbs[1].process(contextB);
+
+
+        // 4. Apply smoothed crossfade volumes and sum to output
+        for (int sample = 0; sample < numSamples; ++sample)
+        {
+            float volA = ReverbVolumes[0].getNextValue();
+            float volB = ReverbVolumes[1].getNextValue();
+
+            for (int c = 0; c < numOutputChannels; ++c)
+            {
+                float wetSample = (TempBufferA.getSample(c, sample) * volA) +
+                    (TempBufferB.getSample(c, sample) * volB);
+
+                // ADD to the output buffer so we don't overwrite the 2D audio!
+                outputBuffer.addSample(c, sample, wetSample);
+            }
         }
     }
 }
 
 void AudioEngine::Impl::audioDeviceAboutToStart(juce::AudioIODevice* device)
 {
-    device;
+    if (device != nullptr)
+    {
+        juce::dsp::ProcessSpec spec;
+        spec.sampleRate = device->getCurrentSampleRate();
+        spec.maximumBlockSize = device->getCurrentBufferSizeSamples();
+        spec.numChannels = 2;
+
+        Reverbs[0].prepare(spec);
+        Reverbs[1].prepare(spec);
+
+        // Set a 50ms crossfade
+        ReverbVolumes[0].reset(spec.sampleRate, 0.05);
+        ReverbVolumes[1].reset(spec.sampleRate, 0.05);
+
+        ReverbVolumes[0].setCurrentAndTargetValue(1.0f);
+        ReverbVolumes[1].setCurrentAndTargetValue(0.0f);
+
+        TempBufferA.setSize(2, spec.maximumBlockSize);
+        TempBufferB.setSize(2, spec.maximumBlockSize);
+        Dry3DBuffer.setSize(2, spec.maximumBlockSize);
+    }
 }
 
 void AudioEngine::Impl::audioDeviceStopped()

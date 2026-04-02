@@ -57,6 +57,7 @@ public:
 	void UnregisterAudioObstacle(ObstacleHandle aHandle);
 
 	void Control2DSource(const AudioHandle aHandle, const AudiosourceControl aControltype);
+	void ControlRoomPlayback(AudiosourceControl aControltype);
 
 	void StartRoomSimulation();
 
@@ -74,5 +75,6 @@ private:
 	std::unique_ptr<Impl> myImpl;
 	double mySampleRate = 48000.0;
 	bool myIsInitialized = false;
+	bool myRoomIsBaked = false;
 };
 
