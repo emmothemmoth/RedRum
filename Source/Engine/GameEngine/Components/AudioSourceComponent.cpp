@@ -177,7 +177,7 @@ void AudioSourceComponent::ReceiveScoutRays(EmitterHandle aHandle, std::vector<V
 	{
 		RayAnimationTracker anim;
 		anim.PathData = path;
-		anim.Speed = 100.0f;
+		anim.Speed = 500.0f;
 		myAnimators.push_back(anim);
 
 		totalLineSegments += static_cast<int>(path.Bounces.size());

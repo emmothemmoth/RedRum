@@ -139,7 +139,6 @@ void RoomSimulator::Simulate()
 	myConditionVariable.notify_one();
 }
 
-
 void RoomSimulator::WorkerThreadLoop()
 {
 	while (true)
@@ -188,8 +187,8 @@ void RoomSimulator::WorkerThreadLoop()
 		std::mt19937 rng(42);
 		std::uniform_real_distribution<float> dist(-1.0f, 1.0f);
 
-		const int SCOUT_RAY_COUNT = 100;
-		const int HEAVY_RAY_COUNT = 9900;
+		const int SCOUT_RAY_COUNT = 50;
+		const int HEAVY_RAY_COUNT = myRayLimit;
 		const int MAX_BOUNCES = 5;
 
 		// ====================================================================

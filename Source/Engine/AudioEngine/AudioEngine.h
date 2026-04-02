@@ -22,6 +22,13 @@ using FOnSimulationReady = MulticastDelegate<AudioHandle>;
 using FOnSimulationStarted = MulticastDelegate<>;
 using FOnVisualRaysReady = MulticastDelegate<EmitterHandle, std::vector<VisualRayPath>>;
 
+enum class BakeMode
+{
+	Preview_Fast,
+	Preview,
+	Export
+};
+
 enum class AudiosourceControl
 {
 	Play,
@@ -56,6 +63,8 @@ public:
 	bool IsInitialized() const { return myIsInitialized; }
 	const double& GetSampleRate() const { return mySampleRate; }
 	void SetSampleRate(const double& aSampleRate);
+	void SetBakeMode(BakeMode aMode);
+
 	FOnSimulationStarted OnSimulationStarted;
 	FOnSimulationReady OnSimulationReady;
 	FOnVisualRaysReady OnVisualRaysReady;

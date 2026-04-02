@@ -65,6 +65,7 @@ public:
 	MulticastDelegate<uint32_t, std::vector<VisualRayPath>> OnScoutBatchReady;
 	const juce::AudioBuffer<float>& GetSimulation() const { return mySimulation; }
 	void SetBakeRate(const double& aBakeRate) { myBakeRate = aBakeRate; }
+	void SetRayLimit(const uint32_t aLimit) { myRayLimit = aLimit; }
 private:
 	void WorkerThreadLoop();
 
@@ -84,6 +85,7 @@ private:
 	std::mutex myComputeMutex;
 	std::optional<ComputeRequest> myPendingComputeRequest = std::nullopt;
 	double myBakeRate = 48000;
+	uint32_t myRayLimit = 500;
 	bool myHasWork = false;
 	bool myShouldExit = false;
 };

@@ -453,6 +453,24 @@ void AudioEngine::SetSampleRate(const double& aSampleRate)
     myImpl->Simulator.SetBakeRate(aSampleRate);
 }
 
+void AudioEngine::SetBakeMode(BakeMode aMode)
+{
+    switch (aMode)
+    {
+    case BakeMode::Preview_Fast:
+        myImpl->Simulator.SetRayLimit(500);
+        break;
+    case BakeMode::Preview:
+        myImpl->Simulator.SetRayLimit(500);
+        break;
+    case BakeMode::Export:
+        myImpl->Simulator.SetRayLimit(50000);
+        break;
+    default:
+        break;
+    }
+}
+
 AudioEngine::Impl::Impl()
 {
     FormatManager.registerBasicFormats();
