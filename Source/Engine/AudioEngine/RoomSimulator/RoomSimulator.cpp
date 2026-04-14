@@ -152,6 +152,12 @@ std::vector<AudioEmitter> RoomSimulator::GetSourcesCopy()
     return mySources;
 }
 
+std::vector<AudioObstacle> RoomSimulator::GetObstaclesCopy()
+{
+    std::lock_guard<std::mutex> lock(myMutex);
+    return myObstacles;
+}
+
 void RoomSimulator::WorkerThreadLoop()
 {
     while (true)
@@ -177,8 +183,8 @@ void RoomSimulator::WorkerThreadLoop()
         listenerRight.Normalize();
 
         // Settings
-        float listenerRadius = 50.0f;
-        const int SCOUT_RAY_COUNT = 50;
+        float listenerRadius = 100.0f;
+        const int SCOUT_RAY_COUNT = 20;
         const int MAX_BOUNCES = 5;
 
         // Prepare RNG
@@ -208,12 +214,14 @@ void RoomSimulator::WorkerThreadLoop()
             {
                 const auto& aabb = std::get<AABBCollider>(obs.Collider.Shape);
                 GPUObstacle gpuObs;
-                gpuObs.Transform = obs.Transform;
                 gpuObs.InverseTransform = obs.InverseTransform;
+                gpuObs.Transform = obs.Transform;
                 gpuObs.MinPoint = aabb.MinPoint;
+                gpuObs.Padding1 = 0.0f;
                 gpuObs.MaxPoint = aabb.MaxPoint;
-                gpuObs.Absorption = obs.Absorber.ReflectionCoefficient;
-                gpuObs.Padding = 0.0f;
+                gpuObs.Padding2 = 0.0f;
+                gpuObs.Reflection = obs.Absorber.Reflection; // 3-Band Vector
+                gpuObs.Padding3 = 0.0f;
                 gpuObstacles.push_back(gpuObs);
             }
         }
@@ -240,7 +248,8 @@ void RoomSimulator::WorkerThreadLoop()
                 CU::Vector3f currentRayDir(dist(rng), dist(rng), dist(rng));
                 currentRayDir.Normalize();
 
-                float currentPower = 1.0f;
+                // 3-Band Energy Tracker
+                CU::Vector3f currentPower = { 1.0f, 1.0f, 1.0f };
                 VisualRayPath currentPath;
                 currentPath.HitListener = false;
 
@@ -249,7 +258,7 @@ void RoomSimulator::WorkerThreadLoop()
                     float closestT = INFINITY;
                     CU::Vector3f bestNormal;
                     bool hitListener = false;
-                    float hitAbsorption = 0.95f;
+                    CU::Vector3f hitAbsorption = { 0.95f, 0.95f, 0.95f }; // Default wall
 
                     // 1. Check Listener Sphere (Editor Only)
                     CU::Vector3f L = listenerPos - currentRayPos;
@@ -291,7 +300,7 @@ void RoomSimulator::WorkerThreadLoop()
                                 {
                                     closestT = worldT;
                                     hitListener = false;
-                                    hitAbsorption = obstacle.Absorber.ReflectionCoefficient;
+                                    hitAbsorption = obstacle.Absorber.Reflection; // Save specific material hit
 
                                     CU::Vector4f worldNorm4 = obstacle.Transform * CU::Vector4f(localNormal.x, localNormal.y, localNormal.z, 0.0f);
                                     bestNormal = { worldNorm4.x, worldNorm4.y, worldNorm4.z };
@@ -308,18 +317,32 @@ void RoomSimulator::WorkerThreadLoop()
                     RayBounce visualBounce;
                     visualBounce.StartPos = currentRayPos;
                     visualBounce.EndPos = hitPoint;
-                    visualBounce.StartPower = currentPower;
-                    visualBounce.EndPower = hitListener ? currentPower : currentPower * hitAbsorption;
-                    currentPath.Bounces.push_back(visualBounce);
+
+                    // Average the 3 bands to get a single alpha value for the debug line
+                    visualBounce.StartPower = (currentPower.x + currentPower.y + currentPower.z) / 3.0f;
 
                     if (hitListener)
                     {
+                        visualBounce.EndPower = visualBounce.StartPower;
+                        currentPath.Bounces.push_back(visualBounce);
                         currentPath.HitListener = true;
                         break;
                     }
                     else
                     {
-                        currentPower *= hitAbsorption;
+                        // Calculate UI End Power
+                        float endAvg = ((currentPower.x * hitAbsorption.x) +
+                            (currentPower.y * hitAbsorption.y) +
+                            (currentPower.z * hitAbsorption.z)) / 3.0f;
+
+                        visualBounce.EndPower = endAvg;
+                        currentPath.Bounces.push_back(visualBounce);
+
+                        // Apply full 3-Band Absorption
+                        currentPower.x *= hitAbsorption.x;
+                        currentPower.y *= hitAbsorption.y;
+                        currentPower.z *= hitAbsorption.z;
+
                         float dotProduct = currentRayDir.Dot(bestNormal);
                         currentRayDir = currentRayDir - (bestNormal * (2.0f * dotProduct));
                         currentRayDir.Normalize();
@@ -337,15 +360,17 @@ void RoomSimulator::WorkerThreadLoop()
             // PHASE B: THE GPU MEGA BAKE
             // ----------------------------------------------------------------
             std::vector<GPURay> gpuRays;
-            gpuRays.reserve(myRayLimit); // Use your dynamic limit
+            gpuRays.reserve(myRayLimit);
 
             for (int i = 0; i < myRayLimit; ++i)
             {
                 GPURay r;
                 r.Origin = sourcePos;
+                r.Padding1 = 0.0f;
+                r.Power = CU::Vector3f(1.0f, 1.0f, 1.0f); // 3-Band Energy starts at 100%
+                r.Padding2 = 0.0f;
                 r.Direction = CU::Vector3f(dist(rng), dist(rng), dist(rng)).GetNormalized();
-                r.Power = 1.0f;
-                r.Padding = 0.0f;
+                r.Padding3 = 0.0f;
                 gpuRays.push_back(r);
             }
 

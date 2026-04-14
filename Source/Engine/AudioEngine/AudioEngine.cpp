@@ -9,9 +9,10 @@
 #include "AudioEngine.h"
 #include "RoomSimulator/RoomSimulator.h"
 
+#include "CommonUtilities/Intersection.hpp"
+
 #include <unordered_map>
 #include <optional>
-
 #include <iostream>
 
 struct AudioFile
@@ -27,7 +28,7 @@ struct AudioSource
     AudioSource(){}
     AudioSource(AudioSource&& other) noexcept = default;
     AudioSource& operator=(AudioSource&& other) noexcept = default;
-    void Prepare(int numOutputChannels)
+    void Prepare(int numOutputChannels, double hardwareSampleRate)
     {
         Interpolators.clear();
         Interpolators.resize(numOutputChannels);
@@ -35,6 +36,9 @@ struct AudioSource
         {
             interpolator = std::make_unique<juce::LagrangeInterpolator>();
         }
+        juce::dsp::ProcessSpec spec{ hardwareSampleRate, 2048, static_cast<juce::uint32>(numOutputChannels) };
+        OcclusionFilter.prepare(spec);
+        OcclusionFilter.setType(juce::dsp::StateVariableTPTFilterType::lowpass);
     }
 
     // Delete the copy constructor and assignment to satisfy the compiler
@@ -113,8 +117,11 @@ struct AudioSource
     CommonUtilities::Matrix4x4f Transform;
     std::shared_ptr<AudioFile> CurrentSound;
     std::vector<std::unique_ptr<juce::LagrangeInterpolator>> Interpolators;
+    juce::dsp::StateVariableTPTFilter<float> OcclusionFilter;
     double Ratio = 1.0;
     int ReadIndex = 0;
+    float TargetOcclusion = 0.0f;
+    float CurrentOcclusion = 0.0f;
     bool IsPlaying = false;
     bool Loop = false;
 };
@@ -182,14 +189,15 @@ struct AudioEngine::Impl : public juce::AudioIODeviceCallback
     juce::SmoothedValue<float, juce::ValueSmoothingTypes::Linear> ReverbVolumes[2];
     juce::AudioBuffer<float> TempBufferA;
     juce::AudioBuffer<float> TempBufferB;
-    int ActiveReverbIdx = 0;
+    int LoadedProbeIndices[2] = { -1,-1 };
     CU::Vector3f LastListenerRight = { 0, 0, 0 };
 
     std::vector<AcousticProbe> CachedGrid;
-    int ActiveProbeIndex = -1;
     std::atomic<double> SampleRate;
     bool IsRoomBaked = false;
     bool IsSimulationRunning = false;
+    CU::Vector3f LiveListenerPos = { 0,0,0 };
+    CU::Vector3f LiveListenerRight = { 0,0,0 };
 };
 
 AudioEngine::AudioEngine()
@@ -218,7 +226,10 @@ void AudioEngine::Initialize()
             {
                 myImpl->CachedGrid = std::move(bakedGrid);
                 myImpl->IsRoomBaked = true;
-                myImpl->ActiveProbeIndex = -1; // Force an audio update on the next frame
+                myImpl->LoadedProbeIndices[0] = -1;
+                myImpl->LoadedProbeIndices[1] = -1;
+
+                OnSimulationReady.Broadcast(0);
             });
 
         myImpl->DeviceManager.initialiseWithDefaultDevices(0, 2);
@@ -239,46 +250,116 @@ void AudioEngine::Update()
         auto transform = myImpl->Simulator.GetListenerTransform();
         listenerPos = { transform(4,1), transform(4,2), transform(4,3) };
         currentRight = { transform(1,1), transform(1,2), transform(1,3) };
+        currentRight.Normalize();
+
+        myImpl->LiveListenerPos = listenerPos;
+        myImpl->LiveListenerRight = currentRight;
+    }
+    for (auto& [handle, sourcePtr] : myImpl->AudioSources)
+    {
+        if (!sourcePtr || !sourcePtr->IsPlaying) continue;
+
+        CU::Vector3f sourcePos = { sourcePtr->Transform(4,1), sourcePtr->Transform(4,2), sourcePtr->Transform(4,3) };
+        CU::Vector3f dirToSource = sourcePos - listenerPos;
+        float distanceToSource = dirToSource.Length();
+        if (distanceToSource > 0.001f) dirToSource.Normalize();
+
+        bool isOccluded = false;
+
+        for (const auto& obstacle : myImpl->Simulator.GetObstaclesCopy())
+        {
+            CU::Vector4f localOrigin4 = obstacle.InverseTransform * CU::Vector4f(listenerPos.x, listenerPos.y, listenerPos.z, 1.0f);
+            CU::Vector4f localDir4 = obstacle.InverseTransform * CU::Vector4f(dirToSource.x, dirToSource.y, dirToSource.z, 0.0f);
+            CU::Vector3f localOrigin = { localOrigin4.x, localOrigin4.y, localOrigin4.z };
+            CU::Vector3f localDir = { localDir4.x, localDir4.y, localDir4.z };
+
+            if (std::holds_alternative<AABBCollider>(obstacle.Collider.Shape))
+            {
+                const auto& aabb = std::get<AABBCollider>(obstacle.Collider.Shape);
+                float hitT;
+                CU::Vector3f localNormal;
+
+                if (CU::RaycastAABB(localOrigin, localDir, aabb.MinPoint, aabb.MaxPoint, hitT, localNormal))
+                {
+                    float worldT = hitT * localDir.Length();
+
+                    // 3. TOLERANCE CHECK
+                    // If the hit is closer than the audio source (minus a 10 unit buffer to ignore self-collision)
+                    if (worldT > 10.0f/*&& worldT < (distanceToSource - 10.0f)*/)
+                    {
+                        //isOccluded = true; //TODO!!
+                        isOccluded = false; //TODO!!
+                        break;
+                    }
+                }
+            }
+        }
+        sourcePtr->TargetOcclusion = isOccluded ? 1.0f : 0.0f;
     }
 
-    int nearestIdx = -1;
-    float minDist = 999999999.0f;
+    // 1. Find the TWO closest probes
+    int topProbes[2] = { -1, -1 };
+    float topDists[2] = { 999999.0f, 999999.0f };
 
     for (int i = 0; i < myImpl->CachedGrid.size(); ++i)
     {
         float dist = (myImpl->CachedGrid[i].Position - listenerPos).Length();
-        if (dist < minDist)
+        if (dist < topDists[0])
         {
-            minDist = dist;
-            nearestIdx = i;
+            topDists[1] = topDists[0]; topProbes[1] = topProbes[0];
+            topDists[0] = dist;        topProbes[0] = i;
+        }
+        else if (dist < topDists[1])
+        {
+            topDists[1] = dist; topProbes[1] = i;
         }
     }
 
-    bool zoneChanged = (nearestIdx != -1 && nearestIdx != myImpl->ActiveProbeIndex);
-
-    // Check if player rotated more than ~3.5 degrees
-    bool rotationChanged = (myImpl->LastListenerRight.Dot(currentRight) < 0.998f);
-
-    if (zoneChanged || (rotationChanged && myImpl->ActiveProbeIndex != -1))
+    if (topProbes[0] == -1) return;
+    if (topProbes[1] == -1)
     {
-        bool wasFirstTime = (myImpl->ActiveProbeIndex == -1);
+        topProbes[1] = topProbes[0];
+        topDists[1] = topDists[0];
+    }
 
-        myImpl->ActiveProbeIndex = nearestIdx;
-        myImpl->LastListenerRight = currentRight; // Save rotation
+    // 2. Calculate Blend Weights (Inverse Distance)
+    // Avoid div by zero if standing directly on a probe
+    float totalDist = topDists[0] + topDists[1];
+    float weight0 = (totalDist > 0.01f) ? (1.0f - (topDists[0] / totalDist)) : 1.0f;
+    float weight1 = (totalDist > 0.01f) ? (1.0f - (topDists[1] / totalDist)) : 0.0f;
 
-        int inactiveIdx = (myImpl->ActiveReverbIdx == 0) ? 1 : 0;
+    // Force rotation updates (re-bake the IRs if user spins)
+    bool rotationChanged = (myImpl->LastListenerRight.Dot(currentRight) < 0.998f);
+    if (rotationChanged) myImpl->LastListenerRight = currentRight;
 
-        // Pass the live rotation into the IR generator!
-        myImpl->LoadProbeIR(myImpl->CachedGrid[nearestIdx], inactiveIdx, currentRight);
+    // 3. Engine Assignment Logic
+    for (int p = 0; p < 2; ++p)
+    {
+        int requiredProbe = topProbes[p];
+        float requiredVolume = (p == 0) ? weight0 : weight1;
 
-        myImpl->ReverbVolumes[myImpl->ActiveReverbIdx].setTargetValue(0.0f);
-        myImpl->ReverbVolumes[inactiveIdx].setTargetValue(1.0f);
+        // Check if this probe is already loaded in one of the engines
+        int foundInEngine = -1;
+        if (myImpl->LoadedProbeIndices[0] == requiredProbe) foundInEngine = 0;
+        if (myImpl->LoadedProbeIndices[1] == requiredProbe) foundInEngine = 1;
 
-        myImpl->ActiveReverbIdx = inactiveIdx;
-
-        if (wasFirstTime)
+        if (foundInEngine != -1)
         {
-            OnSimulationReady.Broadcast(0);
+            // It's loaded! Just update its volume and optionally refresh rotation
+            myImpl->ReverbVolumes[foundInEngine].setTargetValue(requiredVolume);
+            if (rotationChanged)
+            {
+                myImpl->LoadProbeIR(myImpl->CachedGrid[requiredProbe], foundInEngine, currentRight);
+            }
+        }
+        else
+        {
+            // It's NOT loaded. Find the engine that is NOT holding the other top probe
+            int engineToOverwrite = (myImpl->LoadedProbeIndices[0] == topProbes[1 - p]) ? 1 : 0;
+
+            myImpl->LoadProbeIR(myImpl->CachedGrid[requiredProbe], engineToOverwrite, currentRight);
+            myImpl->LoadedProbeIndices[engineToOverwrite] = requiredProbe;
+            myImpl->ReverbVolumes[engineToOverwrite].setTargetValue(requiredVolume);
         }
     }
 }
@@ -368,7 +449,7 @@ std::optional<AudioHandle> AudioEngine::RegisterSoundSource(const std::filesyste
     auto* device = myImpl->DeviceManager.getCurrentAudioDevice();
     double hardwareSampleRate = device ? device->getCurrentSampleRate() : 44100.0;
 
-    newSource->Prepare(numChannels);
+    newSource->Prepare(numChannels, hardwareSampleRate);
     newSource->Ratio = globalEditorRate / hardwareSampleRate; // Standardized Ratio
     newSource->CurrentSound = newFile;
     newSource->IsPlaying = false;
@@ -415,6 +496,11 @@ std::optional<EmitterHandle> AudioEngine::RegisterAudioEmitter(AudioHandle aSour
 void AudioEngine::UpdateAudioEmitter(const EmitterHandle aHandle, const EmitterSettings& someSettings, const CU::Matrix4x4f& aMatrix)
 {
     myImpl->Simulator.UpdateEmitter(aHandle, someSettings, aMatrix);
+    auto it = myImpl->AudioSources.find(aHandle);
+    if (it != myImpl->AudioSources.end())
+    {
+        it->second->Transform = aMatrix;
+    }
 }
 
 void AudioEngine::UnregisterEmitter(const EmitterHandle aHandle)
@@ -450,17 +536,16 @@ void AudioEngine::Impl::LoadProbeIR(const AcousticProbe& activeProbe, int target
     int sampleRate = static_cast<int>(Simulator.GetRayLimit() > 0 ? 48000 : 48000);
     int irLengthSamples = sampleRate * 2; // 2 seconds max reverb tail
 
-    juce::AudioBuffer<float> irBuffer(2, irLengthSamples);
-    irBuffer.clear();
+    // 1. Create 3 separate buffers for our frequency bands
+    juce::AudioBuffer<float> lowBuffer(2, irLengthSamples);
+    juce::AudioBuffer<float> midBuffer(2, irLengthSamples);
+    juce::AudioBuffer<float> highBuffer(2, irLengthSamples);
+    lowBuffer.clear(); midBuffer.clear(); highBuffer.clear();
 
-    const float minDistance = 200.0f;
-    const float rolloffFactor = 0.5f;
     float rayLimitFloat = static_cast<float>(Simulator.GetRayLimit());
+    float reverbBoost = 100.0f;
 
-    // 1. WE DELETED THE FAKE DRY SOUND HERE
-    // The physics engine will naturally provide the direct hits from the raycaster!
-
-    // 2. Mix the Reflections (The "Wet" Tail)
+    // 2. Mix the Reflections into their respective frequency bands
     for (const auto& hit : activeProbe.Hits)
     {
         float delaySeconds = hit.Distance / 34300.0f;
@@ -468,27 +553,81 @@ void AudioEngine::Impl::LoadProbeIR(const AcousticProbe& activeProbe, int target
 
         if (delaySamples >= irLengthSamples) continue;
 
-        float attenuation = minDistance / (minDistance + rolloffFactor * (hit.Distance - minDistance));
-        float clampedAtten = (attenuation < 1.0f) ? attenuation : 1.0f;
-
-        // --- THE ENERGY FIX ---
-        // A single-sample impulse needs significantly more amplitude than continuous audio.
-        // We multiply by a "Reverb Boost" factor (e.g., 500.0f) so it's actually audible.
-        // You can tweak this 500.0f up or down to act as a global "Wetness" knob!
-        float reverbBoost = 300.0f;
-        float finalGain = (clampedAtten * hit.Power * reverbBoost) / rayLimitFloat;
-
         float pan = listenerRight.Dot(-hit.RayDirection); // Use live rotation!
         float livePanAngle = (pan + 1.0f) * 0.5f * (3.14159f * 0.5f);
 
-        float leftGain = std::cos(livePanAngle) * finalGain;
-        float rightGain = std::sin(livePanAngle) * finalGain;
+        float leftPan = std::cos(livePanAngle);
+        float rightPan = std::sin(livePanAngle);
 
-        irBuffer.addSample(0, delaySamples, leftGain);
-        irBuffer.addSample(1, delaySamples, rightGain);
+
+        float baseGain = reverbBoost / rayLimitFloat;
+
+        float highAirAbsorb = std::pow(0.9f, delaySeconds);
+        float midAirAbsorb = std::pow(0.98f, delaySeconds);
+
+        // Multiply the base gain by the 3-band absorption we got from the GPU
+        float lowGain = hit.Power.x * baseGain;
+        float midGain = hit.Power.y * baseGain * midAirAbsorb;
+        float highGain = hit.Power.z * baseGain * highAirAbsorb;
+
+        // Add to the respective band buffers
+        lowBuffer.addSample(0, delaySamples, lowGain * leftPan);
+        lowBuffer.addSample(1, delaySamples, lowGain * rightPan);
+
+        midBuffer.addSample(0, delaySamples, midGain * leftPan);
+        midBuffer.addSample(1, delaySamples, midGain * rightPan);
+
+        highBuffer.addSample(0, delaySamples, highGain * leftPan);
+        highBuffer.addSample(1, delaySamples, highGain * rightPan);
     }
 
-    // 3. Hand the Room Fingerprint to the Convolution Engine
+    // 3. Apply physical EQ filters to the 3 Band Buffers
+    juce::dsp::ProcessSpec spec;
+    spec.sampleRate = static_cast<double>(sampleRate);
+    spec.maximumBlockSize = static_cast<juce::uint32>(irLengthSamples);
+    spec.numChannels = 1;
+
+    juce::dsp::IIR::Filter<float> lowPass[2];
+    juce::dsp::IIR::Filter<float> midBand[2];
+    juce::dsp::IIR::Filter<float> highPass[2];
+
+    // Create the coefficients once
+    auto lpCoeffs = juce::dsp::IIR::Coefficients<float>::makeLowPass(sampleRate, 250.0f);
+    auto mbCoeffs = juce::dsp::IIR::Coefficients<float>::makeBandPass(sampleRate, 1000.0f);
+    auto hpCoeffs = juce::dsp::IIR::Coefficients<float>::makeHighPass(sampleRate, 4000.0f);
+
+    // Process Left (0) and Right (1) entirely independently
+    for (int c = 0; c < 2; ++c)
+    {
+        lowPass[c].prepare(spec);
+        midBand[c].prepare(spec);
+        highPass[c].prepare(spec);
+
+        lowPass[c].coefficients = lpCoeffs;
+        midBand[c].coefficients = mbCoeffs;
+        highPass[c].coefficients = hpCoeffs;
+
+        // Wrap just this single channel in an AudioBlock
+        juce::dsp::AudioBlock<float> lowChannel(lowBuffer.getArrayOfWritePointers() + c, 1, irLengthSamples);
+        lowPass[c].process(juce::dsp::ProcessContextReplacing<float>(lowChannel));
+
+        juce::dsp::AudioBlock<float> midChannel(midBuffer.getArrayOfWritePointers() + c, 1, irLengthSamples);
+        midBand[c].process(juce::dsp::ProcessContextReplacing<float>(midChannel));
+
+        juce::dsp::AudioBlock<float> highChannel(highBuffer.getArrayOfWritePointers() + c, 1, irLengthSamples);
+        highPass[c].process(juce::dsp::ProcessContextReplacing<float>(highChannel));
+    }
+    // 4. Sum the filtered bands back into the final IR buffer
+    juce::AudioBuffer<float> irBuffer(2, irLengthSamples);
+    irBuffer.clear();
+    for (int c = 0; c < 2; ++c)
+    {
+        irBuffer.addFrom(c, 0, lowBuffer, c, 0, irLengthSamples);
+        irBuffer.addFrom(c, 0, midBuffer, c, 0, irLengthSamples);
+        irBuffer.addFrom(c, 0, highBuffer, c, 0, irLengthSamples);
+    }
+
+    // 5. Hand the finalized Room Fingerprint to the Convolution Engine
     Reverbs[targetReverbIndex].loadImpulseResponse(
         std::move(irBuffer),
         sampleRate,
@@ -725,45 +864,105 @@ void AudioEngine::Impl::audioDeviceIOCallbackWithContext(const float* const* inp
         Dry3DBuffer.clear(c, 0, numSamples);
     }
 
+    // We need a small temporary buffer to hold the raw source before we route it
+    juce::AudioBuffer<float> tempSourceBuffer(numOutputChannels, numSamples);
+
     // 1. ROUTE AUDIO
     for (auto& [handle, sourcePtr] : AudioSources)
     {
         if (sourcePtr && sourcePtr->IsPlaying)
         {
+            tempSourceBuffer.clear();
+            sourcePtr->Process(tempSourceBuffer);
+
             if (IsSimulationRunning)
             {
-                sourcePtr->Process(Dry3DBuffer); // Send to Reverb
+                for (int c = 0; c < numOutputChannels; ++c)
+                {
+                    Dry3DBuffer.addFrom(c, 0, tempSourceBuffer, c, 0, numSamples);
+                }
+
+                // --- NEW: OCCLUSION DSP ---
+                // 1. Smooth the occlusion value to prevent clicks (0.01 = smoothing speed)
+                sourcePtr->CurrentOcclusion += (sourcePtr->TargetOcclusion - sourcePtr->CurrentOcclusion) * 0.1f;
+
+                // 2. Map Occlusion (0.0 - 1.0) to a Frequency (20000Hz down to 800Hz)
+                float cutoffFreq = 20000.0f - (sourcePtr->CurrentOcclusion * 19200.0f);
+                sourcePtr->OcclusionFilter.setCutoffFrequency(cutoffFreq);
+
+                // 3. Process the filter onto the Dry signal
+                juce::dsp::AudioBlock<float> dryBlock(tempSourceBuffer);
+                sourcePtr->OcclusionFilter.process(juce::dsp::ProcessContextReplacing<float>(dryBlock));
+
+                // 4. Map Occlusion to a volume drop (drops to 30% volume when occluded)
+                float occlusionVolumeMultiplier = 1.0f - (sourcePtr->CurrentOcclusion * 0.7f);
+
+
+                // B. DRY PATH (Real-Time Distance & Panning)
+                CU::Vector3f sourcePos = { sourcePtr->Transform(4,1), sourcePtr->Transform(4,2), sourcePtr->Transform(4,3) };
+                CU::Vector3f dirToSource = sourcePos - LiveListenerPos;
+                float distance = dirToSource.Length();
+
+                const float minDistance = 200.0f;
+                float attenuation = minDistance / (minDistance + 0.5f * (distance - minDistance));
+                attenuation = std::min(1.0f, std::max(0.0f, attenuation));
+
+                // Multiply inverse distance by occlusion muffle volume
+                attenuation *= occlusionVolumeMultiplier;
+
+                if (distance > 0.001f) dirToSource.Normalize();
+                float pan = LiveListenerRight.Dot(dirToSource);
+                float panAngle = (pan + 1.0f) * 0.5f * (3.14159f * 0.5f);
+
+                float leftGain = attenuation * std::cos(panAngle);
+                float rightGain = attenuation * std::sin(panAngle);
+
+                outputBuffer.addFrom(0, 0, tempSourceBuffer, 0, 0, numSamples, leftGain);
+                outputBuffer.addFrom(1, 0, tempSourceBuffer, 1, 0, numSamples, rightGain);
             }
             else
             {
-                sourcePtr->Process(outputBuffer); // Send directly to Speakers!
+                // PREVIEW MODE (2D Inspector)
+                for (int c = 0; c < numOutputChannels; ++c)
+                {
+                    outputBuffer.addFrom(c, 0, tempSourceBuffer, c, 0, numSamples);
+                }
             }
         }
     }
 
-    if (IsRoomBaked && ActiveProbeIndex != -1)
+    bool hasLoadedProbes = (LoadedProbeIndices[0] != -1 || LoadedProbeIndices[1] != -1);
+
+    if (IsSimulationRunning && IsRoomBaked && hasLoadedProbes)
     {
-        // 1. Clear ONLY the chunk of the temp buffers we are about to use
-        // (Since block sizes fluctuate, we only clear 'numSamples')
         for (int c = 0; c < numOutputChannels; ++c)
         {
-            // FIX A: Copy from Dry3DBuffer, not outputBuffer!
             TempBufferA.copyFrom(c, 0, Dry3DBuffer, c, 0, numSamples);
             TempBufferB.copyFrom(c, 0, Dry3DBuffer, c, 0, numSamples);
         }
 
-        // 2. Process Convolution A
-        juce::dsp::AudioBlock<float> blockA(TempBufferA.getArrayOfWritePointers(), numOutputChannels, numSamples);
-        juce::dsp::ProcessContextReplacing<float> contextA(blockA);
-        Reverbs[0].process(contextA);
+        // Process Convolution A (Only if it has a loaded probe)
+        if (LoadedProbeIndices[0] != -1)
+        {
+            juce::dsp::AudioBlock<float> blockA(TempBufferA);
+            Reverbs[0].process(juce::dsp::ProcessContextReplacing<float>(blockA));
+        }
+        else
+        {
+            TempBufferA.clear();
+        }
 
-        // 3. Process Convolution B
-        juce::dsp::AudioBlock<float> blockB(TempBufferB.getArrayOfWritePointers(), numOutputChannels, numSamples);
-        juce::dsp::ProcessContextReplacing<float> contextB(blockB);
-        Reverbs[1].process(contextB);
+        // Process Convolution B (Only if it has a loaded probe)
+        if (LoadedProbeIndices[1] != -1)
+        {
+            juce::dsp::AudioBlock<float> blockB(TempBufferB);
+            Reverbs[1].process(juce::dsp::ProcessContextReplacing<float>(blockB));
+        }
+        else
+        {
+            TempBufferB.clear();
+        }
 
-
-        // 4. Apply smoothed crossfade volumes and sum to output
         for (int sample = 0; sample < numSamples; ++sample)
         {
             float volA = ReverbVolumes[0].getNextValue();
@@ -774,7 +973,6 @@ void AudioEngine::Impl::audioDeviceIOCallbackWithContext(const float* const* inp
                 float wetSample = (TempBufferA.getSample(c, sample) * volA) +
                     (TempBufferB.getSample(c, sample) * volB);
 
-                // ADD to the output buffer so we don't overwrite the 2D audio!
                 outputBuffer.addSample(c, sample, wetSample);
             }
         }

@@ -3,9 +3,11 @@
 struct GPURay
 {
     float3 Origin;
-    float Power;
+    float Padding1;
+    float3 Power;
+    float Padding2;
     float3 Direction;
-    float Padding;
+    float Padding3;
 };
 
 struct GPUObstacle
@@ -13,18 +15,19 @@ struct GPUObstacle
     matrix InverseTransform;
     matrix Transform;
     float3 MinPoint;
-    float Absorption;
+    float Padding1;
     float3 MaxPoint;
-    float Padding;
+    float Padding2;
+    float3 Reflection;
+    float Padding3;
 };
 
 struct GPUMegaHit
 {
     float3 RayDirection;
     int ProbeIndex;
+    float3 Power;
     float Distance;
-    float Power;
-    float2 Padding;
 };
 
 // --- INPUTS ---
@@ -87,13 +90,14 @@ void main(uint3 DTid : SV_DispatchThreadID)
 
     GPURay currentRay = InputRays[index];
     float accumulatedDistance = 0.0f;
-    const int MAX_BOUNCES = 10;
+    const int MAX_BOUNCES = 200;
     const float PI = 3.14159265359f;
 
     for (int bounce = 0; bounce < MAX_BOUNCES; ++bounce)
     {
         float closestWallT = 1000000.0f;
         float3 bestNormal = float3(0, 0, 0);
+        float3 bestReflection = float3(0, 0, 0);
 
         // ==========================================
         // 1. CHECK OBSTACLES FIRST (Find the wall)
@@ -115,6 +119,7 @@ void main(uint3 DTid : SV_DispatchThreadID)
                 {
                     closestWallT = worldT;
                     bestNormal = normalize(mul(float4(localNormal, 0.0f), obs.Transform).xyz);
+                    bestReflection = obs.Reflection;
                 }
             }
         }
@@ -141,14 +146,16 @@ void main(uint3 DTid : SV_DispatchThreadID)
                 // CRITICAL FIX: Only log if the probe is CLOSER than the wall!
                 if (hitT > 0.01f && hitT < closestWallT)
                 {
-                    GPUMegaHit hit;
-                    hit.Padding = float2(0, 0);
-                    hit.ProbeIndex = p;
-                    hit.Distance = accumulatedDistance + hitT;
-                    hit.Power = currentRay.Power;
-                    hit.RayDirection = currentRay.Direction;
+                    if (bounce > 0)
+                    {
+                        GPUMegaHit hit;
+                        hit.ProbeIndex = p;
+                        hit.Distance = accumulatedDistance + hitT;
+                        hit.Power = currentRay.Power;
+                        hit.RayDirection = currentRay.Direction;
                     
-                    OutputHits.Append(hit); // Append directly, no temp arrays needed!
+                        OutputHits.Append(hit);
+                    }
                 }
             }
         }
@@ -165,6 +172,6 @@ void main(uint3 DTid : SV_DispatchThreadID)
         // Reflection math
         currentRay.Direction = reflect(currentRay.Direction, bestNormal);
         currentRay.Origin = hitPoint + (bestNormal * 0.1f); // Nudge off surface 
-        currentRay.Power *= 0.95f; // Wall absorption
+        currentRay.Power *= bestReflection; // Wall absorption
     }
 }

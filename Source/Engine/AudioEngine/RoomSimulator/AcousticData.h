@@ -7,9 +7,11 @@
 struct GPURay
 {
 	CU::Vector3f Origin;
-	float Power;
+	float Padding1;
+	CU::Vector3f Power;
+	float Padding2;
 	CU::Vector3f Direction;
-	float Padding; 
+	float Padding3; 
 };
 
 struct GPUObstacle
@@ -17,9 +19,11 @@ struct GPUObstacle
 	CU::Matrix4x4f InverseTransform; // 64 bytes
 	CU::Matrix4x4f Transform;        // 64 bytes
 	CU::Vector3f MinPoint;
-	float Absorption; 
+	float Padding1; 
 	CU::Vector3f MaxPoint;
-	float Padding;      
+	float Padding2;
+	CU::Vector3f Reflection;
+	float Padding3;
 };
 
 struct GPURayResult
@@ -53,9 +57,8 @@ struct GPUMegaHit
 {
 	CU::Vector3f RayDirection;
 	int ProbeIndex;
+	CU::Vector3f Power;
 	float Distance;
-	float Power;
-	CU::Vector2f Padding;
 };
 
 struct AcousticProbe

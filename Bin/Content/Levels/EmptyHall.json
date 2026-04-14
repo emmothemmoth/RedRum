@@ -58,9 +58,9 @@
     {
       "Name": "Roof",
       "Transform": {
-        "Position": [ 0.0, 480.0, 0.0 ],
+        "Position": [ 0.0, 720.0, 0.0 ],
         "RotationDegrees": [ 90, 0, 0 ],
-        "scale": [ 2, 4, 1 ]
+        "scale": [ 3, 6, 1 ]
       },
       "Components": [
         {
@@ -76,7 +76,7 @@
       "Transform": {
         "Position": [ 0.0, 0.0, 0.0 ],
         "RotationDegrees": [ -90, 0, 0 ],
-        "scale": [ 2, 4, 1 ]
+        "scale": [ 3, 6, 1 ]
       },
       "Components": [
         {
@@ -91,9 +91,9 @@
     {
       "Name": "Left",
       "Transform": {
-        "Position": [ -480.0, 240.0, 0.0 ],
+        "Position": [ -720.0, 360.0, 0.0 ],
         "RotationDegrees": [ 0, 90, 0 ],
-        "scale": [ 2, 2, 1 ]
+        "scale": [ 3, 3, 1 ]
       },
       "Components": [
         {
@@ -107,9 +107,9 @@
     {
       "Name": "Right",
       "Transform": {
-        "Position": [ 480.0, 240.0, 0.0 ],
+        "Position": [ 720.0, 360.0, 0.0 ],
         "RotationDegrees": [ 0, -90, 0 ],
-        "scale": [ 2, 2, 1 ]
+        "scale": [ 3, 3, 1 ]
       },
       "Components": [
         {
@@ -123,9 +123,9 @@
     {
       "Name": "Front",
       "Transform": {
-        "Position": [ 0.0, 240.0, 480.0 ],
+        "Position": [ 0.0, 360.0, 720.0 ],
         "RotationDegrees": [ 0, 180, 0 ],
-        "scale": [ 2, 2, 1 ]
+        "scale": [ 3, 3, 1 ]
       },
       "Components": [
         {
@@ -139,9 +139,9 @@
     {
       "Name": "Back",
       "Transform": {
-        "Position": [ 0.0, 240.0, -480.0 ],
+        "Position": [ 0.0, 360.0, -720.0 ],
         "RotationDegrees": [ 0, -180, 0 ],
-        "scale": [ 2, 2, 1 ]
+        "scale": [ 3, 3, 1 ]
       },
       "Components": [
         {

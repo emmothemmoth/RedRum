@@ -71,6 +71,7 @@ public:
 	CU::Matrix4x4f GetListenerTransform();
 
 	std::vector<AudioEmitter> GetSourcesCopy();
+	std::vector<AudioObstacle> GetObstaclesCopy();
 	int GetRayLimit() const { return myRayLimit; }
 private:
 	void WorkerThreadLoop();
@@ -93,7 +94,7 @@ private:
 	std::mutex myComputeMutex;
 	std::optional<ComputeRequest> myPendingComputeRequest = std::nullopt;
 	double myBakeRate = 48000;
-	int myRayLimit = 500;
+	int myRayLimit = 2'000'000;
 	float myProbeSpacing = 200.0f;
 	float myProbeRadius = 50.0f;
 	bool myHasWork = false;
