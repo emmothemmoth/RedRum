@@ -51,7 +51,9 @@ private:
 	uint32_t myEmitterHandle = UINT32_MAX;
 	DelegateHandle myVisualizeHandle;
 	DelegateHandle myScoutHandle;
+	float myLineAlpha = 1.0f;
 	bool myIsAnimatingRays = false;
+	bool myAnimationDone = false;
 	bool myIsPlayable = false;
 	bool myIsDirty = false;
 };

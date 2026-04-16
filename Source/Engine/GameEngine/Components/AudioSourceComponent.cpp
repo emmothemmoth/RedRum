@@ -56,6 +56,10 @@ void AudioSourceComponent::Update(const float aDeltaTime)
 	if (myIsAnimatingRays)
 	{
 		bool allFinished = true;
+		if (!myAnimationDone)
+		{
+			myLineAlpha < 1.0f ? myLineAlpha += aDeltaTime * 0.25f : myLineAlpha = 1.0f;
+		}
 
 		for (auto& anim : myAnimators)
 		{
@@ -88,7 +92,17 @@ void AudioSourceComponent::Update(const float aDeltaTime)
 
 		if (allFinished)
 		{
-			// myIsAnimatingRays = false; 
+			// myIsAnimatingRays = false;
+			myAnimationDone = true;
+		}
+	}
+	if(myAnimationDone)
+	{
+		myLineAlpha -= aDeltaTime * 0.5f;
+		if (myLineAlpha <= 0.0001f)
+		{
+			myIsAnimatingRays = false;
+			myLineAlpha = 0.0f;
 		}
 	}
 }
@@ -108,8 +122,10 @@ void AudioSourceComponent::Render()
 		for (int i = 0; i < anim.CurrentBounceIndex; ++i)
 		{
 			const auto& bounce = anim.PathData.Bounces[i];
-			CU::Vector4f startColor = baseColor; startColor.w = bounce.StartPower;
-			CU::Vector4f endColor = baseColor;   endColor.w = bounce.EndPower;
+			CU::Vector4f startColor = baseColor; 
+			startColor.w *= bounce.StartPower * myLineAlpha;
+			CU::Vector4f endColor = baseColor;   
+			endColor.w *= bounce.EndPower * myLineAlpha;
 
 			myDebugLines->AddLine(bounce.StartPos, bounce.EndPos, startColor, endColor);
 		}
@@ -121,8 +137,10 @@ void AudioSourceComponent::Render()
 			CU::Vector3f currentEndPos = bounce.StartPos + ((bounce.EndPos - bounce.StartPos) * anim.CurrentBounceProgress);
 			float currentPower = bounce.StartPower + ((bounce.EndPower - bounce.StartPower) * anim.CurrentBounceProgress);
 
-			CU::Vector4f startColor = baseColor; startColor.w = bounce.StartPower;
-			CU::Vector4f endColor = baseColor;   endColor.w = currentPower;
+			CU::Vector4f startColor = baseColor; 
+			startColor.w = bounce.StartPower * myLineAlpha;
+			CU::Vector4f endColor = baseColor;   
+			endColor.w = currentPower * myLineAlpha;
 
 			myDebugLines->AddLine(bounce.StartPos, currentEndPos, startColor, endColor);
 		}
@@ -191,4 +209,6 @@ void AudioSourceComponent::ReceiveScoutRays(EmitterHandle aHandle, std::vector<V
 	myDebugLines->Reserve(totalLineSegments * 2, totalLineSegments * 2);
 
 	myIsAnimatingRays = true;
+	myLineAlpha = 0.0f;
+	myAnimationDone = false;
 }

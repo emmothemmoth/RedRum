@@ -283,8 +283,6 @@ void AudioEngine::Update()
                 {
                     float worldT = hitT * localDir.Length();
 
-                    // 3. TOLERANCE CHECK
-                    // If the hit is closer than the audio source (minus a 10 unit buffer to ignore self-collision)
                     if (worldT > 10.0f/*&& worldT < (distanceToSource - 10.0f)*/)
                     {
                         //isOccluded = true; //TODO!!
@@ -297,7 +295,6 @@ void AudioEngine::Update()
         sourcePtr->TargetOcclusion = isOccluded ? 1.0f : 0.0f;
     }
 
-    // 1. Find the TWO closest probes
     int topProbes[2] = { -1, -1 };
     float topDists[2] = { 999999.0f, 999999.0f };
 
@@ -486,6 +483,12 @@ std::optional<EmitterHandle> AudioEngine::RegisterAudioEmitter(AudioHandle aSour
         myImpl->SceneEmitterHandles.push_back(aSourceHandle);
         const juce::AudioBuffer<float>* sourceBuffer = &it->second->Buffer;
         float sourceRate = static_cast<float>(it->second->SampleRate);
+
+        auto sourceIt = myImpl->AudioSources.find(aSourceHandle);
+        if (sourceIt != myImpl->AudioSources.end())
+        {
+            sourceIt->second->Transform = aTransform;
+        }
 
         return myImpl->Simulator.RegisterEmitter(sourceBuffer, sourceRate, someSettings, aTransform);
     }
